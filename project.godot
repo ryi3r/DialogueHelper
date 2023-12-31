@@ -1,0 +1,35 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="Dialogue Helper"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.2", "Forward Plus")
+run/low_processor_mode_sleep_usec=0
+config/icon="res://icon.svg"
+boot_splash/stretch/aspect="expand"
+
+[display]
+
+window/size/viewport_width=1100
+window/size/viewport_height=700
+window/subwindows/embed_subwindows=false
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[network]
+
+limits/debugger/max_chars_per_second=999999999
+limits/debugger/max_queued_messages=999999999
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"

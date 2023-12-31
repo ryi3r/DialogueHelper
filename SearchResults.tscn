@@ -1,0 +1,21 @@
+[gd_scene load_steps=2 format=3 uid="uid://dkxkfyqho8db7"]
+
+[ext_resource type="Script" path="res://SearchResults.gd" id="1_bu7hw"]
+
+[node name="SearchResults" type="Window"]
+title = "Search Results."
+initial_position = 1
+size = Vector2i(600, 600)
+transient = true
+unresizable = true
+script = ExtResource("1_bu7hw")
+
+[node name="ItemList" type="ItemList" parent="."]
+offset_right = 600.0
+offset_bottom = 600.0
+allow_reselect = true
+item_count = 1
+item_0/text = ""
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="item_selected" from="ItemList" to="." method="_on_item_selected"]

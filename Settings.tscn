@@ -1,0 +1,94 @@
+[gd_scene load_steps=2 format=3 uid="uid://dfk3iirt1ep8m"]
+
+[ext_resource type="Script" path="res://Settings.gd" id="1_xvsog"]
+
+[node name="Settings" type="Window"]
+title = "Settings"
+initial_position = 2
+size = Vector2i(500, 300)
+transient = true
+exclusive = true
+unresizable = true
+script = ExtResource("1_xvsog")
+
+[node name="OkButton" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -110.0
+offset_top = -41.0
+offset_right = -79.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "OK"
+
+[node name="CancelButton" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -70.0
+offset_top = -41.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Cancel"
+
+[node name="EnableGit" type="CheckBox" parent="."]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 124.0
+offset_bottom = 51.0
+text = "Enable git"
+
+[node name="RepoLabel" type="Label" parent="EnableGit"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = 35.0
+offset_right = 98.0
+offset_bottom = 58.0
+text = "Git repo url:"
+
+[node name="BranchLabel" type="Label" parent="EnableGit/RepoLabel"]
+layout_mode = 0
+offset_left = -5.0
+offset_top = 65.0
+offset_right = 103.0
+offset_bottom = 88.0
+text = "Branch name:
+
+P.D:   You need to have already installed git and have it
+          on the environment variables for DH to be able to use
+          it."
+
+[node name="LineEdit" type="LineEdit" parent="EnableGit/RepoLabel/BranchLabel"]
+layout_mode = 0
+offset_left = 115.0
+offset_top = -3.0
+offset_right = 265.0
+offset_bottom = 28.0
+
+[node name="ValidLabel" type="Label" parent="EnableGit/RepoLabel"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 30.0
+offset_right = 185.0
+offset_bottom = 53.0
+theme_override_colors/font_color = Color(0, 1, 0, 1)
+text = "Url is valid."
+
+[node name="LineEdit" type="LineEdit" parent="EnableGit/RepoLabel"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = -3.0
+offset_right = 350.0
+offset_bottom = 28.0
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="OkButton" to="." method="_on_ok_button_pressed"]
+[connection signal="pressed" from="CancelButton" to="." method="_on_cancel_button_pressed"]

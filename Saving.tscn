@@ -1,0 +1,28 @@
+[gd_scene load_steps=2 format=3 uid="uid://bhbsbag1ebr7"]
+
+[ext_resource type="Script" path="res://Loading.gd" id="1_sqhla"]
+
+[node name="Saving" type="Window"]
+gui_disable_input = true
+title = "Saving file..."
+initial_position = 1
+size = Vector2i(475, 100)
+transient = true
+exclusive = true
+unresizable = true
+unfocusable = true
+script = ExtResource("1_sqhla")
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(475, 0)
+offset_top = 5.0
+offset_right = 475.0
+offset_bottom = 28.0
+text = "Saving..."
+horizontal_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="."]
+offset_left = 28.0
+offset_top = 35.0
+offset_right = 448.0
+offset_bottom = 65.0

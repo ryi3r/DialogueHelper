@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://dtlxqu8obb0q3"]
+
+[node name="ShowInfo" type="Window"]
+title = "String Information."
+initial_position = 2
+size = Vector2i(600, 220)
+transient = true
+exclusive = true
+unresizable = true
+
+[node name="Label" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 65.0
+offset_bottom = 43.0
+text = "Current String:
+
+Original String:
+
+Last Edit Details: EDIT_DETAILS"
+visible_characters_behavior = 1
+
+[node name="LineEdit" type="LineEdit" parent="."]
+offset_left = 140.0
+offset_top = 17.0
+offset_right = 565.0
+offset_bottom = 48.0
+editable = false
+
+[node name="LineEdit2" type="LineEdit" parent="."]
+offset_left = 140.0
+offset_top = 70.0
+offset_right = 565.0
+offset_bottom = 101.0
+editable = false

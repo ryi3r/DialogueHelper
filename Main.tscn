@@ -1,0 +1,272 @@
+[gd_scene load_steps=3 format=3 uid="uid://dsotjep87sau4"]
+
+[ext_resource type="Script" path="res://Main.gd" id="1_4lgbp"]
+[ext_resource type="PackedScene" uid="uid://d4chixre3rvi5" path="res://Box.tscn" id="2_71puv"]
+
+[node name="Main" type="Node2D"]
+texture_filter = 1
+script = ExtResource("1_4lgbp")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(550, 350)
+
+[node name="Box" parent="." instance=ExtResource("2_71puv")]
+z_index = -1
+position = Vector2(516, 46)
+
+[node name="Panel" type="Panel" parent="."]
+offset_right = 1100.0
+offset_bottom = 40.0
+
+[node name="MenuBar" type="MenuBar" parent="Panel"]
+layout_mode = 0
+offset_right = 306.0
+offset_bottom = 40.0
+
+[node name="Container" type="HBoxContainer" parent="Panel/MenuBar"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="File" type="MenuButton" parent="Panel/MenuBar/Container"]
+layout_mode = 2
+text = "File"
+item_count = 6
+popup/item_0/text = "Open JSON"
+popup/item_0/id = 0
+popup/item_1/text = "Save JSON"
+popup/item_1/id = 1
+popup/item_2/text = ""
+popup/item_2/id = 3
+popup/item_2/separator = true
+popup/item_3/text = "Settings"
+popup/item_3/id = 4
+popup/item_4/text = ""
+popup/item_4/id = 5
+popup/item_4/separator = true
+popup/item_5/text = "Exit"
+popup/item_5/id = 2
+
+[node name="About" type="Button" parent="Panel/MenuBar/Container"]
+layout_mode = 2
+focus_mode = 1
+text = "About"
+
+[node name="EnablePortrait" type="CheckBox" parent="."]
+offset_left = 471.0
+offset_top = 655.0
+offset_right = 620.0
+offset_bottom = 686.0
+focus_mode = 0
+text = "Enable portrait"
+
+[node name="ReplaceSimilar" type="CheckBox" parent="."]
+offset_left = 633.0
+offset_top = 656.0
+offset_right = 865.0
+offset_bottom = 687.0
+focus_mode = 0
+button_pressed = true
+text = "Replace all similar entries"
+
+[node name="DialogueEdit" type="TextEdit" parent="."]
+offset_left = 283.0
+offset_top = 484.0
+offset_right = 870.0
+offset_bottom = 642.0
+focus_mode = 1
+placeholder_text = "Put your Dialogue text here to try it out."
+
+[node name="CurrentLayer" type="Label" parent="."]
+offset_left = 284.0
+offset_top = 449.0
+offset_right = 372.0
+offset_bottom = 472.0
+text = "Text Layer:"
+
+[node name="Num" type="SpinBox" parent="CurrentLayer"]
+layout_mode = 0
+offset_left = 94.0
+offset_top = -3.0
+offset_right = 177.063
+offset_bottom = 28.0
+focus_mode = 1
+min_value = 1.0
+value = 1.0
+rounded = true
+
+[node name="CurrentBox" type="Label" parent="."]
+offset_left = 464.0
+offset_top = 449.0
+offset_right = 504.0
+offset_bottom = 472.0
+text = "Box:"
+
+[node name="Num" type="SpinBox" parent="CurrentBox"]
+layout_mode = 0
+offset_left = 47.0
+offset_top = -3.0
+offset_right = 130.063
+offset_bottom = 28.0
+focus_mode = 1
+min_value = 1.0
+value = 1.0
+rounded = true
+
+[node name="Info" type="Label" parent="CurrentBox"]
+layout_mode = 0
+offset_left = -25.0
+offset_top = -21.0
+offset_right = 133.0
+offset_bottom = -6.0
+theme_override_font_sizes/font_size = 10
+text = "OW"
+horizontal_alignment = 1
+
+[node name="CurrentFont" type="Label" parent="."]
+offset_left = 596.0
+offset_top = 448.0
+offset_right = 636.0
+offset_bottom = 471.0
+focus_mode = 1
+text = "Font:"
+
+[node name="Num" type="SpinBox" parent="CurrentFont"]
+layout_mode = 0
+offset_left = 52.0
+offset_top = -2.0
+offset_right = 135.063
+offset_bottom = 29.0
+min_value = 1.0
+value = 1.0
+rounded = true
+
+[node name="Info" type="Label" parent="CurrentFont"]
+layout_mode = 0
+offset_left = -31.0
+offset_top = -20.0
+offset_right = 127.0
+offset_bottom = -5.0
+theme_override_font_sizes/font_size = 10
+text = "Speech"
+horizontal_alignment = 1
+
+[node name="CurrentColor" type="Label" parent="."]
+offset_left = 733.0
+offset_top = 450.0
+offset_right = 826.0
+offset_bottom = 473.0
+text = "Layer Color:"
+
+[node name="Picker" type="ColorPickerButton" parent="CurrentColor"]
+layout_mode = 0
+offset_left = 105.0
+offset_top = -3.0
+offset_right = 137.0
+offset_bottom = 28.0
+focus_mode = 1
+color = Color(1, 1, 1, 1)
+edit_alpha = false
+
+[node name="DialogueSelector" type="Label" parent="."]
+offset_left = 8.0
+offset_top = 448.0
+offset_right = 128.0
+offset_bottom = 471.0
+text = "Select an entry:"
+
+[node name="ItemList" type="ItemList" parent="DialogueSelector"]
+layout_mode = 0
+offset_top = 35.0
+offset_right = 268.0
+offset_bottom = 194.0
+
+[node name="StringSelector" type="Label" parent="."]
+offset_left = 881.0
+offset_top = 451.0
+offset_right = 994.0
+offset_bottom = 474.0
+text = "Select a string:"
+
+[node name="ItemList" type="ItemList" parent="StringSelector"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 34.0
+offset_right = 208.0
+offset_bottom = 191.0
+
+[node name="SimilarEntries" type="Label" parent="."]
+offset_left = 881.0
+offset_top = 318.0
+offset_right = 998.0
+offset_bottom = 341.0
+text = "Similar entries:"
+
+[node name="ItemList" type="ItemList" parent="SimilarEntries"]
+layout_mode = 0
+offset_left = 1.0
+offset_top = 33.0
+offset_right = 207.0
+offset_bottom = 122.0
+
+[node name="LoadButton" type="Button" parent="."]
+offset_left = 8.0
+offset_top = 656.0
+offset_right = 97.0
+offset_bottom = 687.0
+focus_mode = 1
+text = "Load JSON"
+
+[node name="SaveButton" type="Button" parent="."]
+offset_left = 116.0
+offset_top = 656.0
+offset_right = 203.0
+offset_bottom = 687.0
+text = "Save JSON"
+
+[node name="DetailsButton" type="Button" parent="."]
+offset_left = 929.0
+offset_top = 656.0
+offset_right = 1089.0
+offset_bottom = 687.0
+text = "Set Modifier Details"
+
+[node name="InfoButton" type="Button" parent="."]
+offset_left = 223.0
+offset_top = 656.0
+offset_right = 308.0
+offset_bottom = 687.0
+text = "Show Info"
+
+[node name="SettingsButton" type="Button" parent="."]
+offset_left = 330.0
+offset_top = 656.0
+offset_right = 400.0
+offset_bottom = 687.0
+text = "Settings"
+
+[node name="GoToButton" type="Button" parent="."]
+offset_left = 8.0
+offset_top = 405.0
+offset_right = 71.0
+offset_bottom = 436.0
+text = "Go to"
+
+[node name="SearchButton" type="Button" parent="."]
+offset_left = 91.0
+offset_top = 406.0
+offset_right = 152.0
+offset_bottom = 437.0
+text = "Search"
+
+[connection signal="text_changed" from="DialogueEdit" to="." method="_on_dialogue_edit_text_changed"]
+[connection signal="item_selected" from="DialogueSelector/ItemList" to="." method="_on_item_list_item_selected"]
+[connection signal="item_selected" from="StringSelector/ItemList" to="." method="_on_item_list_item_selected_str"]
+[connection signal="item_selected" from="SimilarEntries/ItemList" to="." method="_on_item_list_item_selected_similar"]
+[connection signal="pressed" from="LoadButton" to="." method="_on_load_button_pressed"]
+[connection signal="pressed" from="SaveButton" to="." method="_on_save_button_pressed"]
+[connection signal="pressed" from="DetailsButton" to="." method="_on_details_button_pressed"]
+[connection signal="pressed" from="InfoButton" to="." method="_on_info_button_pressed"]
+[connection signal="pressed" from="SettingsButton" to="." method="_on_settings_button_pressed"]
+[connection signal="pressed" from="GoToButton" to="." method="_on_go_to_button_pressed"]
+[connection signal="pressed" from="SearchButton" to="." method="_on_search_button_pressed"]
