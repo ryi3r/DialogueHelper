@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://c3qpf3tjlb2lh"]
 
-[ext_resource type="Script" path="res://GoTo.gd" id="1_8uuyr"]
+[ext_resource type="Script" path="res://Scripts/Subwindows/GoTo.gd" id="1_8uuyr"]
 
 [node name="GoTo" type="Window"]
 title = "Go to entry..."

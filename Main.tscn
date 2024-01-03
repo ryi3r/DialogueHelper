@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://dsotjep87sau4"]
 
 [ext_resource type="Script" path="res://Main.gd" id="1_4lgbp"]
-[ext_resource type="PackedScene" uid="uid://d4chixre3rvi5" path="res://Box.tscn" id="2_71puv"]
+[ext_resource type="PackedScene" uid="uid://d4chixre3rvi5" path="res://Subwindows/Box.tscn" id="2_71puv"]
 
 [node name="Main" type="Node2D"]
 texture_filter = 1
@@ -12,7 +12,7 @@ position = Vector2(550, 350)
 
 [node name="Box" parent="." instance=ExtResource("2_71puv")]
 z_index = -1
-position = Vector2(516, 46)
+position = Vector2(286, 48)
 
 [node name="Panel" type="Panel" parent="."]
 offset_right = 1100.0
@@ -31,161 +31,210 @@ offset_bottom = 40.0
 [node name="File" type="MenuButton" parent="Panel/MenuBar/Container"]
 layout_mode = 2
 text = "File"
+flat = false
 item_count = 6
 popup/item_0/text = "Open JSON"
 popup/item_0/id = 0
 popup/item_1/text = "Save JSON"
 popup/item_1/id = 1
 popup/item_2/text = ""
-popup/item_2/id = 3
+popup/item_2/id = 2
 popup/item_2/separator = true
 popup/item_3/text = "Settings"
-popup/item_3/id = 4
+popup/item_3/id = 3
 popup/item_4/text = ""
-popup/item_4/id = 5
+popup/item_4/id = 4
 popup/item_4/separator = true
 popup/item_5/text = "Exit"
-popup/item_5/id = 2
+popup/item_5/id = 5
 
-[node name="About" type="Button" parent="Panel/MenuBar/Container"]
+[node name="Go To" type="Button" parent="Panel/MenuBar/Container"]
 layout_mode = 2
-focus_mode = 1
+focus_mode = 0
+text = "Go to"
+
+[node name="Search" type="Button" parent="Panel/MenuBar/Container"]
+layout_mode = 2
+focus_mode = 0
+text = "Search"
+
+[node name="About" type="MenuButton" parent="Panel/MenuBar/Container"]
+layout_mode = 2
 text = "About"
+flat = false
+item_count = 4
+popup/item_0/text = "Show String Info"
+popup/item_0/id = 0
+popup/item_1/text = "Set Author Details"
+popup/item_1/id = 1
+popup/item_2/text = ""
+popup/item_2/id = 2
+popup/item_2/separator = true
+popup/item_3/text = "About DH..."
+popup/item_3/id = 3
 
 [node name="EnablePortrait" type="CheckBox" parent="."]
-offset_left = 471.0
-offset_top = 655.0
-offset_right = 620.0
-offset_bottom = 686.0
+offset_left = 283.0
+offset_top = 491.0
+offset_right = 432.0
+offset_bottom = 522.0
 focus_mode = 0
 text = "Enable portrait"
 
 [node name="ReplaceSimilar" type="CheckBox" parent="."]
-offset_left = 633.0
-offset_top = 656.0
-offset_right = 865.0
-offset_bottom = 687.0
+offset_left = 636.0
+offset_top = 489.0
+offset_right = 868.0
+offset_bottom = 520.0
 focus_mode = 0
 button_pressed = true
 text = "Replace all similar entries"
 
 [node name="DialogueEdit" type="TextEdit" parent="."]
 offset_left = 283.0
-offset_top = 484.0
+offset_top = 530.0
 offset_right = 870.0
-offset_bottom = 642.0
+offset_bottom = 688.0
 focus_mode = 1
 placeholder_text = "Put your Dialogue text here to try it out."
 
-[node name="CurrentLayer" type="Label" parent="."]
-offset_left = 284.0
-offset_top = 449.0
-offset_right = 372.0
-offset_bottom = 472.0
+[node name="DisplaySettings" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="CurrentLayer" type="Label" parent="DisplaySettings"]
+layout_mode = 0
+offset_left = 877.0
+offset_top = 53.0
+offset_right = 965.0
+offset_bottom = 76.0
 text = "Text Layer:"
 
-[node name="Num" type="SpinBox" parent="CurrentLayer"]
+[node name="Num" type="SpinBox" parent="DisplaySettings/CurrentLayer"]
 layout_mode = 0
-offset_left = 94.0
-offset_top = -3.0
-offset_right = 177.063
-offset_bottom = 28.0
+offset_left = 134.0
+offset_top = -5.0
+offset_right = 217.063
+offset_bottom = 26.0
 focus_mode = 1
 min_value = 1.0
 value = 1.0
 rounded = true
 
-[node name="CurrentBox" type="Label" parent="."]
-offset_left = 464.0
-offset_top = 449.0
-offset_right = 504.0
-offset_bottom = 472.0
+[node name="CurrentScale" type="Label" parent="DisplaySettings"]
+layout_mode = 0
+offset_left = 877.0
+offset_top = 195.0
+offset_right = 965.0
+offset_bottom = 218.0
+text = "Text Scale:"
+
+[node name="Num" type="SpinBox" parent="DisplaySettings/CurrentScale"]
+layout_mode = 0
+offset_left = 134.0
+offset_top = -5.0
+offset_right = 217.063
+offset_bottom = 26.0
+focus_mode = 1
+step = 0.01
+value = 1.0
+custom_arrow_step = 0.01
+
+[node name="CurrentBox" type="Label" parent="DisplaySettings"]
+layout_mode = 0
+offset_left = 877.0
+offset_top = 100.0
+offset_right = 917.0
+offset_bottom = 123.0
 text = "Box:"
 
-[node name="Num" type="SpinBox" parent="CurrentBox"]
+[node name="Num" type="SpinBox" parent="DisplaySettings/CurrentBox"]
 layout_mode = 0
-offset_left = 47.0
+offset_left = 134.0
 offset_top = -3.0
-offset_right = 130.063
+offset_right = 217.063
 offset_bottom = 28.0
 focus_mode = 1
 min_value = 1.0
 value = 1.0
 rounded = true
 
-[node name="Info" type="Label" parent="CurrentBox"]
+[node name="Info" type="Label" parent="DisplaySettings/CurrentBox"]
 layout_mode = 0
-offset_left = -25.0
-offset_top = -21.0
-offset_right = 133.0
-offset_bottom = -6.0
+offset_left = 90.0
+offset_top = -20.0
+offset_right = 248.0
+offset_bottom = -5.0
 theme_override_font_sizes/font_size = 10
 text = "OW"
 horizontal_alignment = 1
 
-[node name="CurrentFont" type="Label" parent="."]
-offset_left = 596.0
-offset_top = 448.0
-offset_right = 636.0
-offset_bottom = 471.0
+[node name="CurrentFont" type="Label" parent="DisplaySettings"]
+layout_mode = 0
+offset_left = 877.0
+offset_top = 149.0
+offset_right = 917.0
+offset_bottom = 172.0
 focus_mode = 1
 text = "Font:"
 
-[node name="Num" type="SpinBox" parent="CurrentFont"]
+[node name="Num" type="SpinBox" parent="DisplaySettings/CurrentFont"]
 layout_mode = 0
-offset_left = 52.0
+offset_left = 134.0
 offset_top = -2.0
-offset_right = 135.063
+offset_right = 217.063
 offset_bottom = 29.0
 min_value = 1.0
 value = 1.0
 rounded = true
 
-[node name="Info" type="Label" parent="CurrentFont"]
+[node name="Info" type="Label" parent="DisplaySettings/CurrentFont"]
 layout_mode = 0
-offset_left = -31.0
-offset_top = -20.0
-offset_right = 127.0
-offset_bottom = -5.0
+offset_left = 90.0
+offset_top = -19.0
+offset_right = 248.0
+offset_bottom = -4.0
 theme_override_font_sizes/font_size = 10
 text = "Speech"
 horizontal_alignment = 1
 
-[node name="CurrentColor" type="Label" parent="."]
-offset_left = 733.0
-offset_top = 450.0
-offset_right = 826.0
-offset_bottom = 473.0
+[node name="CurrentColor" type="Label" parent="DisplaySettings"]
+layout_mode = 0
+offset_left = 877.0
+offset_top = 238.0
+offset_right = 970.0
+offset_bottom = 261.0
 text = "Layer Color:"
 
-[node name="Picker" type="ColorPickerButton" parent="CurrentColor"]
+[node name="Picker" type="ColorPickerButton" parent="DisplaySettings/CurrentColor"]
 layout_mode = 0
-offset_left = 105.0
+offset_left = 169.0
 offset_top = -3.0
-offset_right = 137.0
+offset_right = 201.0
 offset_bottom = 28.0
 focus_mode = 1
 color = Color(1, 1, 1, 1)
 edit_alpha = false
 
-[node name="DialogueSelector" type="Label" parent="."]
+[node name="EntrySearch" type="LineEdit" parent="."]
 offset_left = 8.0
-offset_top = 448.0
-offset_right = 128.0
-offset_bottom = 471.0
-text = "Select an entry:"
+offset_top = 48.0
+offset_right = 276.0
+offset_bottom = 79.0
+placeholder_text = "Search an entry."
 
-[node name="ItemList" type="ItemList" parent="DialogueSelector"]
-layout_mode = 0
-offset_top = 35.0
-offset_right = 268.0
-offset_bottom = 194.0
+[node name="EntryList" type="ItemList" parent="."]
+offset_left = 8.0
+offset_top = 86.0
+offset_right = 276.0
+offset_bottom = 688.0
+max_columns = 2
 
 [node name="StringSelector" type="Label" parent="."]
 offset_left = 881.0
-offset_top = 451.0
+offset_top = 497.0
 offset_right = 994.0
-offset_bottom = 474.0
+offset_bottom = 520.0
 text = "Select a string:"
 
 [node name="ItemList" type="ItemList" parent="StringSelector"]
@@ -196,77 +245,23 @@ offset_right = 208.0
 offset_bottom = 191.0
 
 [node name="SimilarEntries" type="Label" parent="."]
-offset_left = 881.0
-offset_top = 318.0
-offset_right = 998.0
-offset_bottom = 341.0
-text = "Similar entries:"
+offset_left = 879.0
+offset_top = 362.0
+offset_right = 1045.0
+offset_bottom = 385.0
+text = "Similar String entries:"
 
 [node name="ItemList" type="ItemList" parent="SimilarEntries"]
 layout_mode = 0
-offset_left = 1.0
+offset_left = 2.0
 offset_top = 33.0
-offset_right = 207.0
+offset_right = 208.0
 offset_bottom = 122.0
 
-[node name="LoadButton" type="Button" parent="."]
-offset_left = 8.0
-offset_top = 656.0
-offset_right = 97.0
-offset_bottom = 687.0
-focus_mode = 1
-text = "Load JSON"
-
-[node name="SaveButton" type="Button" parent="."]
-offset_left = 116.0
-offset_top = 656.0
-offset_right = 203.0
-offset_bottom = 687.0
-text = "Save JSON"
-
-[node name="DetailsButton" type="Button" parent="."]
-offset_left = 929.0
-offset_top = 656.0
-offset_right = 1089.0
-offset_bottom = 687.0
-text = "Set Modifier Details"
-
-[node name="InfoButton" type="Button" parent="."]
-offset_left = 223.0
-offset_top = 656.0
-offset_right = 308.0
-offset_bottom = 687.0
-text = "Show Info"
-
-[node name="SettingsButton" type="Button" parent="."]
-offset_left = 330.0
-offset_top = 656.0
-offset_right = 400.0
-offset_bottom = 687.0
-text = "Settings"
-
-[node name="GoToButton" type="Button" parent="."]
-offset_left = 8.0
-offset_top = 405.0
-offset_right = 71.0
-offset_bottom = 436.0
-text = "Go to"
-
-[node name="SearchButton" type="Button" parent="."]
-offset_left = 91.0
-offset_top = 406.0
-offset_right = 152.0
-offset_bottom = 437.0
-text = "Search"
-
+[connection signal="pressed" from="Panel/MenuBar/Container/Go To" to="." method="open_go_to_menu"]
+[connection signal="pressed" from="Panel/MenuBar/Container/Search" to="." method="open_search_menu"]
 [connection signal="text_changed" from="DialogueEdit" to="." method="_on_dialogue_edit_text_changed"]
-[connection signal="item_selected" from="DialogueSelector/ItemList" to="." method="_on_item_list_item_selected"]
+[connection signal="text_changed" from="EntrySearch" to="." method="entry_search_text_changed"]
+[connection signal="item_selected" from="EntryList" to="." method="_on_item_list_item_selected"]
 [connection signal="item_selected" from="StringSelector/ItemList" to="." method="_on_item_list_item_selected_str"]
 [connection signal="item_selected" from="SimilarEntries/ItemList" to="." method="_on_item_list_item_selected_similar"]
-[connection signal="pressed" from="LoadButton" to="." method="_on_load_button_pressed"]
-[connection signal="pressed" from="SaveButton" to="." method="_on_save_button_pressed"]
-[connection signal="pressed" from="DetailsButton" to="." method="_on_details_button_pressed"]
-[connection signal="pressed" from="InfoButton" to="." method="_on_info_button_pressed"]
-[connection signal="pressed" from="SettingsButton" to="." method="_on_settings_button_pressed"]
-[connection signal="pressed" from="GoToButton" to="." method="_on_go_to_button_pressed"]
-[connection signal="pressed" from="SearchButton" to="." method="_on_search_button_pressed"]

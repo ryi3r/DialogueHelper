@@ -4,9 +4,9 @@ extends Window;
 @onready var search_for: TextEdit = $SearchForLabel/TextEdit;
 @onready var case_sensitive: CheckBox = $CaseSensitive;
 
-var searching_scene = preload("res://Searching.tscn");
+var searching_scene = preload("res://Subwindows/Progress bars/Searching.tscn");
 var searching_window = null;
-var search_results_scene = preload("res://SearchResults.tscn");
+var search_results_scene = preload("res://Subwindows/SearchResults.tscn");
 var search_results_window = null;
 
 var last_thread = null;
@@ -45,6 +45,7 @@ func _on_search_button_pressed():
 	last_thread = Thread.new();
 	search_results_window = search_results_scene.instantiate();
 	get_parent().add_child(search_results_window);
+	search_results_window.title = "Search results for: " + str(search_for.text);
 	var il: ItemList = search_results_window.get_node("ItemList");
 	last_thread.start(func():
 		var v = 0;
@@ -64,4 +65,5 @@ func _on_search_button_pressed():
 				index += 1;
 				searching_window.progress_bar.call_deferred_thread_group("set_value", v);
 		call_deferred_thread_group("set_visible", false);
+		search_results_window.call_deferred_thread_group("grab_focus");
 	);

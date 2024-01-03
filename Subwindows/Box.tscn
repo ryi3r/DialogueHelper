@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://d4chixre3rvi5"]
 
-[ext_resource type="Script" path="res://Box.gd" id="1_lmt1w"]
+[ext_resource type="Script" path="res://Scripts/Subwindows/Box.gd" id="1_lmt1w"]
 [ext_resource type="Texture2D" uid="uid://cjfmcv08c61eh" path="res://Boxes/Box1.png" id="2_rnfqc"]
 
 [node name="Box" type="Node2D"]

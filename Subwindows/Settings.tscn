@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dfk3iirt1ep8m"]
 
-[ext_resource type="Script" path="res://Settings.gd" id="1_xvsog"]
+[ext_resource type="Script" path="res://Scripts/Subwindows/Settings.gd" id="1_xvsog"]
 
 [node name="Settings" type="Window"]
 title = "Settings"

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://c2rhhjqbphfsx"]
 
-[ext_resource type="Script" path="res://AuthorInfo.gd" id="1_5i3n5"]
+[ext_resource type="Script" path="res://Scripts/Subwindows/AuthorInfo.gd" id="1_fup4n"]
 
 [node name="AuthorInfo" type="Window"]
 title = "Set your Username."
@@ -9,7 +9,7 @@ size = Vector2i(400, 120)
 transient = true
 exclusive = true
 unresizable = true
-script = ExtResource("1_5i3n5")
+script = ExtResource("1_fup4n")
 
 [node name="Label" type="Label" parent="."]
 offset_left = 20.0

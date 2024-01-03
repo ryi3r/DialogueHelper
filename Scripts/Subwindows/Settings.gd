@@ -47,10 +47,19 @@ func _on_ok_button_pressed():
 		get_parent().git.url = git_url.text;
 		get_parent().git.branch = git_branch.text;
 		if !DirAccess.open("user://").dir_exists("user://repo/"):
-			get_parent().git.clone();
+			var r = get_parent().git.clone();
+			get_parent().call_deferred_thread_group("handle_git_output", r);
+			if !r.success:
+				return;
 		else:
-			get_parent().git.set_url();
-			get_parent().git.pull();
+			var r = get_parent().git.set_url();
+			get_parent().call_deferred_thread_group("handle_git_output", r);
+			if !r.success:
+				return;
+			r = get_parent().git.pull();
+			get_parent().call_deferred_thread_group("handle_git_output", r);
+			if !r.success:
+				return;
 	else:
 		if FileAccess.file_exists("user://enable_git.bool"):
 			DirAccess.open("user://").remove("user://enable_git.bool");

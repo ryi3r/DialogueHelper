@@ -1,24 +1,24 @@
-[gd_scene load_steps=2 format=3 uid="uid://bhbsbag1ebr7"]
+[gd_scene load_steps=2 format=3 uid="uid://cu40g6ab3xvpv"]
 
-[ext_resource type="Script" path="res://Loading.gd" id="1_sqhla"]
+[ext_resource type="Script" path="res://Scripts/Subwindows/Loading.gd" id="1_7qfxx"]
 
-[node name="Saving" type="Window"]
+[node name="Loading" type="Window"]
 gui_disable_input = true
-title = "Saving file..."
+title = "Loading file..."
 initial_position = 1
 size = Vector2i(475, 100)
 transient = true
 exclusive = true
 unresizable = true
 unfocusable = true
-script = ExtResource("1_sqhla")
+script = ExtResource("1_7qfxx")
 
 [node name="Label" type="Label" parent="."]
 custom_minimum_size = Vector2(475, 0)
 offset_top = 5.0
 offset_right = 475.0
 offset_bottom = 28.0
-text = "Saving..."
+text = "Loading..."
 horizontal_alignment = 1
 
 [node name="ProgressBar" type="ProgressBar" parent="."]

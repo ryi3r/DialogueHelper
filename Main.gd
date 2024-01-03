@@ -26,17 +26,17 @@ var show_info_last_edit_templ = "
 @onready var similar_entries = $SimilarEntries/ItemList;
 @onready var box = $Box;
 @onready var dialogue_edit = $DialogueEdit;
-@onready var current_layer_node = $CurrentLayer/Num;
-@onready var current_box_node = $CurrentBox/Num;
-@onready var current_font_node = $CurrentFont/Num;
-@onready var current_color_node = $CurrentColor/Picker;
+@onready var current_layer_node = $DisplaySettings/CurrentLayer/Num;
+@onready var current_box_node = $DisplaySettings/CurrentBox/Num;
+@onready var current_font_node = $DisplaySettings/CurrentFont/Num;
+@onready var current_color_node = $DisplaySettings/CurrentColor/Picker;
+@onready var current_scale_node = $DisplaySettings/CurrentScale/Num;
 
-@onready var current_box_label = $CurrentBox/Info;
-@onready var current_font_label = $CurrentFont/Info;
-@onready var dialogue_selector = $DialogueSelector/ItemList;
+@onready var current_box_label = $DisplaySettings/CurrentBox/Info;
+@onready var current_font_label = $DisplaySettings/CurrentFont/Info;
+@onready var dialogue_selector = $EntryList;
 @onready var string_selector = $StringSelector/ItemList;
 
-@onready var load_button = $LoadButton;
 @onready var replace_similar = $ReplaceSimilar;
 @onready var enable_portrait = $EnablePortrait;
 
@@ -47,32 +47,35 @@ var ascender = 0;
 var current_layer = 0;
 var current_font_id = 0;
 var current_box = 0;
+var current_scale = 1.0;
 
-var loading_scene = preload("res://Loading.tscn");
+var loading_scene = preload("res://Subwindows/Progress bars/Loading.tscn");
 var loading_window = null;
-var saving_scene = preload("res://Saving.tscn");
+var saving_scene = preload("res://Subwindows/Progress bars/Saving.tscn");
 var saving_window = null;
-var fd_scene = preload("res://LoadJSON.tscn");
+var fd_scene = preload("res://Subwindows/File action/LoadJSON.tscn");
 var fd_window = null;
-var show_info_scene = preload("res://ShowInfo.tscn");
+var show_info_scene = preload("res://Subwindows/ShowInfo.tscn");
 var show_info_window = null;
-var author_scene = preload("res://AuthorInfo.tscn");
+var author_scene = preload("res://Subwindows/AuthorInfo.tscn");
 var author_window = null;
-var settings_scene = preload("res://Settings.tscn");
+var settings_scene = preload("res://Subwindows/Settings.tscn");
 var settings_window = null;
-var fds_scene = preload("res://SaveJSON.tscn");
+var fds_scene = preload("res://Subwindows/File action/SaveJSON.tscn");
 var fds_window = null;
-var goto_scene = preload("res://GoTo.tscn");
+var goto_scene = preload("res://Subwindows/GoTo.tscn");
 var goto_window = null;
-var search_scene = preload("res://Search.tscn");
+var search_scene = preload("res://Subwindows/Search.tscn");
 var search_window = null;
 
 @onready var file_popup: PopupMenu = $Panel/MenuBar/Container/File.get_popup();
+@onready var about_popup: PopupMenu = $Panel/MenuBar/Container/About.get_popup();
 
 var data = {};
 var data_table = {};
 var string_ids = {};
 var data_size = 0;
+var entry_names = [];
 var last_thread = null;
 
 var force_update_box = 0;
@@ -90,6 +93,7 @@ class StringContainer:
 	var layer_colors = null;
 	var box_style = 0;
 	var font_style = 0;
+	var font_scale = 1.0;
 	var enable_portrait = false;
 
 	func to_json() -> Dictionary:
@@ -103,6 +107,7 @@ class StringContainer:
 			"LayerColors": layer_colors,
 			"BoxStyle": box_style,
 			"FontStyle": font_style,
+			"FontScale": font_scale,
 			"EnablePortrait": enable_portrait,
 		};
 
@@ -126,11 +131,13 @@ class StringContainer:
 				box_style = json["BoxStyle"];
 			if "FontStyle" in json:
 				font_style = json["FontStyle"];
+			if "FontScale" in json:
+				font_scale = json["FontScale"];
 			if "EnablePortrait" in json:
 				enable_portrait = json["EnablePortrait"];
 
 	func _to_string():
-		return to_json();
+		return JSON.stringify(to_json(), "", false);
 
 	func update():
 		if layer_strings == null:
@@ -163,7 +170,7 @@ class LastEdited:
 			author = _author;
 
 	func _to_string():
-		return to_json();
+		return JSON.stringify(to_json(), "", false);
 
 class StringTable:
 	var name = "";
@@ -185,6 +192,10 @@ class StringTable:
 	func _to_string():
 		return JSON.stringify(to_json(), "", false);
 
+class GitResponse:
+	var success = true;
+	var output = [];
+
 class Git:
 	var url = "";
 	var branch = "";
@@ -192,42 +203,50 @@ class Git:
 	func gpath(path):
 		return ProjectSettings.globalize_path("user://" + path);
 	
-	func _run_command(args: Array, show_console: bool = false):
+	func _run_command(args: Array, show_console: bool = false) -> GitResponse:
 		var opt = [];
 		OS.execute("cmd.exe", PackedStringArray(args), opt, false, show_console);
+		var r = GitResponse.new();
 		print("Output:");
-		for line in opt:
+		for line: String in opt:
 			print(line);
+			if (line.begins_with("error:") || line.begins_with("fatal:")):
+				r.success = false;
 		print("=======");
+		r.output = opt;
+		return r;
 	
-	func clone():
-		_run_command(["/c", "git -C \"{3}\" clone --branch \"{2}\" \"{0}\" \"{1}\"".format([
+	func clone() -> GitResponse:
+		return _run_command(["/c", "git -C \"{3}\" clone --branch \"{2}\" \"{0}\" \"{1}\"".format([
 			url,
 			gpath("repo/"),
 			branch,
 			gpath(""),
 		])], true);
 	
-	func pull():
-		_run_command(["/c", "git -C \"{0}\" checkout \"{1}\" & git -C \"{0}\" pull -f".format([
+	func pull() -> GitResponse:
+		return _run_command(["/c", "git -C \"{0}\" checkout \"{1}\" & git -C \"{0}\" pull -f".format([
 			gpath("repo/"),
 			branch,
 		])]);
 	
-	func commit(message: String):
-		_run_command(["/c", "git -C \"{0}\" add . & git -C \"{0}\" commit -m \"{2}\" & git -C \"{0}\" push origin \"{1}\"".format([
+	func commit(message: String) -> GitResponse:
+		return _run_command(["/c", "git -C \"{0}\" add . & git -C \"{0}\" commit -m \"{2}\" & git -C \"{0}\" push origin \"{1}\"".format([
 			gpath("repo/"),
 			branch,
 			message,
 		])]);
 	
-	func set_url():
-		_run_command(["/c", "git -C \"{0}\" remote set-url origin \"{1}\"".format([
+	func set_url() -> GitResponse:
+		return _run_command(["/c", "git -C \"{0}\" remote set-url origin \"{1}\"".format([
 			gpath("repo/"),
 			url,
 		])]);
 
 func _ready():
+	file_popup.id_pressed.connect(file_menu_selected);
+	about_popup.id_pressed.connect(about_menu_selected);
+	
 	if FileAccess.file_exists("user://username.txt"):
 		author = FileAccess.get_file_as_string("user://username.txt");
 	if FileAccess.file_exists("user://enable_git.bool"):
@@ -236,15 +255,14 @@ func _ready():
 			branch = FileAccess.get_file_as_string("user://git_branch.txt");
 		git.url = FileAccess.get_file_as_string("user://git_url.txt");
 		git.branch = branch;
+	
 	current_layer_node.max_value = layers;
 	current_font_node.max_value = 8;
 	current_box_node.max_value = 29;
-	load_font();
 	
+	load_font();
 
 func _process(_delta):
-	#box.position.x = box.x_offset + ((1100.0 - 640.0) / 2.0);
-	#box.position.y = 10;
 	enable_portrait.disabled = !box.supports_portrait;
 	if current_layer_node.value - 1 != current_layer:
 		current_layer = current_layer_node.value - 1;
@@ -267,6 +285,12 @@ func _process(_delta):
 				data[item][string_selector.get_selected_items()[0]].box_style = current_box;
 		if force_update_box > 0:
 			force_update_box -= 1;
+	if current_scale_node.value != current_scale:
+		current_scale = current_scale_node.value;
+		if dialogue_selector.get_selected_items().size() > 0:
+			item = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0]);
+			if data.has(item):
+				data[item][string_selector.get_selected_items()[0]].font_scale = current_scale_node.value;
 	layer_data[current_layer] = dialogue_edit.text;
 	layer_color[current_layer] = current_color_node.color.to_rgba32();
 	if dialogue_selector.get_selected_items().size() > 0:
@@ -343,7 +367,7 @@ func _draw():
 		var t = layer_data[i];
 		var pos = Vector2(box.position.x + (box.portrait_offset.x if box.supports_portrait && enable_portrait.button_pressed else box.dialogue_offset.x), box.position.y + (box.portrait_offset.y if box.supports_portrait && enable_portrait.button_pressed else box.dialogue_offset.y));
 		var add = Vector2();
-		var color = layer_color[i];
+		var color = Color.hex(int(layer_color[i]));
 		for chr in str(t):
 			var curc = str(chr).unicode_at(0);
 			if curc == "#".unicode_at(0):
@@ -352,8 +376,8 @@ func _draw():
 				continue;
 			if glyphs.has(str(curc)):
 				var glyph = glyphs[str(curc)];
-				draw_texture_rect_region(dataure, Rect2(pos.x + add.x + (glyph["offset"] * font_scale), pos.y + add.y, (glyph["source"].size.x * font_scale), (glyph["source"].size.y * font_scale)), glyph["source"], color);
-				add.x += glyph["shift"] * font_scale;
+				draw_texture_rect_region(dataure, Rect2(pos.x + add.x + (glyph["offset"] * (font_scale * current_scale)), pos.y + add.y, (glyph["source"].size.x * (font_scale * current_scale)), (glyph["source"].size.y * (font_scale * current_scale))), glyph["source"], color);
+				add.x += glyph["shift"] * (font_scale * current_scale);
 
 func load_font():
 	dataure = load("res://Fonts/{0}.png".format([current_font]));
@@ -374,41 +398,24 @@ func load_font():
 				};
 			i += 1;
 
-func _on_load_button_pressed():
-	if FileAccess.file_exists("user://enable_git.bool"):
-		_on_file_dialog_file_selected("user://repo/strings.json");
-	else:
-		fd_window = fd_scene.instantiate();
-		add_child(fd_window);
-		fd_window.file_selected.connect(_on_file_dialog_file_selected);
-		fd_window.close_requested.connect(func():
-			fd_window.queue_free();
-		);
-		fd_window.show();
-
-func _on_file_dialog_file_selected(path):
-	var t = create_tween();
-	t.tween_interval(1.0 / 60.0);
-	t.tween_callback(func():
-		if fd_window != null:
-			fd_window.free();
-			fd_window = null;
-		loading_window = loading_scene.instantiate();
-		add_child(loading_window);
-		var tre = Thread.new();
-		tre.start(load_stuff.bind(path));
-		last_thread = tre;
-	);
-	t.play();
+func handle_git_output(r: GitResponse):
+	if !r.success:
+		var w = preload("res://Subwindows/GitError.tscn").instantiate();
+		add_child(w);
+		w.get_node("TextEdit").text = "".join(PackedStringArray(r.output));
 
 func load_stuff(path):
 	if FileAccess.file_exists("user://enable_git.bool"):
 		(loading_window.label as Label).call_deferred_thread_group("set_text", "Fetching the git repo...");
-		git.pull();
+		var r = git.pull();
+		call_deferred_thread_group("handle_git_output", r);
+		if !r.success:
+			return;
 	(loading_window.label as Label).call_deferred_thread_group("set_text", "Loading...");
 	dialogue_selector.call_deferred_thread_group("clear");
 	string_selector.call_deferred_thread_group("clear");
 	similar_entries.call_deferred_thread_group("clear");
+	entry_names.clear();
 	layer_data = ["", "", "", "", ""];
 	layer_color = [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff];
 	data.clear();
@@ -423,6 +430,7 @@ func load_stuff(path):
 			for entry in datat[en]:
 				var strg = [];
 				for stri in entry["Strings"]:
+					entry_names.append(entry["Name"]);
 					data_table[int(id)] = StringTable.new(entry["Name"], strg, strg.size());
 					var container = StringContainer.new();
 					container.id = id;
@@ -443,6 +451,7 @@ func load_stuff(path):
 		data = Dictionary(datat);
 		var extr = 0;
 		var size = 0;
+		entry_names.append_array(data.keys());
 		for e in data.values():
 			for sube in e:
 				size += 1;
@@ -555,6 +564,7 @@ func _on_item_list_item_selected_str(index):
 		t.tween_callback(func():
 			current_font_node.set_value(stri.font_style + 1);
 			current_box_node.set_value(stri.box_style + 1);
+			current_scale_node.set_value(stri.font_scale);
 		);
 		t.play();
 		current_color_node.color = Color.hex(layer_color[current_layer]);
@@ -580,6 +590,7 @@ func change_to(item, index: int = 0):
 			t.tween_callback(func():
 				current_font_node.set_value(stri.font_style + 1);
 				current_box_node.set_value(stri.box_style + 1);
+				current_scale_node.set_value(stri.font_scale);
 			);
 			t.play();
 			current_color_node.color = Color.hex(layer_color[current_layer]);
@@ -634,55 +645,49 @@ func _on_dialogue_edit_text_changed():
 				if entry_table[int(entr.id)] == int(f.index):
 					string_selector.set_item_text(f.index, dialogue_edit.text);
 
-func _on_info_button_pressed():
-	show_info_window = show_info_scene.instantiate() as Window;
-	add_child(show_info_window);
-	show_info_window.close_requested.connect(func():
-		show_info_window.queue_free();
-	);
-	var n: Label = show_info_window.get_node("Label");
-	var l: LineEdit = show_info_window.get_node("LineEdit");
-	var l2: LineEdit = show_info_window.get_node("LineEdit2");
-	if dialogue_selector.get_selected_items().size() > 0 && string_selector.get_selected_items().size() > 0:
-		var ename = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0]);
-		var eindex = string_selector.get_selected_items()[0];
-		var laste = (data[ename][eindex] as StringContainer).last_edited;
-		var td = Time.get_datetime_dict_from_unix_time(laste.timestamp + (Time.get_time_zone_from_system().bias * 60.0)); # Local timezone?
-		n.text = show_info_templ.substr(1, show_info_templ.length() - 2) \
-			.replace("EDIT_DETAILS", "\n>   No Last Edit was made." if laste.author == "" || laste.timestamp == -1 else (
-				show_info_last_edit_templ.substr(0, show_info_last_edit_templ.length() - 1) \
-					.replace("AUTHOR_NAME", laste.author) \
-					.replace("TIMESTAMP", "{DAY}/{MONTH}/{YEAR} {HOUR}:{MINUTE}:{SECOND} {HFORMAT}".format({
-							"DAY": str(td["day"]).pad_zeros(2),
-							"MONTH": str(td["month"]).pad_zeros(2),
-							"YEAR": str(td["year"]).pad_zeros(4),
-							"HOUR": str(12 if td["hour"] == 0 else td["hour"] if td["hour"] < 13 else td["hour"] - 12).pad_zeros(2),
-							"MINUTE": str(td["minute"]).pad_zeros(2),
-							"SECOND": str(td["second"]).pad_zeros(2),
-							"HFORMAT": "a.m." if td["hour"] < 12 else "p.m",
-						}))
-			));
-		l.text = ename + ":" + str(eindex + 1);
-		l2.text = (data[ename][eindex] as StringContainer).original_content;
-	else:
-		n.text = "But Nobody Came." if randi() % 50 == 0 else "But there was nothing to see.";
-		l.hide();
-		l2.hide();
-
-func _on_details_button_pressed():
-	author_window = author_scene.instantiate();
-	add_child(author_window);
-	author_window.get_node("Label/LineEdit").text = author;
-
-func _on_settings_button_pressed():
-	settings_window = settings_scene.instantiate();
-	add_child(settings_window);
-
 func save_stuff(path):
 	var f;
 	if FileAccess.file_exists("user://enable_git.bool"):
 		(saving_window.label as Label).call_deferred_thread_group("set_text", "Fetching the git repo...");
-		git.pull();
+		var old_json = FileAccess.get_file_as_string(path);
+		var r = git.pull();
+		call_deferred_thread_group("handle_git_output", r);
+		if !r.success:
+			return;
+		var new_json = FileAccess.get_file_as_string(path);
+		if old_json != new_json: # A commit was made
+			new_json = JSON.parse_string(new_json) as Dictionary;
+			old_json = JSON.parse_string(old_json) as Dictionary;
+			(saving_window.label as Label).call_deferred_thread_group("set_text", "Checking up differences between commits...");
+			for entry_name in new_json.keys():
+				if old_json.has(entry_name) && data.has(entry_name):
+					var i = 0;
+					var oentry = old_json[entry_name];
+					var dentry = data[entry_name];
+					for entry in new_json[entry_name]:
+						if entry["Content"] != oentry[i]["Content"]:
+							if entry["Content"] != (dentry[i] as StringContainer).content:
+								if oentry[i]["Content"] == (dentry[i] as StringContainer).content:
+									# The entry has been changed between the commits,
+									# And it hasn't been modified by the author.
+									# We can update the string safely.
+									dentry[i] = StringContainer.new(entry);
+								else:
+									# The entry has been changed between the commits,
+									# And it has been modified by the author.
+									# The last edit matters more, so we'll be leaving
+									# Our own string.
+									pass;
+							elif oentry[i]["Content"] == (dentry[i] as StringContainer).content:
+								# The entry has not been changed.
+								# We do nothing.
+								pass;
+							else:
+								# The old entry was different.
+								# We do nothing, since the most recent
+								# version has our string.
+								pass;
+						i += 1;
 	(saving_window.label as Label).call_deferred_thread_group("set_text", "Saving...");
 	var json = {};
 	var size = 0;
@@ -705,67 +710,150 @@ func save_stuff(path):
 	f.close();
 	if FileAccess.file_exists("user://enable_git.bool"):
 		(saving_window.label as Label).call_deferred_thread_group("set_text", "Commiting on the git repo...");
-		git.commit("Update Strings (Using DH)");
+		var r = git.commit("Update Strings (Using DH)");
+		call_deferred_thread_group("handle_git_output", r);
+		if !r.success:
+			return;
 	call_deferred_thread_group("remove_child", saving_window);
 
-func _on_save_button_pressed():
-	var lambda = func(path):
-		var t = create_tween();
-		t.tween_interval(1.0 / 60.0);
-		t.tween_callback(func():
-			if fds_window != null:
-				fds_window.free();
-				fds_window = null;
-			saving_window = saving_scene.instantiate();
-			add_child(saving_window);
-			var tre = Thread.new();
-			tre.start(save_stuff.bind(path));
-			last_thread = tre;
-		);
-		t.play();
-	if FileAccess.file_exists("user://enable_git.bool"):
-		lambda.call("user://repo/strings.json");
-	else:
-		fds_window = fds_scene.instantiate();
-		add_child(fds_window);
-		fds_window.file_selected.connect(lambda);
-		fds_window.close_requested.connect(func():
-			fds_window.queue_free();
-		);
-		fds_window.show();
+func file_menu_selected(id):
+	match id:
+		0: # Open JSON
+			var lambda = func(path):
+				var t = create_tween();
+				t.tween_interval(1.0 / 60.0);
+				t.tween_callback(func():
+					if fd_window != null:
+						fd_window.free();
+						fd_window = null;
+					loading_window = loading_scene.instantiate();
+					add_child(loading_window);
+					var tre = Thread.new();
+					tre.start(load_stuff.bind(path));
+					last_thread = tre;
+				);
+				t.play();
+			if FileAccess.file_exists("user://enable_git.bool"):
+				lambda.call("user://repo/strings.json");
+			else:
+				fd_window = fd_scene.instantiate();
+				add_child(fd_window);
+				fd_window.file_selected.connect(lambda);
+				fd_window.close_requested.connect(func():
+					fd_window.queue_free();
+				);
+				fd_window.show();
+		1: # Save JSON
+			var lambda = func(path):
+				var t = create_tween();
+				t.tween_interval(1.0 / 60.0);
+				t.tween_callback(func():
+					if fds_window != null:
+						fds_window.free();
+						fds_window = null;
+					saving_window = saving_scene.instantiate();
+					add_child(saving_window);
+					var tre = Thread.new();
+					tre.start(save_stuff.bind(path));
+					last_thread = tre;
+				);
+				t.play();
+			if FileAccess.file_exists("user://enable_git.bool"):
+				lambda.call("user://repo/strings.json");
+			else:
+				fds_window = fds_scene.instantiate();
+				add_child(fds_window);
+				fds_window.file_selected.connect(lambda);
+				fds_window.close_requested.connect(func():
+					fds_window.queue_free();
+				);
+				fds_window.show();
+		3: # Settings
+			settings_window = settings_scene.instantiate();
+			add_child(settings_window);
+		5: # Quit
+			get_tree().quit();
 
-func _on_go_button_pressed(text: String):
-	if text.length() > 0:
-		var item = (text + ":1").split(":");
-		if data.has(item[0]):
-			change_to(item[0], int(item[1]) - 1);
-			string_selector.clear();
-			for stri in data[item[0]]:
-				string_selector.add_item(stri.layer_strings[0]);
-			string_selector.select(int(item[1]) - 1);
-			string_selector.ensure_current_is_visible();
-			var i = 0;
-			while i < dialogue_selector.get_item_count():
-				if dialogue_selector.get_item_text(i) == item[0]:
-					dialogue_selector.select(i);
-					dialogue_selector.ensure_current_is_visible();
-					break;
-				i += 1;
+func about_menu_selected(id):
+	match id:
+		0: # Show String Info
+			show_info_window = show_info_scene.instantiate() as Window;
+			add_child(show_info_window);
+			show_info_window.close_requested.connect(func():
+				show_info_window.queue_free();
+			);
+			var n: Label = show_info_window.get_node("Label");
+			var l: LineEdit = show_info_window.get_node("LineEdit");
+			var l2: LineEdit = show_info_window.get_node("LineEdit2");
+			if dialogue_selector.get_selected_items().size() > 0 && string_selector.get_selected_items().size() > 0:
+				var ename = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0]);
+				var eindex = string_selector.get_selected_items()[0];
+				var laste = (data[ename][eindex] as StringContainer).last_edited;
+				var td = Time.get_datetime_dict_from_unix_time(laste.timestamp + (Time.get_time_zone_from_system().bias * 60.0)); # Local timezone?
+				n.text = show_info_templ.substr(1, show_info_templ.length() - 2) \
+					.replace("EDIT_DETAILS", "\n>   No Last Edit was made." if laste.author == "" || laste.timestamp == -1 else (
+						show_info_last_edit_templ.substr(0, show_info_last_edit_templ.length() - 1) \
+							.replace("AUTHOR_NAME", laste.author) \
+							.replace("TIMESTAMP", "{DAY}/{MONTH}/{YEAR} {HOUR}:{MINUTE}:{SECOND} {HFORMAT}".format({
+									"DAY": str(td["day"]).pad_zeros(2),
+									"MONTH": str(td["month"]).pad_zeros(2),
+									"YEAR": str(td["year"]).pad_zeros(4),
+									"HOUR": str(12 if td["hour"] == 0 else td["hour"] if td["hour"] < 13 else td["hour"] - 12).pad_zeros(2),
+									"MINUTE": str(td["minute"]).pad_zeros(2),
+									"SECOND": str(td["second"]).pad_zeros(2),
+									"HFORMAT": "a.m." if td["hour"] < 12 else "p.m",
+								}))
+					));
+				l.text = ename + ":" + str(eindex + 1);
+				l2.text = (data[ename][eindex] as StringContainer).original_content;
+			else:
+				n.text = "But Nobody Came." if randi() % 50 == 0 else "But there was nothing to see.";
+				l.hide();
+				l2.hide();
+		1: # Set Author Details
+			author_window = author_scene.instantiate();
+			add_child(author_window);
+			author_window.get_node("Label/LineEdit").text = author;
 
-func _on_go_to_button_pressed():
-	goto_window = goto_scene.instantiate();
-	add_child(goto_window);
-	goto_window.get_node("GoTo/GoButton").pressed.connect(func():
-		_on_go_button_pressed(goto_window.get_node("GoTo/Str").text);
-		var t = create_tween();
-		t.tween_interval(1.0 / 60.0);
-		t.tween_callback(func():
-			remove_child(goto_window);
-		);
-		t.play();
-	);
-
-func _on_search_button_pressed():
+func open_search_menu():
 	search_window = search_scene.instantiate();
 	add_child(search_window);
 
+func open_go_to_menu():
+	goto_window = goto_scene.instantiate();
+	add_child(goto_window);
+	goto_window.get_node("GoTo/GoButton").pressed.connect(func():
+		var t = goto_window.get_node("GoTo/Str").text;
+		if t.length() > 0:
+			var item = (t + ":1").split(":");
+			if data.has(item[0]):
+				change_to(item[0], int(item[1]) - 1);
+				string_selector.clear();
+				for stri in data[item[0]]:
+					string_selector.add_item(stri.layer_strings[0]);
+				string_selector.select(int(item[1]) - 1);
+				string_selector.ensure_current_is_visible();
+				var i = 0;
+				while i < dialogue_selector.get_item_count():
+					if dialogue_selector.get_item_text(i) == item[0]:
+						dialogue_selector.select(i);
+						dialogue_selector.ensure_current_is_visible();
+						break;
+					i += 1;
+			t = create_tween();
+			t.tween_interval(1.0 / 60.0);
+			t.tween_callback(func():
+				remove_child(goto_window);
+			);
+			t.play();
+	);
+
+func entry_search_text_changed(t: String):
+	dialogue_selector.clear();
+	if t.length() == 0:
+		for e in entry_names:
+			dialogue_selector.add_item(e);
+	else:
+		for e in entry_names:
+			if str(e).to_lower().contains(t.to_lower()):
+				dialogue_selector.add_item(e);
