@@ -1,9 +1,7 @@
 extends Control;
 
 var font = GMFont.GFont.new();
-
 var search_kind = 0;
-
 var author = "DefaultUsername";
 
 @onready var similar_entries = $SimilarEntries/ItemList;
@@ -22,12 +20,13 @@ var author = "DefaultUsername";
 
 @onready var replace_similar = $ReplaceSimilar;
 @onready var enable_portrait = $EnablePortrait;
+@onready var add_entry = $AddEntry;
+@onready var add_string = $AddString;
 
+var file_handler = preload("res://Subwindows/FileHandler.tscn").instantiate();
 var current_layer = 0;
 var current_font_id = 0;
 var current_box = 0;
-
-var file_handler = preload("res://Resources/FileHandler.tscn").instantiate();
 
 @onready var file_popup: PopupMenu = $Panel/MenuBar/Container/File.get_popup();
 @onready var about_popup: PopupMenu = $Panel/MenuBar/Container/About.get_popup();
@@ -39,6 +38,7 @@ func _ready():
 	add_child(file_handler);
 	file_popup.id_pressed.connect(file_menu_selected);
 	about_popup.id_pressed.connect(about_menu_selected);
+	Handle.main_node = self;
 	
 	if FileAccess.file_exists("user://username.txt"):
 		author = FileAccess.get_file_as_string("user://username.txt");
@@ -64,7 +64,9 @@ func _ready():
 func _process(_delta):
 	current_font_node.max_value = Handle.font_data.size();
 	current_box_node.max_value = Handle.box_data.size();
+	add_string.disabled = dialogue_selector.get_selected_items().is_empty();
 	enable_portrait.disabled = !box.supports_portrait;
+	box.portrait_enabled = enable_portrait.button_pressed;
 	if current_layer_node.value - 1 != current_layer:
 		current_layer = current_layer_node.value - 1;
 		current_color_node.color = Handle.layer_colors[current_layer];
@@ -116,6 +118,7 @@ func update_box(i: int):
 		return;
 	current_box = i;
 	current_box_label.text = Handle.box_data[i].name;
+	current_box_node.value = i + 1;
 	box.current_box = i;
 	Handle.is_modified = true;
 
@@ -125,6 +128,7 @@ func update_font(i: int):
 	current_font_id = i;
 	Handle.current_font = i;
 	current_font_label.text = Handle.font_data[i].name;
+	current_font_node.value = i + 1;
 	font = GMFont.get_font(Handle.current_font);
 	Handle.is_modified = true;
 
@@ -135,7 +139,8 @@ func _on_item_list_item_selected(index):
 		var it = Handle.strings[item];
 		for stri in it:
 			string_selector.add_item(stri.content);
-		string_selector.select(string_selector.get_item_at_position(Vector2(0, 0)));
+		if !it.is_empty():
+			string_selector.select(string_selector.get_item_at_position(Vector2(0, 0)));
 
 func _on_item_list_item_selected_str(index):
 	var item = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0]);
@@ -334,6 +339,15 @@ func clear_data():
 	Handle.strings.clear();
 	Handle.string_ids.clear();
 	Handle.string_table.clear();
+	for i in range(Handle.layer_colors.size()):
+		Handle.layer_colors[i] = Color.WHITE;
+	for i in range(Handle.layer_strings.size()):
+		Handle.layer_strings[i] = "";
+	dialogue_edit.text = "";
+	current_font_node.value = current_font_node.min_value;
+	current_box_node.value = current_box_node.min_value;
+	current_color_node.color = Color.WHITE;
+	Handle.last_string_id = 0;
 
 func about_menu_selected(id):
 	match id:
@@ -426,3 +440,13 @@ func entry_search_text_changed(t: String):
 
 func _on_reload_style_pressed():
 	Handle.load_style();
+
+func _on_add_entry_pressed():
+	Handle.ae_window = Handle.ae_scene.instantiate();
+	add_child(Handle.ae_window);
+
+func _on_add_string_pressed():
+	if !dialogue_selector.get_selected_items().is_empty():
+		Handle.as_window = Handle.as_scene.instantiate();
+		Handle.as_window.entry = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0]);
+		add_child(Handle.as_window);

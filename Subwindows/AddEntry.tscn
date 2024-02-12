@@ -1,0 +1,59 @@
+[gd_scene load_steps=2 format=3 uid="uid://dbjdogx8g2c36"]
+
+[ext_resource type="Script" path="res://Scripts/Subwindows/AddEntry.gd" id="1_f471j"]
+
+[node name="AddEntry" type="Window"]
+title = "Add a new Entry."
+initial_position = 2
+size = Vector2i(420, 120)
+transient = true
+exclusive = true
+unresizable = true
+script = ExtResource("1_f471j")
+
+[node name="Label" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 35.0
+offset_right = 109.0
+offset_bottom = 58.0
+text = "Entry Name: "
+
+[node name="LineEdit" type="LineEdit" parent="Label"]
+layout_mode = 0
+offset_left = 110.0
+offset_top = -3.0
+offset_right = 360.0
+offset_bottom = 28.0
+placeholder_text = "Set the Entry name here."
+
+[node name="OkButton" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -35.0
+offset_right = -69.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "OK"
+
+[node name="CancelButton" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -65.0
+offset_top = -35.0
+offset_right = -5.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Cancel"
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="OkButton" to="." method="_on_ok_button_pressed"]
+[connection signal="pressed" from="CancelButton" to="." method="_on_cancel_button_pressed"]

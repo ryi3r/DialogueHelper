@@ -2,11 +2,11 @@ extends Node;
 
 var loading_scene = preload("res://Subwindows/Progress bars/Loading.tscn");
 var saving_scene = preload("res://Subwindows/Progress bars/Saving.tscn");
-var fd_scene = preload("res://Subwindows/File action/LoadJSON.tscn");
+var fd_scene = preload("res://Subwindows/File action/LoadFile.tscn");
 var show_info_scene = preload("res://Subwindows/ShowInfo.tscn");
 var author_scene = preload("res://Subwindows/AuthorInfo.tscn");
 var settings_scene = preload("res://Subwindows/Settings.tscn");
-var fds_scene = preload("res://Subwindows/File action/SaveJSON.tscn");
+var fds_scene = preload("res://Subwindows/File action/SaveFile.tscn");
 var goto_scene = preload("res://Subwindows/GoTo.tscn");
 var search_scene = preload("res://Subwindows/Search.tscn");
 var gc_scene = preload("res://Subwindows/GitConflict.tscn");
@@ -15,6 +15,8 @@ var se_scene = preload("res://Subwindows/StyleError.tscn");
 var ls_scene = preload("res://Subwindows/Progress bars/LoadingStyle.tscn");
 var uc_scene = preload("res://Subwindows/UnsavedChanges.tscn");
 var adh_scene = preload("res://Subwindows/AboutDh.tscn");
+var ae_scene = preload("res://Subwindows/AddEntry.tscn");
+var as_scene = preload("res://Subwindows/AddString.tscn");
 
 var loading_window = null;
 var saving_window = null;
@@ -31,6 +33,8 @@ var se_window = null;
 var ls_window = null;
 var uc_window = null;
 var adh_window = null;
+var ae_window = null;
+var as_window = null;
 
 var style = "Template";
 
@@ -56,6 +60,7 @@ var string_size = 0;
 var is_modified = false;
 
 var git = Type.Git.new();
+var main_node = null;
 
 func load_style(_style = null):
 	if _style is String:

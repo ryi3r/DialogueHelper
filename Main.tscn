@@ -108,6 +108,22 @@ focus_mode = 0
 button_pressed = true
 text = "Replace all similar entries"
 
+[node name="AddEntry" type="Button" parent="."]
+layout_mode = 0
+offset_left = 288.0
+offset_top = 458.0
+offset_right = 409.0
+offset_bottom = 489.0
+text = "Add new Entry"
+
+[node name="AddString" type="Button" parent="."]
+layout_mode = 0
+offset_left = 732.0
+offset_top = 458.0
+offset_right = 857.0
+offset_bottom = 489.0
+text = "Add new String"
+
 [node name="DialogueEdit" type="TextEdit" parent="."]
 layout_mode = 0
 offset_left = 283.0
@@ -253,7 +269,7 @@ offset_left = 8.0
 offset_top = 86.0
 offset_right = 276.0
 offset_bottom = 688.0
-max_columns = 2
+allow_reselect = true
 
 [node name="StringSelector" type="Label" parent="."]
 layout_mode = 0
@@ -269,6 +285,7 @@ offset_left = 1.0
 offset_top = 34.0
 offset_right = 208.0
 offset_bottom = 191.0
+allow_reselect = true
 
 [node name="SimilarEntries" type="Label" parent="."]
 layout_mode = 0
@@ -288,6 +305,8 @@ offset_bottom = 122.0
 [connection signal="pressed" from="Panel/MenuBar/Container/GoTo" to="." method="open_go_to_menu"]
 [connection signal="pressed" from="Panel/MenuBar/Container/Search" to="." method="open_search_menu"]
 [connection signal="pressed" from="Panel/MenuBar/Container/ReloadStyle" to="." method="_on_reload_style_pressed"]
+[connection signal="pressed" from="AddEntry" to="." method="_on_add_entry_pressed"]
+[connection signal="pressed" from="AddString" to="." method="_on_add_string_pressed"]
 [connection signal="text_changed" from="DialogueEdit" to="." method="_on_dialogue_edit_text_changed"]
 [connection signal="text_changed" from="EntrySearch" to="." method="entry_search_text_changed"]
 [connection signal="item_selected" from="EntryList" to="." method="_on_item_list_item_selected"]

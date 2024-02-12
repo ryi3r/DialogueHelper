@@ -5,7 +5,7 @@
 
 [node name="Box" type="ScrollContainer"]
 texture_filter = 1
-custom_minimum_size = Vector2(580, 415)
+custom_minimum_size = Vector2(580, 400)
 script = ExtResource("1_lmt1w")
 
 [node name="Handler" type="Control" parent="."]

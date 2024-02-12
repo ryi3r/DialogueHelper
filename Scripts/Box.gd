@@ -21,9 +21,9 @@ class GBox:
 				if FileAccess.file_exists(path):
 					texture = load(path) if OS.has_feature("editor") else ImageTexture.create_from_image(Image.load_from_file(path));
 			if "Scale" in json:
-				scale = json["Scale"];
+				scale = float(json["Scale"]);
 			if "SupportsPortrait" in json:
-				supports_portrait = json["SupportsPortrait"];
+				supports_portrait = bool(json["SupportsPortrait"]);
 			if "DialogueOffset" in json:
 				var arr = json["DialogueOffset"];
 				dialogue_offset = Vector2i(int(arr[0]), int(arr[1]));

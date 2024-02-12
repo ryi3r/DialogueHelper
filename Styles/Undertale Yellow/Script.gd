@@ -3,23 +3,22 @@
 # This function will be called for each glyph (character)
 # in the string, this allows you full control of how
 # it gets drawn.
-static func draw_glyph(data: Type.DrawGlyph):
-    if data.ignore || (!data.font.glyphs.has(data.char) && !data.new_line):
+static func draw_glyph(data: Type.UserData):
+    if data.char.is_ignore || (!data.font.glyphs.has(data.char.char) && !data.char.is_newline):
         return;
-    var scale = data.visual_scale * data.font.scale;
-    if data.new_line:
-        data.offset.x = 0;
-        var a_glyph = data.font.glyphs["A"];
-        var size = a_glyph.rect.size.y;
-        data.offset.y += (size + (size % 2) + (data.font.size % 2)) * (data.visual_scale * data.font.scale);
+    var scale = data.glyph.vscale * data.font.scale;
+    if data.char.is_newline:
+        data.char.position_offset.x = 0;
+        var size = data.font.glyphs["A"].rect.size.y;
+        data.char.position_offset.y += (size + (size % 2) + (data.font.size % 2)) * (data.glyph.vscale * data.font.scale);
     else:
-        var glyph: GMFont.Glyph = data.font.glyphs[data.char];
-        data.draw_glyph = true;
-        data.glyph_rect.position.x = data.position.x + data.offset.x + (glyph.offset * (data.visual_scale * data.font.scale));
-        data.glyph_rect.position.y = data.position.y + data.offset.y;
-        data.glyph_rect.size.x = glyph.rect.size.x * (data.visual_scale * data.font.scale);
-        data.glyph_rect.size.y = glyph.rect.size.y * (data.visual_scale * data.font.scale);
+        var glyph: GMFont.Glyph = data.font.glyphs[data.char.char];
+        data.char.glyph.position.x = data.char.start_position.x + data.char.position_offset.x + (glyph.offset * (data.glyph.vscale * data.font.scale));
+        data.char.glyph.position.y = data.char.start_position.y + data.char.position_offset.y;
+        data.char.glyph.size.x = glyph.rect.size.x * (data.glyph.vscale * data.font.scale);
+        data.char.glyph.size.y = glyph.rect.size.y * (data.glyph.vscale * data.font.scale);
+        data.draw_glyph();
         if (glyph.shift + (glyph.shift % 2)) / max(glyph.rect.size.x, 1) >= 6:
-            data.offset.x += ((glyph.shift - data.font.size) + glyph.offset) * (data.visual_scale * data.font.scale);
+            data.char.position_offset.x += ((glyph.shift - data.font.size) + glyph.offset) * (data.glyph.vscale * data.font.scale);
         else:
-            data.offset.x += glyph.shift * (data.visual_scale * data.font.scale);
+            data.char.position_offset.x += glyph.shift * (data.glyph.vscale * data.font.scale);

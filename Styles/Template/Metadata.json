@@ -1,5 +1,6 @@
 {
 	"Name": "Template",
+	"Script": "Script.gd",
 	"NewLines": [],
 	"Ignore": []
 }

@@ -1,5 +1,11 @@
 extends Node;
 
+enum GitConflictKeep {
+	NoChoice,
+	KeepGit,
+	KeepOriginal,
+};
+
 class StringContainer:
 	var id = -1;
 	var content = "";
@@ -133,7 +139,7 @@ class StringContainer:
 		if layer_strings == null:
 			layer_strings = [content, "", "", "", ""];
 		if layer_colors == null:
-			layer_colors = [0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff];
+			layer_colors = [Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE];
 		if !(id is int):
 			push_warning("ID is not an Integer!");
 		elif id < 0:
@@ -237,29 +243,56 @@ class GitConflict:
 	var current_string = null;
 	var git_string = null;
 
-class DrawGlyph:
-	@warning_ignore("shadowed_global_identifier")
-	var char = "";
-	var position = Vector2();
-	var offset = Vector2();
-	
-	var ignore = false;
-	var new_line = false;
-	
-	var color = Color.WHITE;
-	var layer_color = Color.WHITE;
-	
-	var layer = 0;
-	var current_char = 0;
-	
+class UserData: # Do a backflip!
+	var env = null;
 	var font = GMFont.GFont.new();
-	var visual_scale = 1;
-	
-	var draw_glyph = false;
-	var glyph_rect = Rect2();
+	var glyph = UserGlyph.new();
+	@warning_ignore("shadowed_global_identifier")
+	var char = UserChar.new();
 
-enum GitConflictKeep {
-	NoChoice,
-	KeepGit,
-	KeepOriginal,
-};
+	var __parent = null;
+	
+	func draw_glyph():
+		__parent.draw_texture_rect_region(font.texture, char.glyph, font.glyphs[char.char].rect, glyph.color);
+		if char.glyph.position.x + char.glyph.size.x + 20 > __parent.custom_minimum_size.x:
+			__parent.custom_minimum_size.x = char.glyph.position.x + char.glyph.size.x + 20;
+		if char.glyph.position.y + char.glyph.size.y + 20 > __parent.custom_minimum_size.y:
+			__parent.custom_minimum_size.y = char.glyph.position.y + char.glyph.size.y + 20;
+
+	func set_current_box(box_id: int):
+		Handle.main_node.update_box(box_id);
+	
+	func set_current_font(font_id: int):
+		Handle.main_node.update_font(font_id);
+		
+	func set_box_button_enabled(enabled: bool):
+		Handle.main_node.current_box_node.editable = enabled;
+	
+	func set_font_button_enabled(enabled: bool):
+		Handle.main_node.current_font_node.editable = enabled;
+	
+	func get_box_button_enabled() -> bool:
+		return Handle.main_node.current_box_node.editable;
+	
+	func get_font_button_enabled() -> bool:
+		return Handle.main_node.current_font_node.editable;
+
+class UserChar:
+	@warning_ignore("shadowed_global_identifier")
+	var char = null; # 1-letter String "layer_string[layer][index]" [READ ONLY]
+	var index = null; # Char index contained in the current layer string "layer_string[layer]" [READ ONLY]
+	
+	var start_position = Vector2(); # Glyph starter position
+	var position_offset = Vector2(); # Glyph local offset
+	var glyph = Rect2(); # Glyph draw Rect
+	
+	var is_ignore = false; # Char is classified as "ignore" [READ ONLY]
+	var is_newline = false; # Char is classified as "new line" [READ ONLY]
+
+class UserGlyph:
+	var color = Color.WHITE; # Glyph color
+	var vscale = 1; # Visual Scale [READ ONLY]
+	
+	var current_layer = null; # Glyph Layer [READ ONLY]
+	var layer_strings = null; # Layer String data
+	var layer_colors = null; # Layer Color data

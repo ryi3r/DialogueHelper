@@ -101,6 +101,7 @@ func save_file(path) -> Thread:
 	return thr;
 
 func load_file(path) -> Thread:
+	Handle.main_node.clear_data();
 	var cthr = Thread.new();
 	cthr.start(func():
 		var parent = get_parent();
@@ -119,13 +120,14 @@ func load_file(path) -> Thread:
 		for i in range(Handle.layer_strings.size()):
 			Handle.layer_strings[i] = "";
 		for i in range(Handle.layer_colors.size()):
-			Handle.layer_colors[i] = 0xffffffff;
+			Handle.layer_colors[i] = Color.WHITE;
 		Handle.strings.clear();
 		var output = load_file_data(path, true, true);
 		Handle.strings = output[0];
 		Handle.string_table = output[1];
 		Handle.string_ids = output[2];
 		Handle.entry_names = output[3];
+		Handle.last_string_id = output[4];
 		Handle.loading_window.label.call_deferred_thread_group("set_text", "Caching similar entries... [This may take a long time.]");
 		
 		var m = Mutex.new();
@@ -201,13 +203,14 @@ func load_file(path) -> Thread:
 	);
 	return cthr;
 
-# [Dictionary (Strings), Dictionary (StrTable), Dictionary (StrIDs), Array (EntryNames)]
+# [Dictionary (Strings), Dictionary (StrTable), Dictionary (StrIDs), Array (EntryNames), Int (LastStringID)]
 func load_file_data(path, apply_settings = true, is_thread = false) -> Array:
 	var parent = get_parent();
 	var strings = {};
 	var string_table = {};
 	var string_ids = {};
 	var entry_names = [];
+	var last_string_id = 0;
 	
 	var datas = FileAccess.get_file_as_string(path);
 	var datat = JSON.parse_string(datas);
@@ -235,6 +238,8 @@ func load_file_data(path, apply_settings = true, is_thread = false) -> Array:
 			while i < entry.size():
 				string_table[int(entry[i]["ID"])] = Type.StringTable.new(entry_name, entry[i]["Content"], i);
 				string_ids[int(entry[i]["ID"])] = entry[i]["Content"];
+				if int(entry[i]["ID"]) > last_string_id:
+					last_string_id = int(entry[i]["ID"]) + 1;
 				var json = Dictionary(entry[i]).duplicate(true);
 				entry[i] = Type.StringContainer.new(json);
 				i += 1;
@@ -285,6 +290,8 @@ func load_file_data(path, apply_settings = true, is_thread = false) -> Array:
 					line.data["ID"] = current_entry;
 					string_table[int(data.id)] = Type.StringTable.new(current_entry, data.content, entries.size());
 					string_ids[int(data.id)] = data.content;
+					if int(data.id) > last_string_id:
+						last_string_id = int(data.id) + 1;
 					entries.append(data);
 				2: # Assign Equal Strings Array to Index
 					var nea = [];
@@ -294,4 +301,4 @@ func load_file_data(path, apply_settings = true, is_thread = false) -> Array:
 			if is_thread:
 				totl += 1;
 				Handle.loading_window.progress_bar.call_deferred_thread_group("set_value", totl);
-	return [strings, string_table, string_ids, entry_names];
+	return [strings, string_table, string_ids, entry_names, last_string_id];

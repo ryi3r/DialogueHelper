@@ -10,28 +10,28 @@ func _draw():
 	if Handle.font_data.is_empty():
 		return;
 	if Handle.user_script is GDScript:
+		var env = {};
+		var ls = Handle.layer_strings.duplicate();
+		var lc = Handle.layer_colors.duplicate();
 		for layer in range(Handle.layer_strings.size()):
-			var glyph = Type.DrawGlyph.new();
-			glyph.position.x = box.portrait_offset.x if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.x;
-			glyph.position.y = box.portrait_offset.y if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.x;
-			glyph.layer = layer;
-			glyph.layer_color = Handle.layer_colors[layer] if Handle.layer_colors.size() > layer else Color.WHITE;
-			glyph.visual_scale = Handle.visual_scale;
-			glyph.font = Handle.font_data[Handle.current_font];
+			var data = Type.UserData.new();
+			data.__parent = self;
+			data.env = env;
+			data.glyph.layer_strings = ls;
+			data.glyph.layer_colors = lc;
+			data.glyph.current_layer = layer;
+			data.glyph.vscale = Handle.visual_scale;
+			data.char.start_position.x = box.portrait_offset.x if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.x;
+			data.char.start_position.y = box.portrait_offset.y if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.y;
+			data.font = Handle.font_data[Handle.current_font];
 			for layer_char in Handle.layer_strings[layer]:
-				glyph.draw_glyph = false;
-				glyph.char = layer_char;
-				glyph.color = glyph.layer_color;
+				data.char.char = layer_char;
+				data.char.glyph = Rect2();
+				data.glyph.color = Handle.layer_colors[layer];
 				if Handle.style_metadata.has("NewLines"):
-					glyph.new_line = layer_char in Handle.style_metadata["NewLines"];
+					data.char.is_newline = layer_char in Handle.style_metadata["NewLines"];
 				if Handle.style_metadata.has("Ignore"):
-					glyph.ignore = layer_char in Handle.style_metadata["Ignore"];
-				glyph.glyph_rect = Rect2();
+					data.char.is_ignore = layer_char in Handle.style_metadata["Ignore"];
 				if Handle.user_script.has_method("draw_glyph"):
-					Handle.user_script.draw_glyph(glyph);
-					if glyph.draw_glyph:
-						draw_texture_rect_region(glyph.font.texture, glyph.glyph_rect, glyph.font.glyphs[layer_char].rect, glyph.color);
-						if glyph.glyph_rect.position.x + glyph.glyph_rect.size.x + 20 > custom_minimum_size.x:
-							custom_minimum_size.x = glyph.glyph_rect.position.x + glyph.glyph_rect.size.x + 20;
-						if glyph.glyph_rect.position.y + glyph.glyph_rect.size.y + 20 > custom_minimum_size.y:
-							custom_minimum_size.y = glyph.glyph_rect.position.y + glyph.glyph_rect.size.y + 20;
+					Handle.user_script.draw_glyph(data);
+					
