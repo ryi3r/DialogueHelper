@@ -366,6 +366,7 @@ func about_menu_selected(id):
 				l2.text = (Handle.strings[ename][eindex] as Type.StringContainer).original_content;
 			else:
 				n.text = "But Nobody Came." if randi() % 50 == 0 else "But there was nothing to see.";
+				n2.hide();
 				l.hide();
 				l2.hide();
 		1: # Set Author Details
