@@ -11,7 +11,7 @@ extends Window;
 func _ready():
 	style_select.clear();
 	var i = 0;
-	for dir in DirAccess.get_directories_at("res://Styles/"):
+	for dir in DirAccess.get_directories_at(ProjectSettings.globalize_path("res://Styles/")):
 		style_select.add_item(dir, i);
 		if dir == Handle.style:
 			style_select.select(i);

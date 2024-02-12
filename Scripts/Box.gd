@@ -19,7 +19,7 @@ class GBox:
 					"Box": json["Texture"],
 				}));
 				if FileAccess.file_exists(path):
-					texture = load(path);
+					texture = load(path) if OS.has_feature("editor") else ImageTexture.create_from_image(Image.load_from_file(path));
 			if "Scale" in json:
 				scale = json["Scale"];
 			if "SupportsPortrait" in json:

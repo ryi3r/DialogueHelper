@@ -19,7 +19,7 @@ class GFont:
 					"Texture": json["Texture"]
 				}));
 				if FileAccess.file_exists(path):
-					texture = load(path);
+					texture = load(path) if OS.has_feature("editor") else ImageTexture.create_from_image(Image.load_from_file(path));
 			if "Size" in json:
 				size = int(json["Size"]);
 			if "Scale" in json:

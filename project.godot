@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Dialogue Helper"
-config/version="1.0.0"
+config/version="1.0.1"
 run/main_scene="res://Main.tscn"
 config/features=PackedStringArray("4.2", "Forward Plus")
 run/low_processor_mode_sleep_usec=0
@@ -43,3 +43,4 @@ limits/debugger/max_queued_messages=999999999
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
+shader_compiler/shader_cache/enabled=false
