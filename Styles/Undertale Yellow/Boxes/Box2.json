@@ -1,0 +1,6 @@
+{
+    "Name": "Battle",
+    "Texture": "Box2.png",
+    "Scale": 1,
+    "DialogueOffset": [20, 20]
+}

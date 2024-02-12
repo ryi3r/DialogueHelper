@@ -1,0 +1,874 @@
+{
+    "Name": "ChevyRay - Vector Mono",
+    "Texture": "Arcade.png",
+    "Size": 20,
+    "Scale": 1,
+    "Ascender": 0,
+    "AscenderOffset": 0,
+    "Glyphs": [
+        {
+            "Char": " ",
+            "X": 2,
+            "Y": 2,
+            "Width": 24,
+            "Height": 27,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "!",
+            "X": 216,
+            "Y": 158,
+            "Width": 3,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 9
+        },
+        {
+            "Char": "\"",
+            "X": 226,
+            "Y": 158,
+            "Width": 9,
+            "Height": 6,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": "#",
+            "X": 39,
+            "Y": 158,
+            "Width": 15,
+            "Height": 18,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "$",
+            "X": 36,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "%",
+            "X": 39,
+            "Y": 83,
+            "Width": 18,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "&",
+            "X": 59,
+            "Y": 83,
+            "Width": 18,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "'",
+            "X": 245,
+            "Y": 158,
+            "Width": 3,
+            "Height": 6,
+            "Shift": 24,
+            "Offset": 9
+        },
+        {
+            "Char": "(",
+            "X": 117,
+            "Y": 158,
+            "Width": 9,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": ")",
+            "X": 106,
+            "Y": 158,
+            "Width": 9,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": "*",
+            "X": 139,
+            "Y": 158,
+            "Width": 15,
+            "Height": 12,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "+",
+            "X": 2,
+            "Y": 158,
+            "Width": 15,
+            "Height": 18,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": ",",
+            "X": 173,
+            "Y": 158,
+            "Width": 6,
+            "Height": 24,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": "-",
+            "X": 156,
+            "Y": 158,
+            "Width": 15,
+            "Height": 12,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": ".",
+            "X": 221,
+            "Y": 158,
+            "Width": 3,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 9
+        },
+        {
+            "Char": "/",
+            "X": 79,
+            "Y": 83,
+            "Width": 18,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "0",
+            "X": 227,
+            "Y": 83,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "1",
+            "X": 193,
+            "Y": 83,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "2",
+            "X": 87,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "3",
+            "X": 138,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "4",
+            "X": 206,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "5",
+            "X": 87,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "6",
+            "X": 121,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "7",
+            "X": 19,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "8",
+            "X": 70,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "9",
+            "X": 104,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": ":",
+            "X": 206,
+            "Y": 158,
+            "Width": 3,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 9
+        },
+        {
+            "Char": ";",
+            "X": 181,
+            "Y": 158,
+            "Width": 6,
+            "Height": 24,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": "<",
+            "X": 173,
+            "Y": 83,
+            "Width": 18,
+            "Height": 18,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "=",
+            "X": 56,
+            "Y": 158,
+            "Width": 15,
+            "Height": 15,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": ">",
+            "X": 153,
+            "Y": 83,
+            "Width": 18,
+            "Height": 18,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "?",
+            "X": 19,
+            "Y": 83,
+            "Width": 18,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "@",
+            "X": 119,
+            "Y": 83,
+            "Width": 18,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "A",
+            "X": 232,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "B",
+            "X": 71,
+            "Y": 54,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "C",
+            "X": 140,
+            "Y": 2,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "D",
+            "X": 209,
+            "Y": 2,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "E",
+            "X": 25,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "F",
+            "X": 48,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "G",
+            "X": 186,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "H",
+            "X": 140,
+            "Y": 54,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "I",
+            "X": 48,
+            "Y": 2,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "J",
+            "X": 163,
+            "Y": 54,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "K",
+            "X": 209,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "L",
+            "X": 71,
+            "Y": 2,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "M",
+            "X": 163,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "N",
+            "X": 94,
+            "Y": 2,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "O",
+            "X": 186,
+            "Y": 2,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "P",
+            "X": 94,
+            "Y": 54,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "Q",
+            "X": 117,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "R",
+            "X": 117,
+            "Y": 54,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "S",
+            "X": 232,
+            "Y": 2,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "T",
+            "X": 186,
+            "Y": 54,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "U",
+            "X": 25,
+            "Y": 54,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "V",
+            "X": 2,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "W",
+            "X": 2,
+            "Y": 54,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "X",
+            "X": 117,
+            "Y": 2,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "Y",
+            "X": 71,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "Z",
+            "X": 94,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "[",
+            "X": 95,
+            "Y": 158,
+            "Width": 9,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": "\\",
+            "X": 99,
+            "Y": 83,
+            "Width": 18,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "]",
+            "X": 73,
+            "Y": 158,
+            "Width": 9,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": "^",
+            "X": 189,
+            "Y": 158,
+            "Width": 15,
+            "Height": 9,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "_",
+            "X": 140,
+            "Y": 31,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "`",
+            "X": 237,
+            "Y": 158,
+            "Width": 6,
+            "Height": 6,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": "a",
+            "X": 206,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "b",
+            "X": 172,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "c",
+            "X": 189,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "d",
+            "X": 19,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "e",
+            "X": 2,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "f",
+            "X": 121,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "g",
+            "X": 226,
+            "Y": 54,
+            "Width": 15,
+            "Height": 27,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "h",
+            "X": 189,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "i",
+            "X": 36,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "j",
+            "X": 139,
+            "Y": 83,
+            "Width": 12,
+            "Height": 27,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "k",
+            "X": 53,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "l",
+            "X": 104,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "m",
+            "X": 163,
+            "Y": 2,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "n",
+            "X": 210,
+            "Y": 83,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "o",
+            "X": 2,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "p",
+            "X": 2,
+            "Y": 83,
+            "Width": 15,
+            "Height": 27,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "q",
+            "X": 28,
+            "Y": 2,
+            "Width": 18,
+            "Height": 27,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "r",
+            "X": 70,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "s",
+            "X": 155,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "t",
+            "X": 53,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "u",
+            "X": 138,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "v",
+            "X": 155,
+            "Y": 135,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "w",
+            "X": 48,
+            "Y": 54,
+            "Width": 21,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "x",
+            "X": 223,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "y",
+            "X": 209,
+            "Y": 54,
+            "Width": 15,
+            "Height": 27,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "z",
+            "X": 172,
+            "Y": 112,
+            "Width": 15,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 3
+        },
+        {
+            "Char": "{",
+            "X": 128,
+            "Y": 158,
+            "Width": 9,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": "|",
+            "X": 211,
+            "Y": 158,
+            "Width": 3,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 9
+        },
+        {
+            "Char": "}",
+            "X": 84,
+            "Y": 158,
+            "Width": 9,
+            "Height": 21,
+            "Shift": 24,
+            "Offset": 6
+        },
+        {
+            "Char": "~",
+            "X": 19,
+            "Y": 158,
+            "Width": 18,
+            "Height": 15,
+            "Shift": 24,
+            "Offset": 0
+        },
+        {
+            "Char": "\u007f",
+            "X": 223,
+            "Y": 135,
+            "Width": 18,
+            "Height": 15,
+            "Shift": 24,
+            "Offset": 0
+        }
+    ]
+}

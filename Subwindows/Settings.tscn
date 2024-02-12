@@ -5,7 +5,7 @@
 [node name="Settings" type="Window"]
 title = "Settings"
 initial_position = 2
-size = Vector2i(500, 300)
+size = Vector2i(500, 350)
 transient = true
 exclusive = true
 unresizable = true
@@ -63,8 +63,7 @@ offset_bottom = 88.0
 text = "Branch name:
 
 P.D:   You need to have already installed git and have it
-          on the environment variables for DH to be able to use
-          it."
+          on the environment variables to be able to use it."
 
 [node name="LineEdit" type="LineEdit" parent="EnableGit/RepoLabel/BranchLabel"]
 layout_mode = 0
@@ -89,6 +88,45 @@ offset_top = -3.0
 offset_right = 350.0
 offset_bottom = 28.0
 
+[node name="FontStyle" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 250.0
+offset_right = 101.0
+offset_bottom = 273.0
+text = "Font Style:"
+
+[node name="OptionButton" type="OptionButton" parent="FontStyle"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = -3.0
+offset_right = 278.0
+offset_bottom = 28.0
+item_count = 2
+selected = 0
+popup/item_0/text = "Template"
+popup/item_0/id = 1
+popup/item_1/text = "Undertale Yellow"
+popup/item_1/id = 0
+
+[node name="Author" type="Label" parent="FontStyle"]
+layout_mode = 0
+offset_left = 10.0
+offset_top = 40.0
+offset_right = 94.0
+offset_bottom = 63.0
+text = "Author:"
+
+[node name="LineEdit" type="LineEdit" parent="FontStyle/Author"]
+layout_mode = 0
+offset_left = 90.0
+offset_top = -3.0
+offset_right = 240.0
+offset_bottom = 28.0
+text = "AuthorName"
+placeholder_text = "No name."
+editable = false
+
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]
 [connection signal="pressed" from="OkButton" to="." method="_on_ok_button_pressed"]
 [connection signal="pressed" from="CancelButton" to="." method="_on_cancel_button_pressed"]
+[connection signal="item_selected" from="FontStyle/OptionButton" to="." method="_on_option_button_item_selected"]

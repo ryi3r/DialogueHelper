@@ -5,8 +5,8 @@ extends Window;
 @onready var case_sensitive: CheckBox = $CaseSensitive;
 
 var searching_scene = preload("res://Subwindows/Progress bars/Searching.tscn");
-var searching_window = null;
 var search_results_scene = preload("res://Subwindows/SearchResults.tscn");
+var searching_window = null;
 var search_results_window = null;
 
 var last_thread = null;
@@ -38,10 +38,10 @@ func _on_search_button_pressed():
 	if !do_casing:
 		search = search.to_lower();
 	get_parent().search_kind = search_type.get_selected_id();
-	var data = get_parent().data as Dictionary;
+	var data = Handle.strings as Dictionary;
 	searching_window = searching_scene.instantiate();
 	add_child(searching_window);
-	searching_window.progress_bar.set_max(get_parent().data_size);
+	searching_window.progress_bar.set_max(Handle.string_size);
 	last_thread = Thread.new();
 	search_results_window = search_results_scene.instantiate();
 	get_parent().add_child(search_results_window);

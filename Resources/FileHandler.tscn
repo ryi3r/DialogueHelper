@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://2ncu40204euj"]
+
+[ext_resource type="Script" path="res://Scripts/FileHandler.gd" id="1_fal56"]
+
+[node name="FileHandler" type="Node"]
+script = ExtResource("1_fal56")

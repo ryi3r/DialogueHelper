@@ -7,8 +7,8 @@ gui_disable_input = true
 title = "Searching..."
 initial_position = 1
 size = Vector2i(475, 100)
-transient = true
 unresizable = true
+always_on_top = true
 unfocusable = true
 script = ExtResource("1_ig25j")
 

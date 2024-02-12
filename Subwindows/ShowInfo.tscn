@@ -4,21 +4,27 @@
 title = "String Information."
 initial_position = 2
 size = Vector2i(600, 220)
-transient = true
-exclusive = true
 unresizable = true
+always_on_top = true
 
 [node name="Label" type="Label" parent="."]
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 65.0
 offset_bottom = 43.0
-text = "Current String:
+text = "Selected Entry:
 
-Original String:
-
-Last Edit Details: EDIT_DETAILS"
+Original String:"
 visible_characters_behavior = 1
+
+[node name="Label2" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 124.0
+offset_right = 232.0
+offset_bottom = 199.0
+text = "Last Edit Details:
+>    Author: AUTHOR_NAME
+>    Timestamp: TIMESTAMP"
 
 [node name="LineEdit" type="LineEdit" parent="."]
 offset_left = 140.0

@@ -5,10 +5,10 @@ extends Window;
 func _on_item_selected(index):
 	var parent = get_parent();
 	var item = (it.get_item_text(index) + ":1").split(":");
-	if parent.data.has(item[0]):
+	if Handle.strings.has(item[0]):
 		parent.change_to(item[0], int(item[1]) - 1);
 		parent.string_selector.clear();
-		for stri in parent.data[item[0]]:
+		for stri in Handle.strings[item[0]]:
 			parent.string_selector.add_item(stri.layer_strings[0]);
 		parent.string_selector.select(int(item[1]) - 1);
 		parent.string_selector.ensure_current_is_visible();

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://ov3oxog6sbac"]
 
-[ext_resource type="Script" path="res://Subwindows/GitError.gd" id="1_aek62"]
+[ext_resource type="Script" path="res://Scripts/Subwindows/GitError.gd" id="1_u7y4v"]
 
 [node name="GitError" type="Window"]
 title = "Git encountered an error!"
@@ -8,12 +8,16 @@ initial_position = 2
 size = Vector2i(600, 400)
 unresizable = true
 always_on_top = true
-script = ExtResource("1_aek62")
+script = ExtResource("1_u7y4v")
 
 [node name="Label" type="Label" parent="."]
-offset_left = 100.0
-offset_right = 498.0
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -199.0
+offset_right = 199.0
 offset_bottom = 75.0
+grow_horizontal = 2
 text = "Git has encountered an error while doing an action.
 The current operation has been canceled, you may
 try to do it again if you want to do so."

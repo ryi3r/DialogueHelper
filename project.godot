@@ -11,11 +11,21 @@ config_version=5
 [application]
 
 config/name="Dialogue Helper"
+config/version="1.0.0"
 run/main_scene="res://Main.tscn"
 config/features=PackedStringArray("4.2", "Forward Plus")
 run/low_processor_mode_sleep_usec=0
-config/icon="res://icon.svg"
+boot_splash/show_image=false
+config/icon="res://icon.png"
 boot_splash/stretch/aspect="expand"
+
+[autoload]
+
+Type="*res://Scripts/DataTypes.gd"
+Handle="*res://Scripts/Handle.gd"
+FileFormat="*res://Scripts/FileFormat.gd"
+GMFont="*res://Scripts/Font.gd"
+GMBox="*res://Scripts/Box.gd"
 
 [display]
 

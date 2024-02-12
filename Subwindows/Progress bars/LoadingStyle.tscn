@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://ddw767wd84xxg"]
+
+[node name="LoadingStyle" type="Window"]
+gui_disable_input = true
+title = "Loading Style..."
+initial_position = 1
+size = Vector2i(475, 100)
+transient = true
+unresizable = true
+unfocusable = true
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(475, 0)
+offset_top = 5.0
+offset_right = 475.0
+offset_bottom = 28.0
+text = "Loading..."
+horizontal_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="."]
+offset_left = 28.0
+offset_top = 35.0
+offset_right = 448.0
+offset_bottom = 65.0

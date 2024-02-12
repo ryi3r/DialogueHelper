@@ -1,26 +1,33 @@
 [gd_scene load_steps=3 format=3 uid="uid://dsotjep87sau4"]
 
-[ext_resource type="Script" path="res://Main.gd" id="1_4lgbp"]
+[ext_resource type="Script" path="res://Scripts/MainNode.gd" id="1_4lgbp"]
 [ext_resource type="PackedScene" uid="uid://d4chixre3rvi5" path="res://Subwindows/Box.tscn" id="2_71puv"]
 
-[node name="Main" type="Node2D"]
-texture_filter = 1
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1100.0
+offset_bottom = 700.0
 script = ExtResource("1_4lgbp")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 position = Vector2(550, 350)
 
 [node name="Box" parent="." instance=ExtResource("2_71puv")]
-z_index = -1
-position = Vector2(286, 48)
+layout_mode = 0
+offset_left = 286.0
+offset_top = 48.0
+offset_right = 286.0
+offset_bottom = 48.0
 
 [node name="Panel" type="Panel" parent="."]
+layout_mode = 0
 offset_right = 1100.0
 offset_bottom = 40.0
 
 [node name="MenuBar" type="MenuBar" parent="Panel"]
 layout_mode = 0
-offset_right = 306.0
+offset_right = 1100.0
 offset_bottom = 40.0
 
 [node name="Container" type="HBoxContainer" parent="Panel/MenuBar"]
@@ -32,23 +39,27 @@ offset_bottom = 40.0
 layout_mode = 2
 text = "File"
 flat = false
-item_count = 6
-popup/item_0/text = "Open JSON"
-popup/item_0/id = 0
-popup/item_1/text = "Save JSON"
-popup/item_1/id = 1
-popup/item_2/text = ""
-popup/item_2/id = 2
-popup/item_2/separator = true
-popup/item_3/text = "Settings"
-popup/item_3/id = 3
+item_count = 8
+popup/item_0/text = "New File"
+popup/item_0/id = 6
+popup/item_1/text = "Open File"
+popup/item_1/id = 0
+popup/item_2/text = "Save File"
+popup/item_2/id = 1
+popup/item_3/text = "Close File"
+popup/item_3/id = 7
 popup/item_4/text = ""
-popup/item_4/id = 4
+popup/item_4/id = 2
 popup/item_4/separator = true
-popup/item_5/text = "Exit"
-popup/item_5/id = 5
+popup/item_5/text = "Settings"
+popup/item_5/id = 3
+popup/item_6/text = ""
+popup/item_6/id = 4
+popup/item_6/separator = true
+popup/item_7/text = "Exit"
+popup/item_7/id = 5
 
-[node name="Go To" type="Button" parent="Panel/MenuBar/Container"]
+[node name="GoTo" type="Button" parent="Panel/MenuBar/Container"]
 layout_mode = 2
 focus_mode = 0
 text = "Go to"
@@ -73,7 +84,13 @@ popup/item_2/separator = true
 popup/item_3/text = "About DH..."
 popup/item_3/id = 3
 
+[node name="ReloadStyle" type="Button" parent="Panel/MenuBar/Container"]
+layout_mode = 2
+focus_mode = 0
+text = "Reload Style"
+
 [node name="EnablePortrait" type="CheckBox" parent="."]
+layout_mode = 0
 offset_left = 283.0
 offset_top = 491.0
 offset_right = 432.0
@@ -82,6 +99,7 @@ focus_mode = 0
 text = "Enable portrait"
 
 [node name="ReplaceSimilar" type="CheckBox" parent="."]
+layout_mode = 0
 offset_left = 636.0
 offset_top = 489.0
 offset_right = 868.0
@@ -91,6 +109,7 @@ button_pressed = true
 text = "Replace all similar entries"
 
 [node name="DialogueEdit" type="TextEdit" parent="."]
+layout_mode = 0
 offset_left = 283.0
 offset_top = 530.0
 offset_right = 870.0
@@ -120,25 +139,7 @@ focus_mode = 1
 min_value = 1.0
 value = 1.0
 rounded = true
-
-[node name="CurrentScale" type="Label" parent="DisplaySettings"]
-layout_mode = 0
-offset_left = 877.0
-offset_top = 195.0
-offset_right = 965.0
-offset_bottom = 218.0
-text = "Text Scale:"
-
-[node name="Num" type="SpinBox" parent="DisplaySettings/CurrentScale"]
-layout_mode = 0
-offset_left = 134.0
-offset_top = -5.0
-offset_right = 217.063
-offset_bottom = 26.0
-focus_mode = 1
-step = 0.01
-value = 1.0
-custom_arrow_step = 0.01
+alignment = 2
 
 [node name="CurrentBox" type="Label" parent="DisplaySettings"]
 layout_mode = 0
@@ -158,16 +159,17 @@ focus_mode = 1
 min_value = 1.0
 value = 1.0
 rounded = true
+alignment = 2
 
 [node name="Info" type="Label" parent="DisplaySettings/CurrentBox"]
 layout_mode = 0
-offset_left = 90.0
+offset_left = -245.0
 offset_top = -20.0
-offset_right = 248.0
+offset_right = 201.0
 offset_bottom = -5.0
 theme_override_font_sizes/font_size = 10
 text = "OW"
-horizontal_alignment = 1
+horizontal_alignment = 2
 
 [node name="CurrentFont" type="Label" parent="DisplaySettings"]
 layout_mode = 0
@@ -187,16 +189,37 @@ offset_bottom = 29.0
 min_value = 1.0
 value = 1.0
 rounded = true
+alignment = 2
 
 [node name="Info" type="Label" parent="DisplaySettings/CurrentFont"]
 layout_mode = 0
-offset_left = 90.0
+offset_left = -208.0
 offset_top = -19.0
-offset_right = 248.0
+offset_right = 201.0
 offset_bottom = -4.0
 theme_override_font_sizes/font_size = 10
 text = "Speech"
-horizontal_alignment = 1
+horizontal_alignment = 2
+
+[node name="CurrentScale" type="Label" parent="DisplaySettings"]
+layout_mode = 0
+offset_left = 877.0
+offset_top = 195.0
+offset_right = 965.0
+offset_bottom = 218.0
+text = "Text Scale:"
+
+[node name="Num" type="SpinBox" parent="DisplaySettings/CurrentScale"]
+layout_mode = 0
+offset_left = 134.0
+offset_top = -5.0
+offset_right = 217.063
+offset_bottom = 26.0
+focus_mode = 1
+step = 0.01
+value = 1.0
+alignment = 2
+custom_arrow_step = 0.01
 
 [node name="CurrentColor" type="Label" parent="DisplaySettings"]
 layout_mode = 0
@@ -217,6 +240,7 @@ color = Color(1, 1, 1, 1)
 edit_alpha = false
 
 [node name="EntrySearch" type="LineEdit" parent="."]
+layout_mode = 0
 offset_left = 8.0
 offset_top = 48.0
 offset_right = 276.0
@@ -224,6 +248,7 @@ offset_bottom = 79.0
 placeholder_text = "Search an entry."
 
 [node name="EntryList" type="ItemList" parent="."]
+layout_mode = 0
 offset_left = 8.0
 offset_top = 86.0
 offset_right = 276.0
@@ -231,6 +256,7 @@ offset_bottom = 688.0
 max_columns = 2
 
 [node name="StringSelector" type="Label" parent="."]
+layout_mode = 0
 offset_left = 881.0
 offset_top = 497.0
 offset_right = 994.0
@@ -245,6 +271,7 @@ offset_right = 208.0
 offset_bottom = 191.0
 
 [node name="SimilarEntries" type="Label" parent="."]
+layout_mode = 0
 offset_left = 879.0
 offset_top = 362.0
 offset_right = 1045.0
@@ -258,8 +285,9 @@ offset_top = 33.0
 offset_right = 208.0
 offset_bottom = 122.0
 
-[connection signal="pressed" from="Panel/MenuBar/Container/Go To" to="." method="open_go_to_menu"]
+[connection signal="pressed" from="Panel/MenuBar/Container/GoTo" to="." method="open_go_to_menu"]
 [connection signal="pressed" from="Panel/MenuBar/Container/Search" to="." method="open_search_menu"]
+[connection signal="pressed" from="Panel/MenuBar/Container/ReloadStyle" to="." method="_on_reload_style_pressed"]
 [connection signal="text_changed" from="DialogueEdit" to="." method="_on_dialogue_edit_text_changed"]
 [connection signal="text_changed" from="EntrySearch" to="." method="entry_search_text_changed"]
 [connection signal="item_selected" from="EntryList" to="." method="_on_item_list_item_selected"]

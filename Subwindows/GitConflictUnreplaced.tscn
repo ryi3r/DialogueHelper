@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3 uid="uid://bdg8q002csg3n"]
+
+[ext_resource type="Script" path="res://Scripts/Subwindows/GitConflictUnreplaced.gd" id="1_406k0"]
+
+[node name="GitConflictUnreplaced" type="Window"]
+title = "[Git Conflict] Are you sure?"
+initial_position = 2
+size = Vector2i(320, 250)
+exclusive = true
+unresizable = true
+always_on_top = true
+script = ExtResource("1_406k0")
+
+[node name="Label" type="Label" parent="."]
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 302.0
+offset_bottom = 59.0
+text = "Do you really wish to finish the merge
+conflicts without resolving every
+merge conflict?
+This may result in the strings becoming
+outdated. "
+
+[node name="OkButton" type="Button" parent="."]
+offset_left = 10.0
+offset_top = 150.0
+offset_right = 306.0
+offset_bottom = 181.0
+text = "Yes, I am aware of the consequences."
+
+[node name="CancelButton" type="Button" parent="."]
+offset_left = 10.0
+offset_top = 190.0
+offset_right = 185.0
+offset_bottom = 221.0
+text = "No, I want to go back."
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="OkButton" to="." method="_on_ok_button_pressed"]
+[connection signal="pressed" from="CancelButton" to="." method="_on_cancel_button_pressed"]

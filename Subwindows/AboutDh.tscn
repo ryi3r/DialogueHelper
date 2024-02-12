@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3 uid="uid://by5xyjcv5flmt"]
+
+[ext_resource type="Script" path="res://Scripts/Subwindows/AboutDh.gd" id="1_2nqyt"]
+
+[node name="DhAuthor" type="Window"]
+title = "About DH..."
+initial_position = 2
+size = Vector2i(300, 150)
+always_on_top = true
+script = ExtResource("1_2nqyt")
+
+[node name="Label" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -139.5
+offset_top = 10.0
+offset_right = 139.5
+offset_bottom = 85.0
+grow_horizontal = 2
+text = "DH was made by ZorroMundo.
+
+Current Version: v1.0.0  (12/02/2024)"
+horizontal_alignment = 1
+
+[node name="Button" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -41.0
+offset_top = -41.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "OK"
+
+[node name="Button2" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -140.0
+offset_top = -41.0
+offset_right = -46.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Open Repo"
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="Button" to="." method="_on_button_pressed"]
+[connection signal="pressed" from="Button2" to="." method="_on_button_2_pressed"]

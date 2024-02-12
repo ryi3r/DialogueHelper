@@ -1,11 +1,17 @@
 [gd_scene load_steps=3 format=3 uid="uid://d4chixre3rvi5"]
 
 [ext_resource type="Script" path="res://Scripts/Subwindows/Box.gd" id="1_lmt1w"]
-[ext_resource type="Texture2D" uid="uid://cjfmcv08c61eh" path="res://Boxes/Box1.png" id="2_rnfqc"]
+[ext_resource type="Script" path="res://Scripts/Subwindows/BoxHandler.gd" id="2_ao570"]
 
-[node name="Box" type="Node2D"]
+[node name="Box" type="ScrollContainer"]
+texture_filter = 1
+custom_minimum_size = Vector2(580, 415)
 script = ExtResource("1_lmt1w")
 
-[node name="BoxSprite" type="Sprite2D" parent="."]
-texture = ExtResource("2_rnfqc")
+[node name="Handler" type="Control" parent="."]
+layout_mode = 2
+script = ExtResource("2_ao570")
+
+[node name="BoxSprite" type="Sprite2D" parent="Handler"]
+z_index = -1
 centered = false

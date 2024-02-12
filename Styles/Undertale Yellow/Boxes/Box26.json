@@ -1,0 +1,6 @@
+{
+    "Name": "Shop Speech",
+    "Texture": "Box26.png",
+    "Scale": 1,
+    "DialogueOffset": [40, 20]
+}

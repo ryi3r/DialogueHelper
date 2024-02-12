@@ -1,0 +1,2026 @@
+{
+    "Name": "DotumChe",
+    "Texture": "DotumChe.png",
+    "Size": 12,
+    "Scale": 1,
+    "Ascender": 0,
+    "AscenderOffset": 0,
+    "Glyphs": [
+        {
+            "Char": " ",
+            "X": 173,
+            "Y": 2,
+            "Width": 9,
+            "Height": 16,
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "!",
+            "X": 14,
+            "Y": 142,
+            "Width": 2,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 4
+        },
+        {
+            "Char": "\"",
+            "X": 237,
+            "Y": 124,
+            "Width": 5,
+            "Height": 6,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "#",
+            "X": 224,
+            "Y": 2,
+            "Width": 9,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "$",
+            "X": 119,
+            "Y": 20,
+            "Width": 8,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "%",
+            "X": 169,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "&",
+            "X": 52,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "'",
+            "X": 69,
+            "Y": 142,
+            "Width": 2,
+            "Height": 6,
+            "Shift": 9,
+            "Offset": 4
+        },
+        {
+            "Char": "(",
+            "X": 61,
+            "Y": 124,
+            "Width": 5,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": ")",
+            "X": 75,
+            "Y": 124,
+            "Width": 5,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "*",
+            "X": 132,
+            "Y": 124,
+            "Width": 6,
+            "Height": 10,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "+",
+            "X": 2,
+            "Y": 124,
+            "Width": 8,
+            "Height": 11,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": ",",
+            "X": 198,
+            "Y": 124,
+            "Width": 3,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "-",
+            "X": 116,
+            "Y": 124,
+            "Width": 8,
+            "Height": 8,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": ".",
+            "X": 18,
+            "Y": 142,
+            "Width": 2,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 4
+        },
+        {
+            "Char": "/",
+            "X": 199,
+            "Y": 106,
+            "Width": 7,
+            "Height": 13,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "0",
+            "X": 32,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "1",
+            "X": 164,
+            "Y": 124,
+            "Width": 4,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 2
+        },
+        {
+            "Char": "2",
+            "X": 119,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "3",
+            "X": 119,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "4",
+            "X": 151,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "5",
+            "X": 182,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "6",
+            "X": 83,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "7",
+            "X": 47,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "8",
+            "X": 155,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "9",
+            "X": 164,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": ":",
+            "X": 35,
+            "Y": 142,
+            "Width": 2,
+            "Height": 12,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": ";",
+            "X": 203,
+            "Y": 124,
+            "Width": 3,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "<",
+            "X": 245,
+            "Y": 106,
+            "Width": 8,
+            "Height": 11,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "=",
+            "X": 44,
+            "Y": 124,
+            "Width": 8,
+            "Height": 10,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": ">",
+            "X": 235,
+            "Y": 106,
+            "Width": 8,
+            "Height": 11,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "?",
+            "X": 149,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "@",
+            "X": 241,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "A",
+            "X": 62,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "B",
+            "X": 212,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "C",
+            "X": 42,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "D",
+            "X": 62,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "E",
+            "X": 219,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "F",
+            "X": 202,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "G",
+            "X": 162,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "H",
+            "X": 221,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "I",
+            "X": 2,
+            "Y": 142,
+            "Width": 2,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 4
+        },
+        {
+            "Char": "J",
+            "X": 12,
+            "Y": 124,
+            "Width": 6,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "K",
+            "X": 211,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "L",
+            "X": 29,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "M",
+            "X": 171,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "N",
+            "X": 161,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "O",
+            "X": 142,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "P",
+            "X": 102,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "Q",
+            "X": 109,
+            "Y": 20,
+            "Width": 8,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "R",
+            "X": 179,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "S",
+            "X": 122,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "T",
+            "X": 42,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "U",
+            "X": 201,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "V",
+            "X": 239,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "W",
+            "X": 240,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "X",
+            "X": 92,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "Y",
+            "X": 111,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "Z",
+            "X": 2,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "[",
+            "X": 54,
+            "Y": 124,
+            "Width": 5,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "\\",
+            "X": 46,
+            "Y": 20,
+            "Width": 9,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "]",
+            "X": 68,
+            "Y": 124,
+            "Width": 5,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "^",
+            "X": 27,
+            "Y": 142,
+            "Width": 6,
+            "Height": 4,
+            "Shift": 9,
+            "Offset": 2
+        },
+        {
+            "Char": "_",
+            "X": 87,
+            "Y": 20,
+            "Width": 8,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "`",
+            "X": 49,
+            "Y": 142,
+            "Width": 4,
+            "Height": 4,
+            "Shift": 9,
+            "Offset": 2
+        },
+        {
+            "Char": "a",
+            "X": 42,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "b",
+            "X": 209,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "c",
+            "X": 52,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "d",
+            "X": 12,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "e",
+            "X": 101,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "f",
+            "X": 110,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "g",
+            "X": 222,
+            "Y": 73,
+            "Width": 7,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "h",
+            "X": 29,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "i",
+            "X": 10,
+            "Y": 142,
+            "Width": 2,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 4
+        },
+        {
+            "Char": "j",
+            "X": 126,
+            "Y": 124,
+            "Width": 4,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 2
+        },
+        {
+            "Char": "k",
+            "X": 128,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "l",
+            "X": 6,
+            "Y": 142,
+            "Width": 2,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 4
+        },
+        {
+            "Char": "m",
+            "X": 189,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "n",
+            "X": 227,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "o",
+            "X": 62,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "p",
+            "X": 77,
+            "Y": 20,
+            "Width": 8,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "q",
+            "X": 57,
+            "Y": 20,
+            "Width": 8,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "r",
+            "X": 20,
+            "Y": 124,
+            "Width": 6,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 2
+        },
+        {
+            "Char": "s",
+            "X": 56,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "t",
+            "X": 146,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "u",
+            "X": 47,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "v",
+            "X": 32,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "w",
+            "X": 102,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "x",
+            "X": 2,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "y",
+            "X": 67,
+            "Y": 20,
+            "Width": 8,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "z",
+            "X": 92,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "{",
+            "X": 219,
+            "Y": 106,
+            "Width": 6,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 2
+        },
+        {
+            "Char": "|",
+            "X": 251,
+            "Y": 124,
+            "Width": 2,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 4
+        },
+        {
+            "Char": "}",
+            "X": 227,
+            "Y": 106,
+            "Width": 6,
+            "Height": 15,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "~",
+            "X": 100,
+            "Y": 124,
+            "Width": 8,
+            "Height": 8,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u007f",
+            "X": 209,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0080",
+            "X": 200,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0081",
+            "X": 2,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0082",
+            "X": 101,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0083",
+            "X": 155,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0084",
+            "X": 245,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0085",
+            "X": 74,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0086",
+            "X": 83,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0087",
+            "X": 241,
+            "Y": 73,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0088",
+            "X": 101,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0089",
+            "X": 137,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u008a",
+            "X": 11,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u008b",
+            "X": 218,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u008c",
+            "X": 137,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u008d",
+            "X": 65,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u008e",
+            "X": 128,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u008f",
+            "X": 92,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0090",
+            "X": 38,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0091",
+            "X": 56,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0092",
+            "X": 173,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0093",
+            "X": 182,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0094",
+            "X": 146,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0095",
+            "X": 20,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0096",
+            "X": 173,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0097",
+            "X": 191,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0098",
+            "X": 74,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u0099",
+            "X": 236,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u009a",
+            "X": 164,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u009b",
+            "X": 20,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u009c",
+            "X": 65,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u009d",
+            "X": 110,
+            "Y": 106,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u009e",
+            "X": 38,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u009f",
+            "X": 11,
+            "Y": 90,
+            "Width": 7,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00a0",
+            "X": 137,
+            "Y": 2,
+            "Width": 9,
+            "Height": 16,
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "\u00a1",
+            "X": 233,
+            "Y": 124,
+            "Width": 2,
+            "Height": 16,
+            "Shift": 17,
+            "Offset": 4
+        },
+        {
+            "Char": "\u00a2",
+            "X": 211,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00a3",
+            "X": 112,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00a4",
+            "X": 231,
+            "Y": 73,
+            "Width": 8,
+            "Height": 13,
+            "Shift": 17,
+            "Offset": 5
+        },
+        {
+            "Char": "\u00a5",
+            "X": 139,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00a6",
+            "X": 229,
+            "Y": 124,
+            "Width": 2,
+            "Height": 16,
+            "Shift": 9,
+            "Offset": 4
+        },
+        {
+            "Char": "\u00a7",
+            "X": 191,
+            "Y": 106,
+            "Width": 6,
+            "Height": 16,
+            "Shift": 17,
+            "Offset": 6
+        },
+        {
+            "Char": "\u00a8",
+            "X": 62,
+            "Y": 142,
+            "Width": 5,
+            "Height": 3,
+            "Shift": 17,
+            "Offset": 6
+        },
+        {
+            "Char": "\u00a9",
+            "X": 235,
+            "Y": 2,
+            "Width": 9,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "\u00aa",
+            "X": 182,
+            "Y": 124,
+            "Width": 6,
+            "Height": 9,
+            "Shift": 17,
+            "Offset": 6
+        },
+        {
+            "Char": "\u00ab",
+            "X": 82,
+            "Y": 124,
+            "Width": 7,
+            "Height": 10,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00ac",
+            "X": 208,
+            "Y": 106,
+            "Width": 9,
+            "Height": 10,
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "\u00ad",
+            "X": 222,
+            "Y": 124,
+            "Width": 5,
+            "Height": 8,
+            "Shift": 17,
+            "Offset": 6
+        },
+        {
+            "Char": "\u00ae",
+            "X": 66,
+            "Y": 2,
+            "Width": 13,
+            "Height": 14,
+            "Shift": 17,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00af",
+            "X": 55,
+            "Y": 142,
+            "Width": 5,
+            "Height": 3,
+            "Shift": 9,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00b0",
+            "X": 244,
+            "Y": 124,
+            "Width": 5,
+            "Height": 6,
+            "Shift": 17,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00b1",
+            "X": 123,
+            "Y": 2,
+            "Width": 12,
+            "Height": 13,
+            "Shift": 17,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00b2",
+            "X": 215,
+            "Y": 124,
+            "Width": 5,
+            "Height": 8,
+            "Shift": 17,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00b3",
+            "X": 208,
+            "Y": 124,
+            "Width": 5,
+            "Height": 8,
+            "Shift": 17,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00b4",
+            "X": 39,
+            "Y": 142,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 17,
+            "Offset": 7
+        },
+        {
+            "Char": "\u00b5",
+            "X": 231,
+            "Y": 37,
+            "Width": 7,
+            "Height": 16,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00b6",
+            "X": 184,
+            "Y": 2,
+            "Width": 8,
+            "Height": 16,
+            "Shift": 17,
+            "Offset": 4
+        },
+        {
+            "Char": "\u00b7",
+            "X": 45,
+            "Y": 142,
+            "Width": 2,
+            "Height": 8,
+            "Shift": 17,
+            "Offset": 7
+        },
+        {
+            "Char": "\u00b8",
+            "X": 110,
+            "Y": 124,
+            "Width": 4,
+            "Height": 16,
+            "Shift": 17,
+            "Offset": 7
+        },
+        {
+            "Char": "\u00b9",
+            "X": 22,
+            "Y": 142,
+            "Width": 3,
+            "Height": 8,
+            "Shift": 17,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00ba",
+            "X": 190,
+            "Y": 124,
+            "Width": 6,
+            "Height": 9,
+            "Shift": 17,
+            "Offset": 6
+        },
+        {
+            "Char": "\u00bb",
+            "X": 91,
+            "Y": 124,
+            "Width": 7,
+            "Height": 10,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00bc",
+            "X": 2,
+            "Y": 2,
+            "Width": 14,
+            "Height": 15,
+            "Shift": 17,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00bd",
+            "X": 34,
+            "Y": 2,
+            "Width": 14,
+            "Height": 15,
+            "Shift": 17,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00be",
+            "X": 18,
+            "Y": 2,
+            "Width": 14,
+            "Height": 15,
+            "Shift": 17,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00bf",
+            "X": 204,
+            "Y": 2,
+            "Width": 8,
+            "Height": 16,
+            "Shift": 17,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c0",
+            "X": 141,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c1",
+            "X": 172,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c2",
+            "X": 181,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c3",
+            "X": 92,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c4",
+            "X": 131,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c5",
+            "X": 161,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c6",
+            "X": 50,
+            "Y": 2,
+            "Width": 14,
+            "Height": 14,
+            "Shift": 17,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c7",
+            "X": 194,
+            "Y": 2,
+            "Width": 8,
+            "Height": 16,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c8",
+            "X": 81,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00c9",
+            "X": 112,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00ca",
+            "X": 141,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00cb",
+            "X": 159,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00cc",
+            "X": 146,
+            "Y": 124,
+            "Width": 4,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00cd",
+            "X": 176,
+            "Y": 124,
+            "Width": 4,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00ce",
+            "X": 28,
+            "Y": 124,
+            "Width": 6,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00cf",
+            "X": 158,
+            "Y": 124,
+            "Width": 4,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00d0",
+            "X": 109,
+            "Y": 2,
+            "Width": 12,
+            "Height": 14,
+            "Shift": 17,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00d1",
+            "X": 152,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00d2",
+            "X": 12,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00d3",
+            "X": 72,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00d4",
+            "X": 32,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00d5",
+            "X": 192,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00d6",
+            "X": 2,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00d7",
+            "X": 97,
+            "Y": 20,
+            "Width": 10,
+            "Height": 12,
+            "Shift": 17,
+            "Offset": 4
+        },
+        {
+            "Char": "\u00d8",
+            "X": 81,
+            "Y": 2,
+            "Width": 12,
+            "Height": 15,
+            "Shift": 17,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00d9",
+            "X": 182,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00da",
+            "X": 229,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00db",
+            "X": 22,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00dc",
+            "X": 72,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00dd",
+            "X": 12,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00de",
+            "X": 24,
+            "Y": 20,
+            "Width": 9,
+            "Height": 14,
+            "Shift": 17,
+            "Offset": 4
+        },
+        {
+            "Char": "\u00df",
+            "X": 13,
+            "Y": 20,
+            "Width": 9,
+            "Height": 14,
+            "Shift": 17,
+            "Offset": 4
+        },
+        {
+            "Char": "\u00e0",
+            "X": 22,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00e1",
+            "X": 151,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00e2",
+            "X": 199,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00e3",
+            "X": 221,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00e4",
+            "X": 171,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00e5",
+            "X": 121,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00e6",
+            "X": 95,
+            "Y": 2,
+            "Width": 12,
+            "Height": 14,
+            "Shift": 17,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00e7",
+            "X": 214,
+            "Y": 2,
+            "Width": 8,
+            "Height": 16,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00e8",
+            "X": 122,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00e9",
+            "X": 52,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00ea",
+            "X": 191,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00eb",
+            "X": 82,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00ec",
+            "X": 140,
+            "Y": 124,
+            "Width": 4,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00ed",
+            "X": 170,
+            "Y": 124,
+            "Width": 4,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00ee",
+            "X": 36,
+            "Y": 124,
+            "Width": 6,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 2
+        },
+        {
+            "Char": "\u00ef",
+            "X": 152,
+            "Y": 124,
+            "Width": 4,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00f0",
+            "X": 35,
+            "Y": 20,
+            "Width": 9,
+            "Height": 14,
+            "Shift": 17,
+            "Offset": 4
+        },
+        {
+            "Char": "\u00f1",
+            "X": 91,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00f2",
+            "X": 191,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00f3",
+            "X": 22,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00f4",
+            "X": 231,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00f5",
+            "X": 129,
+            "Y": 20,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00f6",
+            "X": 181,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00f7",
+            "X": 159,
+            "Y": 2,
+            "Width": 12,
+            "Height": 12,
+            "Shift": 17,
+            "Offset": 3
+        },
+        {
+            "Char": "\u00f8",
+            "X": 2,
+            "Y": 20,
+            "Width": 9,
+            "Height": 14,
+            "Shift": 17,
+            "Offset": 4
+        },
+        {
+            "Char": "\u00f9",
+            "X": 2,
+            "Y": 55,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00fa",
+            "X": 132,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00fb",
+            "X": 201,
+            "Y": 37,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00fc",
+            "X": 82,
+            "Y": 73,
+            "Width": 8,
+            "Height": 14,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00fd",
+            "X": 132,
+            "Y": 55,
+            "Width": 7,
+            "Height": 16,
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "\u00fe",
+            "X": 148,
+            "Y": 2,
+            "Width": 9,
+            "Height": 16,
+            "Shift": 17,
+            "Offset": 4
+        },
+        {
+            "Char": "\u00ff",
+            "X": 72,
+            "Y": 37,
+            "Width": 7,
+            "Height": 16,
+            "Shift": 9,
+            "Offset": 1
+        }
+    ]
+}

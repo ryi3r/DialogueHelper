@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=3 uid="uid://otc1yygycyfe"]
+
+[ext_resource type="Script" path="res://Scripts/Subwindows/StyleError.gd" id="1_xlv5r"]
+
+[node name="StyleError" type="Window"]
+title = "Font Style Error"
+initial_position = 1
+size = Vector2i(600, 400)
+unresizable = true
+always_on_top = true
+script = ExtResource("1_xlv5r")
+
+[node name="Label" type="Label" parent="."]
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -229.0
+offset_right = 229.0
+offset_bottom = 75.0
+grow_horizontal = 2
+text = "There was an error while loading the Font Style \"FontStyle\",
+The current text-server is empty. Please load-in another
+Font Style to use DH."
+horizontal_alignment = 1
+
+[node name="Label2" type="Label" parent="."]
+offset_left = 10.0
+offset_top = 80.0
+offset_right = 50.0
+offset_bottom = 103.0
+text = "Logs:"
+
+[node name="TextEdit" type="TextEdit" parent="."]
+offset_left = 10.0
+offset_top = 110.0
+offset_right = 590.0
+offset_bottom = 390.0
+placeholder_text = "This is a text sample.
+Test, test!"
+editable = false
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]

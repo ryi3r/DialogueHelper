@@ -1,0 +1,7 @@
+{
+	"Name": "Undertale Yellow",
+	"Author": "ZorroMundo",
+	"Script": "Script.gd",
+	"NewLines": ["#", "\n"],
+	"Ignore": []
+}

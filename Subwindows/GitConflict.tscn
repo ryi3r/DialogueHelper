@@ -1,0 +1,121 @@
+[gd_scene load_steps=2 format=3 uid="uid://23c431cv5wuw"]
+
+[ext_resource type="Script" path="res://Scripts/Subwindows/GitConflict.gd" id="1_t14ey"]
+
+[node name="GitConflict" type="Window"]
+title = "Git Conflict"
+initial_position = 2
+size = Vector2i(660, 250)
+unresizable = true
+always_on_top = true
+script = ExtResource("1_t14ey")
+
+[node name="DoneButton" type="Button" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -70.0
+offset_top = -41.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Done"
+
+[node name="LabelConflict" type="Label" parent="."]
+offset_left = 350.0
+offset_top = 10.0
+offset_right = 440.0
+offset_bottom = 33.0
+text = "Conflict No."
+
+[node name="SpinBox" type="SpinBox" parent="LabelConflict"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = -3.0
+offset_right = 184.0
+offset_bottom = 28.0
+min_value = 1.0
+max_value = 1.0
+value = 1.0
+alignment = 1
+
+[node name="Label" type="Label" parent="LabelConflict"]
+layout_mode = 0
+offset_left = 190.0
+offset_right = 282.0
+offset_bottom = 23.0
+text = "out of 1."
+horizontal_alignment = 3
+
+[node name="LabelText" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 10.0
+offset_right = 254.0
+offset_bottom = 33.0
+text = "Resolve these merge conflicts."
+
+[node name="LabelEntry" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 212.0
+offset_right = 130.0
+offset_bottom = 235.0
+text = "Selected entry:"
+
+[node name="LineEdit" type="LineEdit" parent="LabelEntry"]
+layout_mode = 0
+offset_left = 130.0
+offset_top = -3.0
+offset_right = 530.0
+offset_bottom = 28.0
+editable = false
+
+[node name="LabelCurrent" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 45.0
+offset_right = 134.0
+offset_bottom = 68.0
+text = "Current String:"
+
+[node name="TextEdit" type="TextEdit" parent="LabelCurrent"]
+layout_mode = 0
+offset_top = 30.0
+offset_right = 250.0
+offset_bottom = 150.0
+editable = false
+
+[node name="LabelGit" type="Label" parent="."]
+offset_left = 280.0
+offset_top = 45.0
+offset_right = 394.0
+offset_bottom = 68.0
+text = "Git String:"
+
+[node name="TextEdit" type="TextEdit" parent="LabelGit"]
+layout_mode = 0
+offset_top = 30.0
+offset_right = 250.0
+offset_bottom = 150.0
+editable = false
+
+[node name="ButtonGit" type="Button" parent="."]
+offset_left = 538.0
+offset_top = 135.0
+offset_right = 652.0
+offset_bottom = 166.0
+text = "Keep Git"
+
+[node name="ButtonOg" type="Button" parent="."]
+offset_left = 538.0
+offset_top = 100.0
+offset_right = 652.0
+offset_bottom = 131.0
+text = "Keep Current"
+
+[connection signal="close_requested" from="." to="." method="_on_close_requested"]
+[connection signal="pressed" from="DoneButton" to="." method="_on_done_button_pressed"]
+[connection signal="value_changed" from="LabelConflict/SpinBox" to="." method="_on_spin_box_value_changed"]
+[connection signal="pressed" from="ButtonGit" to="." method="_on_button_git_pressed"]
+[connection signal="pressed" from="ButtonOg" to="." method="_on_button_og_pressed"]
