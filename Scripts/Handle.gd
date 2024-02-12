@@ -154,8 +154,8 @@ func load_style(_style = null):
 			}))
 		progress_bar.value = progress_bar.max_value;
 	else:
-		logs.append("Style \"{Style}\" was not found.".format({
-			"Style": style,
+		logs.append("Style Path \"{RelativePath}\" was not found.".format({
+			"RelativePath": style_get_relative_path(""),
 		}));
 	remove_child(ls_window);
 	if !logs.is_empty(): # An error ocurred.

@@ -18,9 +18,9 @@ offset_left = -229.0
 offset_right = 229.0
 offset_bottom = 75.0
 grow_horizontal = 2
-text = "There was an error while loading the Font Style \"FontStyle\",
-The current text-server is empty. Please load-in another
-Font Style to use DH."
+text = "There was an error while loading the current Font Style.
+Nothing may have been loaded up. There's no guarantee the
+program will fully work."
 horizontal_alignment = 1
 
 [node name="Label2" type="Label" parent="."]

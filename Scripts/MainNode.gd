@@ -112,12 +112,16 @@ func _process(_delta):
 			last_thread = null;
 
 func update_box(i: int):
+	if i >= Handle.box_data.size():
+		return;
 	current_box = i;
 	current_box_label.text = Handle.box_data[i].name;
 	box.current_box = i;
 	Handle.is_modified = true;
 
 func update_font(i: int):
+	if i >= Handle.font_data.size():
+		return;
 	current_font_id = i;
 	Handle.current_font = i;
 	current_font_label.text = Handle.font_data[i].name;
