@@ -37,7 +37,6 @@ window/size/viewport_width=1100
 window/size/viewport_height=700
 window/subwindows/embed_subwindows=false
 window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
 
 [dotnet]
 

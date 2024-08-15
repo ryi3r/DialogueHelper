@@ -10,9 +10,6 @@ offset_right = 1100.0
 offset_bottom = 700.0
 script = ExtResource("1_4lgbp")
 
-[node name="CenterView" type="Camera2D" parent="."]
-position = Vector2(550, 350)
-
 [node name="Box" parent="." instance=ExtResource("2_71puv")]
 layout_mode = 0
 offset_left = 286.0
