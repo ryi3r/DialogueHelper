@@ -174,6 +174,7 @@ func load_file(_path: String) -> Thread:
 						(Handle.string_table[_entry] as IStringTable).data.equal_strings_index = _index
 				_v += 1
 				Handle.loading_window.progress_bar.call_deferred("set_value", _v)
+		Handle.is_modified = false
 		Handle.loading_window.call_deferred("queue_free")
 	)
 	return _cthr

@@ -74,6 +74,7 @@ func _ready() -> void:
 	font = IFont.get_font(Handle.current_font)
 	update_box(current_box)
 	update_font(current_font_id)
+	Handle.is_modified = false
 
 func _process(_delta: float) -> void:
 	if last_size != tree.root.size:
@@ -311,7 +312,21 @@ func file_menu_selected(_id: int) -> void:
 					last_thread = IFileHandler.load_file(_path)
 				).set_delay(1.0 / 60.0)
 				_t.play()
-			if FileAccess.file_exists("user://enable_git.bool"):
+			if Handle.is_modified:
+				Handle.uc_window = Handle.uc_scene.instantiate()
+				Handle.uc_window.callback.connect(func() -> void:
+					if FileAccess.file_exists("user://enable_git.bool"):
+						_lambda.call("user://repo/Strings.txt")
+					else:
+						Handle.fd_window = Handle.fd_scene.instantiate()
+						Handle.fd_window.file_selected.connect(_lambda)
+						Handle.fd_window.close_requested.connect(Handle.fd_window.queue_free)
+						Handle.fd_window.canceled.connect(Handle.fd_window.queue_free)
+						add_child(Handle.fd_window)
+						Handle.fd_window.show()
+				)
+				add_child(Handle.uc_window)
+			elif FileAccess.file_exists("user://enable_git.bool"):
 				_lambda.call("user://repo/Strings.txt")
 			else:
 				Handle.fd_window = Handle.fd_scene.instantiate()
@@ -347,7 +362,7 @@ func file_menu_selected(_id: int) -> void:
 		5: # Quit
 			if Handle.is_modified:
 				Handle.uc_window = Handle.uc_scene.instantiate()
-				Handle.uc_window.is_quitting = true
+				Handle.uc_window.callback.connect(tree.quit)
 				add_child(Handle.uc_window)
 			else:
 				get_tree().quit()
@@ -355,6 +370,7 @@ func file_menu_selected(_id: int) -> void:
 			# Same functionality same code
 			if Handle.is_modified:
 				Handle.uc_window = Handle.uc_scene.instantiate()
+				Handle.uc_window.callback.connect(clear_data)
 				add_child(Handle.uc_window)
 			else:
 				clear_data()
@@ -380,6 +396,7 @@ func clear_data() -> void:
 	current_box_node.value = current_box_node.min_value
 	current_color_node.color = Color.WHITE
 	Handle.last_string_id = 0
+	Handle.is_modified = false
 
 func about_menu_selected(_id: int) -> void:
 	match _id:
