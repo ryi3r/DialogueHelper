@@ -35,6 +35,11 @@ var last_thread: Thread = null
 var last_sthread: Thread = null
 
 func _ready() -> void:
+	if OS.has_environment("USERNAME"):
+		author = OS.get_environment("USERNAME")
+	elif OS.has_environment("USER"):
+		author = OS.get_environment("USER")
+	
 	file_popup.id_pressed.connect(file_menu_selected)
 	about_popup.id_pressed.connect(about_menu_selected)
 	Handle.main_node = self
