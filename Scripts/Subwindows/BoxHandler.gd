@@ -1,37 +1,56 @@
-extends Control;
+extends Control
 
-@onready var box = get_parent();
+@onready var box: WBox = get_parent()
 
-func _process(_delta):
-	queue_redraw();
+var last_layer_strings := []
+var last_layer_colors := []
+var last_pos := Vector2.ZERO
 
-func _draw():
-	custom_minimum_size = Vector2();
+func _process(_delta: float) -> void:
+	var _update := false
+	if Handle.layer_strings != last_layer_strings:
+		last_layer_strings = Handle.layer_strings.duplicate()
+		_update = true
+	if Handle.layer_colors != last_layer_colors:
+		last_layer_colors = Handle.layer_colors.duplicate()
+		_update = true
+	var _posx := box.portrait_offset.x if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.x
+	var _posy := box.portrait_offset.y if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.y
+	if Vector2(_posx, _posy) != last_pos:
+		last_pos = Vector2(_posx, _posy)
+		_update = true
+	if _update:
+		queue_redraw()
+
+func _draw() -> void:
+	custom_minimum_size = Vector2.ZERO
 	if Handle.font_data.is_empty():
-		return;
+		return
 	if Handle.user_script is GDScript:
-		var env = {};
-		var ls = Handle.layer_strings.duplicate();
-		var lc = Handle.layer_colors.duplicate();
-		for layer in range(Handle.layer_strings.size()):
-			var data = Type.UserData.new();
-			data.__parent = self;
-			data.env = env;
-			data.glyph.layer_strings = ls;
-			data.glyph.layer_colors = lc;
-			data.glyph.current_layer = layer;
-			data.glyph.vscale = Handle.visual_scale;
-			data.char.start_position.x = box.portrait_offset.x if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.x;
-			data.char.start_position.y = box.portrait_offset.y if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.y;
-			data.font = Handle.font_data[Handle.current_font];
-			for layer_char in Handle.layer_strings[layer]:
-				data.char.char = layer_char;
-				data.char.glyph = Rect2();
-				data.glyph.color = Handle.layer_colors[layer];
+		var _env := {}
+		var _ls := Handle.layer_strings.duplicate()
+		var _lc := Handle.layer_colors.duplicate()
+		
+		var _data := IUserData.new()
+		_data.__parent = self
+		_data.env = _env
+		_data.glyph.layer_strings = _ls
+		_data.glyph.layer_colors = _lc
+		_data.glyph.vscale = Handle.visual_scale
+		_data.char.start_position.x = box.portrait_offset.x if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.x
+		_data.char.start_position.y = box.portrait_offset.y if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.y
+		_data.font = Handle.font_data[Handle.current_font]
+		for _layer in range(Handle.layer_strings.size()):
+			_data.glyph.current_layer = _layer
+			_data.char.position_offset = Vector2.ZERO
+			for _layer_char: String in Handle.layer_strings[_layer]:
+				_data.char.char = _layer_char
+				_data.char.glyph = Rect2()
+				_data.glyph.color = Handle.layer_colors[_layer]
 				if Handle.style_metadata.has("NewLines"):
-					data.char.is_newline = layer_char in Handle.style_metadata["NewLines"];
+					_data.char.is_newline = (Handle.style_metadata["NewLines"] as Array).has(_layer_char)
 				if Handle.style_metadata.has("Ignore"):
-					data.char.is_ignore = layer_char in Handle.style_metadata["Ignore"];
+					_data.char.is_ignore = (Handle.style_metadata["Ignore"] as Array).has(_layer_char)
 				if Handle.user_script.has_method("draw_glyph"):
-					Handle.user_script.draw_glyph(data);
-					
+					@warning_ignore("unsafe_method_access")
+					Handle.user_script.draw_glyph(_data)

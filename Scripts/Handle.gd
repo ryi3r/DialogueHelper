@@ -1,187 +1,145 @@
-extends Node;
+extends Node
 
-var loading_scene = preload("res://Subwindows/Progress bars/Loading.tscn");
-var saving_scene = preload("res://Subwindows/Progress bars/Saving.tscn");
-var fd_scene = preload("res://Subwindows/File action/LoadFile.tscn");
-var show_info_scene = preload("res://Subwindows/ShowInfo.tscn");
-var author_scene = preload("res://Subwindows/AuthorInfo.tscn");
-var settings_scene = preload("res://Subwindows/Settings.tscn");
-var fds_scene = preload("res://Subwindows/File action/SaveFile.tscn");
-var goto_scene = preload("res://Subwindows/GoTo.tscn");
-var search_scene = preload("res://Subwindows/Search.tscn");
-var gc_scene = preload("res://Subwindows/GitConflict.tscn");
-var gcu_scene = preload("res://Subwindows/GitConflictUnreplaced.tscn");
-var se_scene = preload("res://Subwindows/StyleError.tscn");
-var ls_scene = preload("res://Subwindows/Progress bars/LoadingStyle.tscn");
-var uc_scene = preload("res://Subwindows/UnsavedChanges.tscn");
-var adh_scene = preload("res://Subwindows/AboutDh.tscn");
-var ae_scene = preload("res://Subwindows/AddEntry.tscn");
-var as_scene = preload("res://Subwindows/AddString.tscn");
+var loading_scene := preload("res://Subwindows/Progress bars/Loading.tscn")
+var saving_scene := preload("res://Subwindows/Progress bars/Saving.tscn")
+var fd_scene := preload("res://Subwindows/File action/LoadFile.tscn")
+var show_info_scene := preload("res://Subwindows/ShowInfo.tscn")
+var author_scene := preload("res://Subwindows/AuthorInfo.tscn")
+var settings_scene := preload("res://Subwindows/Settings.tscn")
+var fds_scene := preload("res://Subwindows/File action/SaveFile.tscn")
+var goto_scene := preload("res://Subwindows/GoTo.tscn")
+var search_scene := preload("res://Subwindows/Search.tscn")
+var gc_scene := preload("res://Subwindows/GitConflict.tscn")
+var gcu_scene := preload("res://Subwindows/GitConflictUnreplaced.tscn")
+var se_scene := preload("res://Subwindows/StyleError.tscn")
+var ls_scene := preload("res://Subwindows/Progress bars/LoadingStyle.tscn")
+var uc_scene := preload("res://Subwindows/UnsavedChanges.tscn")
+var adh_scene := preload("res://Subwindows/AboutDh.tscn")
+var ae_scene := preload("res://Subwindows/AddEntry.tscn")
+var as_scene := preload("res://Subwindows/AddString.tscn")
 
-var loading_window = null;
-var saving_window = null;
-var fd_window = null;
-var show_info_window = null;
-var author_window = null;
-var settings_window = null;
-var fds_window = null;
-var goto_window = null;
-var search_window = null;
-var gc_window = null;
-var gcu_window = null;
-var se_window = null;
-var ls_window = null;
-var uc_window = null;
-var adh_window = null;
-var ae_window = null;
-var as_window = null;
+var loading_window: WLoading = null
+var saving_window: WLoading = null
+var fd_window: FileDialog = null
+var show_info_window: Window = null
+var author_window: Node = null
+var settings_window: Node = null
+var fds_window: FileDialog = null
+var goto_window: Node = null
+var search_window: Node = null
+var gc_window: WGitConflict = null
+var gcu_window: Node = null
+var se_window: Node = null
+var ls_window: Node = null
+var uc_window: WUnsavedChanges = null
+var adh_window: Node = null
+var ae_window: Node = null
+var as_window: WAddString = null
 
-var style = "Template";
+var style := "Template"
 
-var font_metadata = {};
-var box_metadata = {};
-var style_metadata = {};
-var font_data = [];
-var box_data = [];
-var user_script = null;
+var font_metadata := {}
+var box_metadata := {}
+var style_metadata := {}
+var font_data := []
+var box_data := []
+var user_script := GDScript.new()
 
-var visual_scale = 1;
-var current_font = 0;
-var layers = 5;
-var layer_strings = [];
-var layer_colors = [];
+var visual_scale := 1.0
+var current_font := 0
+var layers := 5
+var layer_strings := []
+var layer_colors := []
 
-var strings = {};
-var string_table = {};
-var string_ids = {};
-var entry_names = [];
-var last_string_id = 0;
-var string_size = 0;
-var is_modified = false;
+var strings := {}
+var string_table := {}
+var string_ids := {}
+var string_sstr := {}
 
-var git = Type.Git.new();
-var main_node = null;
+var string_sstr_arr: Array[Array] = []
+var entry_names := []
+var last_string_id := 0
+var string_size := 0
+var is_modified := false
 
-func load_style(_style = null):
+var git := IGit.new()
+var main_node: WDialogueHelper = null
+
+func load_style(_style: Variant = null) -> void:
 	if _style is String:
-		style = _style;
-	font_metadata.clear();
-	box_metadata.clear();
-	style_metadata.clear();
-	font_data.clear();
-	box_data.clear();
-	var logs = [];
-	ls_window = ls_scene.instantiate();
-	add_child(ls_window);
-	var progress_bar: ProgressBar = ls_window.get_node("ProgressBar");
+		style = _style
+	font_metadata.clear()
+	box_metadata.clear()
+	style_metadata.clear()
+	font_data.clear()
+	box_data.clear()
+	var logs := PackedStringArray()
+	ls_window = ls_scene.instantiate()
+	add_child(ls_window)
+	var progress_bar: ProgressBar = ls_window.get_node("ProgressBar")
 	if FileAccess.file_exists(style_get_path("Metadata.json")):
-		style_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Metadata.json")));
+		style_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Metadata.json")))
 		if style_metadata == null:
-			logs.append("{RelativePath} had a JSON parsing error.".format({
-				"RelativePath": style_get_relative_path("Metadata.json"),
-			}));
-			style_metadata = {};
+			logs.append("%s had a JSON parsing error." % style_get_relative_path("Metadata.json"))
+			style_metadata = {}
 		elif style_metadata.has("Script"):
-				user_script = GDScript.new();
-				user_script.source_code = FileAccess.get_file_as_string(style_get_path(style_metadata["Script"]));
-				var error = user_script.reload();
+				user_script.source_code = FileAccess.get_file_as_string(style_get_path(str(style_metadata["Script"])))
+				var error := user_script.reload()
 				if error != OK:
-					logs.append("Script failed to compile with error {Error}.".format({
-						"Error": str(error),
-					}));
+					logs.append("Script failed to compile with error %s." % error)
 		if FileAccess.file_exists(style_get_path("Fonts/Metadata.json")):
-			font_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Fonts/Metadata.json")));
+			font_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Fonts/Metadata.json")))
 			if font_metadata == null:
-				logs.append("{RelativePath} had a JSON parsing error.".format({
-					"RelativePath": style_get_relative_path("Metadata.json"),
-				}));
+				logs.append("%s had a JSON parsing error." % style_get_relative_path("Metadata.json"))
 			elif font_metadata.has("Fonts"):
-				progress_bar.max_value += font_metadata["Fonts"].size();
-				for font in font_metadata["Fonts"]:
-					if FileAccess.file_exists(style_get_path("Fonts/{Font}.json".format({
-						"Font": font,
-					}))):
-						var font_json = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Fonts/{Font}.json".format({
-							"Font": font,
-						}))));
+				progress_bar.max_value += (font_metadata["Fonts"] as Array).size()
+				for font: String in font_metadata["Fonts"] as Array:
+					if FileAccess.file_exists(style_get_path("Fonts/%s.json" % font)):
+						var font_json: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Fonts/%s.json" % font)))
 						if font_json == null:
-							logs.append("{RelativePath} had a JSON parsing error.".format({
-								"RelativePath": style_get_relative_path("Fonts/{Font}.json".format({
-										"Font": font,
-									}))
-							}));
+							logs.append("%s had a JSON parsing error." % style_get_relative_path("Fonts/%s.json" % font))
 						else:
-							font_data.append(GMFont.GFont.new(font_json));
-						progress_bar.value += 1;
+							font_data.append(IFont.new(font_json))
+						progress_bar.value += 1
 					else:
-						logs.append("{RelativePath} does not exist.".format({
-							"RelativePath": style_get_relative_path("Fonts/{Font}.json".format({
-									"Font": font,
-								}))
-						}));
+						logs.append("%s does not exist." % style_get_relative_path("Fonts/%s.json" % font))
 		else:
-			logs.append("{RelativePath} does not exist.".format({
-				"RelativePath": style_get_relative_path("Fonts/Metadata.json"),
-			}))
+			logs.append("%s does not exist." % style_get_relative_path("Fonts/Metadata.json"))
 		if FileAccess.file_exists(style_get_path("Boxes/Metadata.json")):
-			box_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Boxes/Metadata.json")));
+			box_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Boxes/Metadata.json")))
 			if box_metadata == null:
-				logs.append("{RelativePath} had a JSON parsing error.".format({
-					"RelativePath": style_get_relative_path("Metadata.json"),
-				}));
+				logs.append("%s had a JSON parsing error." % style_get_relative_path("Metadata.json"))
 			elif box_metadata.has("Boxes"):
-				progress_bar.max_value += box_metadata["Boxes"].size();
-				for box in box_metadata["Boxes"]:
-					if FileAccess.file_exists(style_get_path("Boxes/{Box}.json".format({
-						"Box": box,
-					}))):
-						var box_json = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Boxes/{Box}.json".format({
-							"Box": box,
-						}))));
+				progress_bar.max_value += (box_metadata["Boxes"] as Array).size()
+				for box: String in box_metadata["Boxes"] as Array:
+					if FileAccess.file_exists(style_get_path("Boxes/%s.json" % box)):
+						var box_json: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Boxes/%s.json" % box)))
 						if box_json == null:
-							logs.append("{RelativePath} had a JSON parsing error.".format({
-								"RelativePath": style_get_relative_path("Boxes/{Box}.json".format({
-										"Box": box,
-									}))
-							}));
+							logs.append("%s had a JSON parsing error." % style_get_relative_path("Boxes/%s.json" % box))
 						else:
-							box_data.append(GMBox.GBox.new(box_json));
+							box_data.append(IBox.new(box_json))
 					else:
-						logs.append("{RelativePath} does not exist.".format({
-							"RelativePath": style_get_relative_path("Boxes/{Box}.json".format({
-									"Box": box,
-								}))
-						}));
-					progress_bar.value += 1;
+						logs.append("%s does not exist." % style_get_relative_path("Boxes/%s.json" % box))
+					progress_bar.value += 1
 		else:
-			logs.append("{RelativePath} does not exist.".format({
-				"RelativePath": style_get_relative_path("Boxes/Metadata.json"),
-			}))
-		progress_bar.value = progress_bar.max_value;
+			logs.append("%s does not exist." % style_get_relative_path("Boxes/Metadata.json"))
+		progress_bar.value = progress_bar.max_value
 	else:
-		logs.append("Style Path \"{RelativePath}\" was not found.".format({
-			"RelativePath": style_get_relative_path(""),
-		}));
-	remove_child(ls_window);
+		logs.append("Style Path \"%s\" was not found." % style_get_relative_path(""))
+	ls_window.queue_free()
 	if !logs.is_empty(): # An error ocurred.
-		se_window = se_scene.instantiate();
-		(se_window.get_node("TextEdit") as TextEdit).text = "\n".join(PackedStringArray(logs));
-		add_child(se_window);
+		se_window = se_scene.instantiate()
+		(se_window.get_node("TextEdit") as TextEdit).text = "\n".join(PackedStringArray(logs))
+		add_child(se_window)
 
-func style_get_path(path: String) -> String:
-	return "res://Styles/{Style}/{Path}".format({
-		"Style": style,
-		"Path": path,
-	});
+func style_get_path(_path: String) -> String:
+	return "res://Styles/%s/%s" % [style, _path]
 
-func style_get_relative_path(path: String) -> String:
-	return "/{Style}/{Path}".format({
-		"Style": style,
-		"Path": path,
-	});
+func style_get_relative_path(_path: String) -> String:
+	return "/%s/%s" % [style, _path]
 
-func handle_git_output(r: Type.GitResponse):
+func handle_git_output(r: IGitResponse) -> void:
 	if !r.success:
-		var w = preload("res://Subwindows/GitError.tscn").instantiate();
-		add_child(w);
-		w.get_node("TextEdit").text = "".join(PackedStringArray(r.output));
+		var w := preload("res://Subwindows/GitError.tscn").instantiate()
+		add_child(w)
+		(w.get_node("TextEdit") as TextEdit).text = "".join(PackedStringArray(r.output))

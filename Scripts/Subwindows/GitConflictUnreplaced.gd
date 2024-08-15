@@ -1,16 +1,11 @@
-extends Window;
+extends Window
 
-func _on_close_requested():
-	var t = create_tween();
-	t.tween_interval(1.0 / 60.0);
-	t.tween_callback(func():
-		get_parent().remove_child(self);
-	);
-	t.play();
+func _on_close_requested() -> void:
+	queue_free()
 
-func _on_ok_button_pressed():
-	_on_close_requested();
-	get_parent().resolved_merge_conflicts();
+func _on_ok_button_pressed() -> void:
+	queue_free()
+	(get_parent() as WGitConflict).resolved_merge_conflicts()
 
-func _on_cancel_button_pressed():
-	_on_close_requested();
+func _on_cancel_button_pressed() -> void:
+	queue_free()

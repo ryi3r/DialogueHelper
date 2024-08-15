@@ -54,7 +54,8 @@ using (OpenFileDialog openFileDialog = new OpenFileDialog())
                         header = Int32.Parse(entry);
                     }
                     else
-                    { // Data
+                    {
+                        // Data
                         //ScriptMessage(entry);
                         var sec = entry.Split(":");
                         if (sec.Length < 2)

@@ -1,48 +1,33 @@
-extends Node;
+extends Object
+class_name FileFormat
 
-class FormatEntry:
-	var kind = -1;
-	var data = {};
-	var disable_uri = [];
+static func parse_line(_line: String) -> IFormatEntry:
+	var _index := 0
+	var _last_entry := 0
+	var _got_name := false
+	var _name := ""
+	var _fe := IFormatEntry.new()
 	
-	func _to_string():
-		var stri = "";
-		for key in data.keys():
-			var value = data[key];
-			if stri.length() != 0:
-				stri += ";";
-			stri += key;
-			stri += ":";
-			stri += str(value).uri_encode() if !(key in disable_uri) else str(value);
-		return str(kind) + ";" + stri;
-
-func parse_line(line: String) -> FormatEntry:
-	var index = 0;
-	var last_entry = 0;
-	var got_name = false;
-	var _name = null;
-	var fe = FormatEntry.new();
-	for chr in line:
-		if chr == ":" && !got_name: # Entry Start
-			_name = line.substr(last_entry, index - last_entry);
-			got_name = true;
-			last_entry = index + 1;
-		elif chr == ";" || index == line.length() - 1: # Entry End
-			if !got_name:
-				fe.kind = int(line.substr(last_entry, index - last_entry).uri_decode());
-				last_entry = index + 1;
+	for _char: String in _line:
+		if _char == ":" && !_got_name: # Entry Start
+			_name = _line.substr(_last_entry, _index - _last_entry)
+			_got_name = true
+			_last_entry = _index + 1
+		elif _char == ";" || _index == _line.length() - 1: # Entry End
+			if !_got_name:
+				_fe.kind = int(_line.substr(_last_entry, _index - _last_entry).uri_decode())
+				_last_entry = _index + 1
 			else:
-				if index == line.length() - 1 && chr != ";":
-					index += 1;
-				var value = line.substr(last_entry, index - last_entry).uri_decode();
-				fe.data[_name] = value;
-				last_entry = index + 1;
-				got_name = false;
-		index += 1;
-	return fe;
+				if _index == _line.length() - 1 && _char != ";":
+					_index += 1
+				_fe.data[_name] = _line.substr(_last_entry, _index - _last_entry).uri_decode()
+				_last_entry = _index + 1
+				_got_name = false
+		_index += 1
+	return _fe
 
-func parse_file(data: String) -> Array:
-	var arr = [];
-	for line in data.replace("\r", "").split("\n"):
-		arr.append(parse_line(line));
-	return arr;
+static func parse_file(_data: String) -> Array:
+	var _arr := []
+	for _line in _data.replace("\r", "").split("\n"):
+		_arr.append(parse_line(_line))
+	return _arr

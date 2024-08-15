@@ -11,21 +11,25 @@ config_version=5
 [application]
 
 config/name="Dialogue Helper"
-config/version="1.0.2"
+config/version="1.1.0"
 run/main_scene="res://Main.tscn"
-config/features=PackedStringArray("4.2", "Forward Plus")
-run/low_processor_mode_sleep_usec=0
+config/features=PackedStringArray("4.3", "Forward Plus")
+run/max_fps=60
 boot_splash/show_image=false
 config/icon="res://icon.png"
 boot_splash/stretch/aspect="expand"
 
 [autoload]
 
-Type="*res://Scripts/DataTypes.gd"
 Handle="*res://Scripts/Handle.gd"
-FileFormat="*res://Scripts/FileFormat.gd"
-GMFont="*res://Scripts/Font.gd"
-GMBox="*res://Scripts/Box.gd"
+IFileHandler="*res://Scripts/IFileHandler.gd"
+
+[debug]
+
+gdscript/warnings/untyped_declaration=1
+gdscript/warnings/unsafe_property_access=1
+gdscript/warnings/unsafe_method_access=1
+gdscript/warnings/unsafe_call_argument=1
 
 [display]
 
@@ -35,6 +39,15 @@ window/subwindows/embed_subwindows=false
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[dotnet]
+
+project/assembly_name="Dialogue Helper"
+
+[editor]
+
+naming/scene_name_casing=1
+naming/script_name_casing=1
+
 [network]
 
 limits/debugger/max_chars_per_second=999999999
@@ -42,5 +55,4 @@ limits/debugger/max_queued_messages=999999999
 
 [rendering]
 
-renderer/rendering_method="gl_compatibility"
 shader_compiler/shader_cache/enabled=false
