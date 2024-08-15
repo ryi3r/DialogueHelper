@@ -25,26 +25,31 @@ func save_file(_path: String) -> Thread:
 			var _conflicts: Array[IGitConflict] = []
 			for _entry_name: String in Handle.strings.keys():
 				if Handle.strings.has(_entry_name) && _old_data.has(_entry_name):
-					var _i := 0
 					var _old_entry: Array = _old_data[_entry_name]
 					var _new_entry: Array = Handle.strings[_entry_name]
-					for _entry: IStringContainer in Handle.strings[_entry_name]:
-						if _entry.content != _new_entry[_i].content:
-							if _old_entry[_i].content != _new_entry[_i].content:
-								var _conflict := IGitConflict.new()
-								_conflict.string_id = _entry.id
-								_conflict.current_string = _new_entry[_i].content
-								_conflict.git_string = _old_entry[_i].content
-								_conflicts.append(_conflict)
-						elif _old_entry[_i].content != _new_entry[_i].content:
-							# The old entry was different, but the new entry
-							# contains the most recent string.
-							var _conflict := IGitConflict.new()
-							_conflict.string_id = _entry.id
-							_conflict.current_string = _new_entry[_i].content
-							_conflict.git_string = _entry.content
-							_conflicts.append(_conflict)
-						_i += 1
+					var _i := 0
+					for _entry: IStringContainer in _new_entry:
+						if _i < _old_entry.size():
+							var _oentry: IStringContainer = _old_entry[_i]
+							if _oentry.last_edited.timestamp > _entry.last_edited.timestamp:
+								if _entry.content != _entry.content:
+									if _oentry.content != _entry.content:
+										var _conflict := IGitConflict.new()
+										_conflict.string_id = _entry.id
+										_conflict.current_string = _entry.content
+										_conflict.git_string = _oentry.content
+										_conflicts.append(_conflict)
+								elif _oentry.content != _entry.content:
+									# The old entry was different, but the new entry
+									# contains the most recent string.
+									var _conflict := IGitConflict.new()
+									_conflict.string_id = _entry.id
+									_conflict.current_string = _entry.content
+									_conflict.git_string = _oentry.content
+									_conflicts.append(_conflict)
+							_i += 1
+						else:
+							break
 			if !_conflicts.is_empty():
 				Handle.gc_window.conflicts = _conflicts
 				call_deferred("add_child", Handle.gc_window)
