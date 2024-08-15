@@ -1,5 +1,6 @@
 {
 	"Name": "Template",
+	"Author": "ryi3r",
 	"Script": "Script.gd",
 	"NewLines": [],
 	"Ignore": []
