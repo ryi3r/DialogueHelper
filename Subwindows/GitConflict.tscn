@@ -22,6 +22,7 @@ offset_right = -10.0
 offset_bottom = -10.0
 grow_horizontal = 0
 grow_vertical = 0
+focus_mode = 0
 text = "Done"
 
 [node name="LabelConflict" type="Label" parent="."]
@@ -105,6 +106,7 @@ offset_left = 538.0
 offset_top = 135.0
 offset_right = 652.0
 offset_bottom = 166.0
+focus_mode = 0
 text = "Keep Git"
 
 [node name="ButtonOg" type="Button" parent="."]
@@ -112,6 +114,7 @@ offset_left = 538.0
 offset_top = 100.0
 offset_right = 652.0
 offset_bottom = 131.0
+focus_mode = 0
 text = "Keep Current"
 
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]

@@ -121,6 +121,7 @@ offset_left = 5.0
 offset_top = -72.0
 offset_right = 126.0
 offset_bottom = -41.0
+focus_mode = 0
 text = "Add new Entry"
 
 [node name="AddString" type="Button" parent="DialogueEdit"]
@@ -129,6 +130,7 @@ offset_left = 449.0
 offset_top = -72.0
 offset_right = 574.0
 offset_bottom = -41.0
+focus_mode = 0
 text = "Add new String"
 
 [node name="DisplaySettings" type="Control" parent="."]
@@ -155,7 +157,6 @@ offset_left = 134.0
 offset_top = -5.0
 offset_right = 217.063
 offset_bottom = 26.0
-focus_mode = 1
 min_value = 1.0
 value = 1.0
 rounded = true
@@ -174,7 +175,6 @@ offset_left = 134.0
 offset_top = -3.0
 offset_right = 217.063
 offset_bottom = 28.0
-focus_mode = 1
 min_value = 1.0
 value = 1.0
 rounded = true
@@ -232,7 +232,6 @@ offset_left = 134.0
 offset_top = -5.0
 offset_right = 217.063
 offset_bottom = 26.0
-focus_mode = 1
 step = 0.01
 value = 1.0
 alignment = 2
@@ -251,7 +250,7 @@ offset_left = 169.0
 offset_top = -3.0
 offset_right = 201.0
 offset_bottom = 28.0
-focus_mode = 1
+focus_mode = 0
 color = Color(1, 1, 1, 1)
 edit_alpha = false
 
@@ -269,6 +268,7 @@ offset_left = 8.0
 offset_top = 86.0
 offset_right = 276.0
 offset_bottom = 688.0
+focus_mode = 0
 allow_reselect = true
 
 [node name="StringSelector" type="Label" parent="."]
@@ -285,6 +285,7 @@ offset_left = 1.0
 offset_top = 34.0
 offset_right = 208.0
 offset_bottom = 191.0
+focus_mode = 0
 allow_reselect = true
 
 [node name="SimilarEntries" type="Label" parent="."]
@@ -301,6 +302,7 @@ offset_left = 2.0
 offset_top = 33.0
 offset_right = 208.0
 offset_bottom = 210.0
+focus_mode = 0
 
 [connection signal="pressed" from="Panel/MenuBar/Container/GoTo" to="." method="open_go_to_menu"]
 [connection signal="pressed" from="Panel/MenuBar/Container/Search" to="." method="open_search_menu"]

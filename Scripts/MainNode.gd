@@ -39,6 +39,7 @@ var current_box := 0
 
 var last_thread: Thread = null
 var last_sthread: Thread = null
+var last_size := Vector2i.ZERO
 
 func _ready() -> void:
 	tree.root.min_size = Vector2(1100, 700)
@@ -75,20 +76,21 @@ func _ready() -> void:
 	update_font(current_font_id)
 
 func _process(_delta: float) -> void:
-	panel.size.x = tree.root.size.x
-	display_settings.position.x = tree.root.size.x - (1100 - 876)
-	
-	string_selector_parent.position.x = tree.root.size.x - (1100 - 881)
-	similar_entries_parent.position.x = tree.root.size.x - (1100 - 879)
-	#string_selector_parent.position.y = tree.root.size.y - (700 - 497)
-	box.size.x = tree.root.size.x - (1100 - 580)
-	box.size.y = tree.root.size.y - (700 - 400)
-	dialogue_edit.position.y = tree.root.size.y - (700 - 530)
-	dialogue_edit.size.x = tree.root.size.x - (1100 - 587)
-	add_string.position.x = (dialogue_edit.size.x - 587) + 449
-	replace_similar.position.x = (dialogue_edit.size.x - 587) + 353
-	dialogue_selector.size.y = tree.root.size.y - (700 - 602)
-	string_selector.size.y = tree.root.size.y - (700 - 157)
+	if last_size != tree.root.size:
+		last_size = tree.root.size
+		panel.size.x = tree.root.size.x
+		display_settings.position.x = tree.root.size.x - (1100 - 876)
+		
+		string_selector_parent.position.x = tree.root.size.x - (1100 - 881)
+		similar_entries_parent.position.x = tree.root.size.x - (1100 - 879)
+		box.size.x = tree.root.size.x - (1100 - 580)
+		box.size.y = tree.root.size.y - (700 - 400)
+		dialogue_edit.position.y = tree.root.size.y - (700 - 530)
+		dialogue_edit.size.x = tree.root.size.x - (1100 - 587)
+		add_string.position.x = (dialogue_edit.size.x - 587) + 449
+		replace_similar.position.x = (dialogue_edit.size.x - 587) + 353
+		dialogue_selector.size.y = tree.root.size.y - (700 - 602)
+		string_selector.size.y = tree.root.size.y - (700 - 157)
 	
 	current_font_node.max_value = Handle.font_data.size()
 	current_box_node.max_value = Handle.box_data.size()
@@ -99,26 +101,21 @@ func _process(_delta: float) -> void:
 		current_layer = int(current_layer_node.value) - 1
 		current_color_node.color = Handle.layer_colors[current_layer]
 		dialogue_edit.text = Handle.layer_strings[current_layer]
-	var _item: String = ""
 	if current_font_node.value - 1 != current_font_id:
 		update_font(int(current_font_node.value - 1))
 		if dialogue_selector.get_selected_items().size() > 0:
-			_item = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
+			var _item := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
 			if Handle.strings.has(_item):
 				Handle.strings[_item][string_selector.get_selected_items()[0]].font_style = current_font_id
 	if current_box_node.value - 1 != current_box:
 		update_box(int(current_box_node.value - 1))
 		if dialogue_selector.get_selected_items().size() > 0:
-			_item = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
+			var _item := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
 			if Handle.strings.has(_item):
 				Handle.strings[_item][string_selector.get_selected_items()[0]].box_style = current_box
 	if current_scale_node.value != Handle.visual_scale:
 		Handle.is_modified = true
 		Handle.visual_scale = current_scale_node.value
-		if dialogue_selector.get_selected_items().size() > 0:
-			_item = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
-			if Handle.strings.has(_item):
-				Handle.strings[_item][string_selector.get_selected_items()[0]].font_scale = current_scale_node.value
 		box.handle.queue_redraw()
 		box.spr.scale = Vector2(Handle.visual_scale, Handle.visual_scale)
 		var _f := FileAccess.open("user://scale.txt", FileAccess.WRITE)
@@ -134,7 +131,7 @@ func _process(_delta: float) -> void:
 		Handle.is_modified = true
 		Handle.layer_colors[current_layer] = current_color_node.color
 	if dialogue_selector.get_selected_items().size() > 0:
-		_item = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
+		var _item := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
 		if Handle.strings.has(_item):
 			var _s := string_selector.get_selected_items()
 			var _i := _s[0] if _s.size() > 0 else 0
@@ -444,7 +441,7 @@ func open_go_to_menu() -> void:
 			if Handle.strings.has(_item[0]):
 				change_to(_item[0], int(_item[1]) - 1)
 				string_selector.clear()
-				for _stri: IUserGlyph in Handle.strings[_item[0]]:
+				for _stri: IStringContainer in Handle.strings[_item[0]]:
 					string_selector.add_item(str(_stri.layer_strings[0]))
 				string_selector.select(int(_item[1]) - 1)
 				string_selector.ensure_current_is_visible()
@@ -453,7 +450,7 @@ func open_go_to_menu() -> void:
 						dialogue_selector.select(_i)
 						dialogue_selector.ensure_current_is_visible()
 						break
-			Handle.goto_window.queue_free()
+		Handle.goto_window.queue_free()
 	)
 
 func entry_search_text_changed(_t: String) -> void:

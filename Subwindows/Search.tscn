@@ -23,6 +23,7 @@ offset_right = -10.0
 offset_bottom = -9.0
 grow_horizontal = 0
 grow_vertical = 0
+focus_mode = 0
 text = "Search"
 
 [node name="SearchTypeLabel" type="Label" parent="."]
@@ -38,6 +39,7 @@ offset_left = 100.0
 offset_top = -3.0
 offset_right = 191.0
 offset_bottom = 28.0
+focus_mode = 0
 selected = 1
 item_count = 2
 popup/item_0/text = "Entry"

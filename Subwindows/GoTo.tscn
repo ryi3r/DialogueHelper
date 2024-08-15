@@ -32,6 +32,7 @@ offset_left = 510.0
 offset_top = -2.0
 offset_right = 544.0
 offset_bottom = 29.0
+focus_mode = 0
 text = "Go!"
 
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]

@@ -38,6 +38,7 @@ offset_right = -69.0
 offset_bottom = -4.0
 grow_horizontal = 0
 grow_vertical = 0
+focus_mode = 0
 text = "OK"
 
 [node name="CancelButton" type="Button" parent="."]
@@ -52,6 +53,7 @@ offset_right = -5.0
 offset_bottom = -4.0
 grow_horizontal = 0
 grow_vertical = 0
+focus_mode = 0
 text = "Cancel"
 
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]

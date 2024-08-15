@@ -27,6 +27,7 @@ offset_left = 10.0
 offset_top = 150.0
 offset_right = 306.0
 offset_bottom = 181.0
+focus_mode = 0
 text = "Yes, I am aware of the consequences."
 
 [node name="CancelButton" type="Button" parent="."]
@@ -34,6 +35,7 @@ offset_left = 10.0
 offset_top = 190.0
 offset_right = 185.0
 offset_bottom = 221.0
+focus_mode = 0
 text = "No, I want to go back."
 
 [connection signal="close_requested" from="." to="." method="_on_close_requested"]

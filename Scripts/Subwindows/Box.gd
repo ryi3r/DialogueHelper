@@ -17,8 +17,11 @@ func _process(_delta: float) -> void:
 	scale = Vector2.ZERO
 	if !Handle.box_data.is_empty() && current_box < Handle.box_data.size():
 		var box: IBox = Handle.box_data[current_box]
-		spr.texture = box.texture
+		if spr.texture != box.texture:
+			spr.texture = box.texture
 		supports_portrait = box.supports_portrait
 		dialogue_offset = box.dialogue_offset
 		portrait_offset = box.portrait_offset
-		scale = Vector2(box.scale, box.scale)
+		var _scale := Vector2(box.scale, box.scale)
+		if _scale != scale:
+			scale = _scale
