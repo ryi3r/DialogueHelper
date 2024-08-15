@@ -23,7 +23,6 @@ using (SaveFileDialog saveFileDialog = new SaveFileDialog())
 
         using (StreamWriter writer = new StreamWriter(fileStream))
         {
-            int id = 0;
             foreach (var code in Data.Code)
             {
                 if (code == null)
@@ -41,10 +40,9 @@ using (SaveFileDialog saveFileDialog = new SaveFileDialog())
                             writer.WriteLine("0;ID:" + Uri.EscapeDataString(code.Name.Content));
                         }
                         var str = ((UndertaleString)((UndertaleResourceById<UndertaleString, UndertaleChunkSTRG>)instruction.Value).Resource).Content;
-                        writer.WriteLine("1;ID:" + id.ToString() + ";OriginalContent:" + Uri.EscapeDataString(str));
+                        writer.WriteLine("1;OriginalContent:" + Uri.EscapeDataString(str));
                     }
                 }
-                id += 1;
             }
             writer.Write("8;"); // File end.
         }

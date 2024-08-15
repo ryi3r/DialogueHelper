@@ -287,6 +287,7 @@ func file_menu_selected(_id: int) -> void:
 				Handle.fd_window = Handle.fd_scene.instantiate()
 				Handle.fd_window.file_selected.connect(_lambda)
 				Handle.fd_window.close_requested.connect(Handle.fd_window.queue_free)
+				Handle.fd_window.canceled.connect(Handle.fd_window.queue_free)
 				add_child(Handle.fd_window)
 				Handle.fd_window.show()
 		2: # Save File
@@ -307,6 +308,7 @@ func file_menu_selected(_id: int) -> void:
 				Handle.fds_window = Handle.fds_scene.instantiate()
 				Handle.fds_window.file_selected.connect(_lambda)
 				Handle.fds_window.close_requested.connect(Handle.fds_window.queue_free)
+				Handle.fds_window.canceled.connect(Handle.fds_window.queue_free)
 				add_child(Handle.fds_window)
 				Handle.fds_window.show()
 		3: # Settings
@@ -335,6 +337,9 @@ func clear_data() -> void:
 	Handle.strings.clear()
 	Handle.string_ids.clear()
 	Handle.string_table.clear()
+	Handle.string_sstr.clear()
+	Handle.string_sstr_arr.clear()
+	
 	for _i in range(Handle.layer_colors.size()):
 		Handle.layer_colors[_i] = Color.WHITE
 	for _i in range(Handle.layer_strings.size()):

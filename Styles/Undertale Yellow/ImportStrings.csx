@@ -43,7 +43,6 @@ using (OpenFileDialog openFileDialog = new OpenFileDialog())
                 var entries = line.Split(";");
                 var i = 0;
                 int header = -1;
-                var cid = 0;
                 var og_content = "";
                 var set_og = true;
                 var content = "";
@@ -73,11 +72,7 @@ using (OpenFileDialog openFileDialog = new OpenFileDialog())
                             }
                             break;
                             case 1: // Add String
-                            if (name == "ID")
-                            {
-                                cid = Int32.Parse(value);
-                            }
-                            else if (name == "OriginalContent")
+                            if (name == "OriginalContent")
                             {
                                 og_content = value;
                             }

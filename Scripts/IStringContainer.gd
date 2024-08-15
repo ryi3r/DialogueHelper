@@ -15,13 +15,8 @@ var enable_portrait := false
 
 var equal_strings_index := -1
 
-func _init(json: Variant = null) -> void:
-	var _json := {}
-	if json is IFormatEntry:
-		_json = json.data
-	elif json is Dictionary:
-		_json = json
-	
+func _init(json: IFormatEntry = null) -> void:
+	var _json := json.data
 	if "ID" in _json:
 		id = _json["ID"] as int
 	if "OriginalContent" in _json:
@@ -61,12 +56,14 @@ func _init(json: Variant = null) -> void:
 		font_scale = _json["FontScale"] as int
 	if "EnablePortrait" in _json:
 		enable_portrait = _json["EnablePortrait"] as bool
+	if "EqualStringsIndex" in _json:
+		equal_strings_index = _json["EqualStringsIndex"] as int
 
 func _to_string() -> String:
 	var _entry := IFormatEntry.new()
 	_entry.disable_uri = ["LayerStrings", "LayerColors", "LastEdited"]
 	_entry.kind = 1
-	_entry.data["ID"] = id
+	#_entry.data["ID"] = id
 	if content != original_content:
 		_entry.data["Content"] = content
 	_entry.data["OriginalContent"] = original_content
@@ -98,6 +95,8 @@ func _to_string() -> String:
 		_entry.data["FontScale"] = font_scale
 	if enable_portrait:
 		_entry.data["EnablePortrait"] = enable_portrait
+	if equal_strings_index != -1:
+		_entry.data["EqualStringsIndex"] = equal_strings_index
 	return str(_entry)
 
 func update() -> void:
@@ -108,7 +107,7 @@ func update() -> void:
 	if layer_colors.is_empty():
 		while layer_colors.size() < Handle.layers:
 			layer_colors.append(Color.WHITE)
-	if !(id is int):
+	if id is not int:
 		push_warning("ID is not an Integer!")
 	elif id < 0:
 		push_warning("ID is not initialized (ID < 0)!")
