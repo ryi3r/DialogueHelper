@@ -23,6 +23,7 @@ offset_right = -79.0
 offset_bottom = -10.0
 grow_horizontal = 0
 grow_vertical = 0
+focus_mode = 0
 text = "OK"
 
 [node name="CancelButton" type="Button" parent="."]
@@ -37,6 +38,7 @@ offset_right = -10.0
 offset_bottom = -10.0
 grow_horizontal = 0
 grow_vertical = 0
+focus_mode = 0
 text = "Cancel"
 
 [node name="EnableGit" type="CheckBox" parent="."]

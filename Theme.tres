@@ -1,0 +1,15 @@
+[gd_resource type="Theme" load_steps=5 format=3 uid="uid://diedt7gjaaeij"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r33xn"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ubgh5"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ggd1p"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_e0k70"]
+
+[resource]
+ItemList/styles/focus = SubResource("StyleBoxEmpty_r33xn")
+LineEdit/styles/focus = SubResource("StyleBoxEmpty_ubgh5")
+OptionButton/styles/focus = SubResource("StyleBoxEmpty_ggd1p")
+TextEdit/styles/focus = SubResource("StyleBoxEmpty_e0k70")
