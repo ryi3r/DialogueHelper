@@ -5,7 +5,7 @@
 [node name="Settings" type="Window"]
 title = "Settings"
 initial_position = 2
-size = Vector2i(500, 350)
+size = Vector2i(700, 350)
 transient = true
 exclusive = true
 unresizable = true
@@ -69,7 +69,7 @@ P.D:   You need to have already installed git and have it
 layout_mode = 0
 offset_left = 115.0
 offset_top = -3.0
-offset_right = 265.0
+offset_right = 415.0
 offset_bottom = 28.0
 
 [node name="ValidLabel" type="Label" parent="EnableGit/RepoLabel"]
@@ -85,7 +85,7 @@ text = "Url is valid."
 layout_mode = 0
 offset_left = 100.0
 offset_top = -3.0
-offset_right = 350.0
+offset_right = 600.0
 offset_bottom = 28.0
 
 [node name="FontStyle" type="Label" parent="."]
@@ -99,14 +99,14 @@ text = "Font Style:"
 layout_mode = 0
 offset_left = 100.0
 offset_top = -3.0
-offset_right = 278.0
+offset_right = 400.0
 offset_bottom = 28.0
-item_count = 2
 selected = 0
+item_count = 2
 popup/item_0/text = "Template"
 popup/item_0/id = 1
 popup/item_1/text = "Undertale Yellow"
-popup/item_1/id = 0
+popup/item_1/id = 1
 
 [node name="Author" type="Label" parent="FontStyle"]
 layout_mode = 0
@@ -120,7 +120,7 @@ text = "Author:"
 layout_mode = 0
 offset_left = 90.0
 offset_top = -3.0
-offset_right = 240.0
+offset_right = 390.0
 offset_bottom = 28.0
 text = "AuthorName"
 placeholder_text = "No name."

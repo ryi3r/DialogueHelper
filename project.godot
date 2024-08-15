@@ -15,6 +15,7 @@ config/version="1.1.0"
 run/main_scene="res://Main.tscn"
 config/features=PackedStringArray("4.3", "Forward Plus")
 run/max_fps=60
+boot_splash/bg_color=Color(0.145098, 0.145098, 0.145098, 1)
 boot_splash/show_image=false
 config/icon="res://icon.png"
 boot_splash/stretch/aspect="expand"
@@ -36,7 +37,6 @@ gdscript/warnings/unsafe_call_argument=1
 window/size/viewport_width=1100
 window/size/viewport_height=700
 window/subwindows/embed_subwindows=false
-window/stretch/mode="canvas_items"
 
 [dotnet]
 
@@ -55,3 +55,4 @@ limits/debugger/max_queued_messages=999999999
 [rendering]
 
 shader_compiler/shader_cache/enabled=false
+environment/defaults/default_clear_color=Color(0.160784, 0.172549, 0.254902, 1)

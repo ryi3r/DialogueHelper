@@ -1,13 +1,16 @@
-[gd_scene load_steps=3 format=3 uid="uid://dsotjep87sau4"]
+[gd_scene load_steps=4 format=3 uid="uid://dsotjep87sau4"]
 
 [ext_resource type="Script" path="res://Scripts/MainNode.gd" id="1_4lgbp"]
 [ext_resource type="PackedScene" uid="uid://d4chixre3rvi5" path="res://Subwindows/Box.tscn" id="2_71puv"]
+
+[sub_resource type="Theme" id="Theme_8vexb"]
 
 [node name="Main" type="Control"]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 1100.0
 offset_bottom = 700.0
+theme = SubResource("Theme_8vexb")
 script = ExtResource("1_4lgbp")
 
 [node name="Box" parent="." instance=ExtResource("2_71puv")]
@@ -84,42 +87,8 @@ layout_mode = 2
 focus_mode = 0
 text = "Reload Style"
 
-[node name="EnablePortrait" type="CheckBox" parent="."]
-layout_mode = 0
-offset_left = 283.0
-offset_top = 491.0
-offset_right = 432.0
-offset_bottom = 522.0
-focus_mode = 0
-text = "Enable portrait"
-
-[node name="ReplaceSimilar" type="CheckBox" parent="."]
-layout_mode = 0
-offset_left = 636.0
-offset_top = 489.0
-offset_right = 868.0
-offset_bottom = 520.0
-focus_mode = 0
-button_pressed = true
-text = "Replace all similar entries"
-
-[node name="AddEntry" type="Button" parent="."]
-layout_mode = 0
-offset_left = 288.0
-offset_top = 458.0
-offset_right = 409.0
-offset_bottom = 489.0
-text = "Add new Entry"
-
-[node name="AddString" type="Button" parent="."]
-layout_mode = 0
-offset_left = 732.0
-offset_top = 458.0
-offset_right = 857.0
-offset_bottom = 489.0
-text = "Add new String"
-
 [node name="DialogueEdit" type="TextEdit" parent="."]
+clip_contents = false
 layout_mode = 0
 offset_left = 283.0
 offset_top = 530.0
@@ -128,16 +97,56 @@ offset_bottom = 688.0
 focus_mode = 1
 placeholder_text = "Put your Dialogue text here to try it out."
 
+[node name="EnablePortrait" type="CheckBox" parent="DialogueEdit"]
+layout_mode = 0
+offset_top = -39.0
+offset_right = 149.0
+offset_bottom = -8.0
+focus_mode = 0
+text = "Enable portrait"
+
+[node name="ReplaceSimilar" type="CheckBox" parent="DialogueEdit"]
+layout_mode = 0
+offset_left = 353.0
+offset_top = -41.0
+offset_right = 585.0
+offset_bottom = -10.0
+focus_mode = 0
+button_pressed = true
+text = "Replace all similar entries"
+
+[node name="AddEntry" type="Button" parent="DialogueEdit"]
+layout_mode = 0
+offset_left = 5.0
+offset_top = -72.0
+offset_right = 126.0
+offset_bottom = -41.0
+text = "Add new Entry"
+
+[node name="AddString" type="Button" parent="DialogueEdit"]
+layout_mode = 0
+offset_left = 449.0
+offset_top = -72.0
+offset_right = 574.0
+offset_bottom = -41.0
+text = "Add new String"
+
 [node name="DisplaySettings" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 0
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -224.0
+offset_top = 48.0
+offset_right = -224.0
+offset_bottom = 48.0
+grow_horizontal = 0
 
 [node name="CurrentLayer" type="Label" parent="DisplaySettings"]
 layout_mode = 0
-offset_left = 877.0
-offset_top = 53.0
-offset_right = 965.0
-offset_bottom = 76.0
+offset_top = 5.0
+offset_right = 88.0
+offset_bottom = 28.0
 text = "Text Layer:"
 
 [node name="Num" type="SpinBox" parent="DisplaySettings/CurrentLayer"]
@@ -154,10 +163,9 @@ alignment = 2
 
 [node name="CurrentBox" type="Label" parent="DisplaySettings"]
 layout_mode = 0
-offset_left = 877.0
-offset_top = 100.0
-offset_right = 917.0
-offset_bottom = 123.0
+offset_top = 52.0
+offset_right = 40.0
+offset_bottom = 75.0
 text = "Box:"
 
 [node name="Num" type="SpinBox" parent="DisplaySettings/CurrentBox"]
@@ -184,10 +192,9 @@ horizontal_alignment = 2
 
 [node name="CurrentFont" type="Label" parent="DisplaySettings"]
 layout_mode = 0
-offset_left = 877.0
-offset_top = 149.0
-offset_right = 917.0
-offset_bottom = 172.0
+offset_top = 101.0
+offset_right = 40.0
+offset_bottom = 124.0
 focus_mode = 1
 text = "Font:"
 
@@ -214,11 +221,10 @@ horizontal_alignment = 2
 
 [node name="CurrentScale" type="Label" parent="DisplaySettings"]
 layout_mode = 0
-offset_left = 877.0
-offset_top = 195.0
-offset_right = 965.0
-offset_bottom = 218.0
-text = "Text Scale:"
+offset_top = 147.0
+offset_right = 45.0
+offset_bottom = 170.0
+text = "Scale:"
 
 [node name="Num" type="SpinBox" parent="DisplaySettings/CurrentScale"]
 layout_mode = 0
@@ -234,10 +240,9 @@ custom_arrow_step = 0.01
 
 [node name="CurrentColor" type="Label" parent="DisplaySettings"]
 layout_mode = 0
-offset_left = 877.0
-offset_top = 238.0
-offset_right = 970.0
-offset_bottom = 261.0
+offset_top = 190.0
+offset_right = 93.0
+offset_bottom = 213.0
 text = "Layer Color:"
 
 [node name="Picker" type="ColorPickerButton" parent="DisplaySettings/CurrentColor"]
@@ -285,9 +290,9 @@ allow_reselect = true
 [node name="SimilarEntries" type="Label" parent="."]
 layout_mode = 0
 offset_left = 879.0
-offset_top = 362.0
+offset_top = 281.0
 offset_right = 1045.0
-offset_bottom = 385.0
+offset_bottom = 304.0
 text = "Similar String entries:"
 
 [node name="ItemList" type="ItemList" parent="SimilarEntries"]
@@ -295,14 +300,14 @@ layout_mode = 0
 offset_left = 2.0
 offset_top = 33.0
 offset_right = 208.0
-offset_bottom = 122.0
+offset_bottom = 210.0
 
 [connection signal="pressed" from="Panel/MenuBar/Container/GoTo" to="." method="open_go_to_menu"]
 [connection signal="pressed" from="Panel/MenuBar/Container/Search" to="." method="open_search_menu"]
 [connection signal="pressed" from="Panel/MenuBar/Container/ReloadStyle" to="." method="_on_reload_style_pressed"]
-[connection signal="pressed" from="AddEntry" to="." method="_on_add_entry_pressed"]
-[connection signal="pressed" from="AddString" to="." method="_on_add_string_pressed"]
 [connection signal="text_changed" from="DialogueEdit" to="." method="_on_dialogue_edit_text_changed"]
+[connection signal="pressed" from="DialogueEdit/AddEntry" to="." method="_on_add_entry_pressed"]
+[connection signal="pressed" from="DialogueEdit/AddString" to="." method="_on_add_string_pressed"]
 [connection signal="text_changed" from="EntrySearch" to="." method="entry_search_text_changed"]
 [connection signal="item_selected" from="EntryList" to="." method="_on_item_list_item_selected"]
 [connection signal="item_selected" from="StringSelector/ItemList" to="." method="_on_item_list_item_selected_str"]

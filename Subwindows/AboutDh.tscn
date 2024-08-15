@@ -6,6 +6,7 @@
 title = "About DH..."
 initial_position = 2
 size = Vector2i(300, 150)
+unresizable = true
 always_on_top = true
 script = ExtResource("1_2nqyt")
 

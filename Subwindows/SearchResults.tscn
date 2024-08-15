@@ -6,13 +6,15 @@
 title = "Search Results."
 initial_position = 1
 size = Vector2i(600, 600)
-unresizable = true
 always_on_top = true
 script = ExtResource("1_4btke")
 
 [node name="ItemList" type="ItemList" parent="."]
-offset_right = 600.0
-offset_bottom = 600.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 allow_reselect = true
 item_count = 1
 

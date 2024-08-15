@@ -19,10 +19,16 @@ var author := "DefaultUsername"
 @onready var dialogue_selector: ItemList = $EntryList
 @onready var string_selector: ItemList = $StringSelector/ItemList
 
-@onready var replace_similar: CheckBox = $ReplaceSimilar
-@onready var enable_portrait: CheckBox = $EnablePortrait
-@onready var add_entry: Button = $AddEntry
-@onready var add_string: Button = $AddString
+@onready var replace_similar: CheckBox = $DialogueEdit/ReplaceSimilar
+@onready var enable_portrait: CheckBox = $DialogueEdit/EnablePortrait
+@onready var add_entry: Button = $DialogueEdit/AddEntry
+@onready var add_string: Button = $DialogueEdit/AddString
+
+@onready var tree := get_tree()
+@onready var panel: Control = $Panel
+@onready var display_settings: Control = $DisplaySettings
+@onready var string_selector_parent: Control = $StringSelector
+@onready var similar_entries_parent: Control = $SimilarEntries
 
 var current_layer := 0
 var current_font_id := 0
@@ -35,6 +41,7 @@ var last_thread: Thread = null
 var last_sthread: Thread = null
 
 func _ready() -> void:
+	tree.root.min_size = Vector2(1100, 700)
 	if OS.has_environment("USERNAME"):
 		author = OS.get_environment("USERNAME")
 	elif OS.has_environment("USER"):
@@ -52,6 +59,8 @@ func _ready() -> void:
 			_branch = FileAccess.get_file_as_string("user://git_branch.txt")
 		Handle.git.url = FileAccess.get_file_as_string("user://git_url.txt")
 		Handle.git.branch = _branch
+	if FileAccess.file_exists("user://scale.txt"):
+		current_scale_node.value = int(FileAccess.get_file_as_string("user://scale.txt").strip_escapes())
 	
 	current_layer_node.max_value = Handle.layers
 	current_font_node.max_value = 8
@@ -66,6 +75,21 @@ func _ready() -> void:
 	update_font(current_font_id)
 
 func _process(_delta: float) -> void:
+	panel.size.x = tree.root.size.x
+	display_settings.position.x = tree.root.size.x - (1100 - 876)
+	
+	string_selector_parent.position.x = tree.root.size.x - (1100 - 881)
+	similar_entries_parent.position.x = tree.root.size.x - (1100 - 879)
+	#string_selector_parent.position.y = tree.root.size.y - (700 - 497)
+	box.size.x = tree.root.size.x - (1100 - 580)
+	box.size.y = tree.root.size.y - (700 - 400)
+	dialogue_edit.position.y = tree.root.size.y - (700 - 530)
+	dialogue_edit.size.x = tree.root.size.x - (1100 - 587)
+	add_string.position.x = (dialogue_edit.size.x - 587) + 449
+	replace_similar.position.x = (dialogue_edit.size.x - 587) + 353
+	dialogue_selector.size.y = tree.root.size.y - (700 - 602)
+	string_selector.size.y = tree.root.size.y - (700 - 157)
+	
 	current_font_node.max_value = Handle.font_data.size()
 	current_box_node.max_value = Handle.box_data.size()
 	add_string.disabled = dialogue_selector.get_selected_items().is_empty()
@@ -95,6 +119,12 @@ func _process(_delta: float) -> void:
 			_item = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
 			if Handle.strings.has(_item):
 				Handle.strings[_item][string_selector.get_selected_items()[0]].font_scale = current_scale_node.value
+		box.handle.queue_redraw()
+		box.spr.scale = Vector2(Handle.visual_scale, Handle.visual_scale)
+		var _f := FileAccess.open("user://scale.txt", FileAccess.WRITE)
+		_f.store_string(str(Handle.visual_scale))
+		_f.flush()
+		_f.close()
 	while Handle.layer_strings.size() < Handle.layers:
 		Handle.layer_strings.append("")
 	while Handle.layer_colors.size() < Handle.layers:
@@ -159,7 +189,6 @@ func _on_item_list_item_selected_str(_index: int) -> void:
 		_t.tween_callback(func() -> void:
 			current_font_node.set_value(_stri.font_style + 1)
 			current_box_node.set_value(_stri.box_style + 1)
-			current_scale_node.set_value(_stri.font_scale)
 		).set_delay(1.0 / 60.0)
 		_t.play()
 		current_color_node.color = Handle.layer_colors[current_layer]
@@ -189,7 +218,6 @@ func change_to(item: String, index: int = 0) -> void:
 			_t.tween_callback(func() -> void:
 				current_font_node.set_value(_stri.font_style + 1)
 				current_box_node.set_value(_stri.box_style + 1)
-				current_scale_node.set_value(_stri.font_scale)
 			).set_delay(1.0 / 60.0)
 			_t.play()
 			current_color_node.color = Handle.layer_colors[current_layer]
@@ -350,6 +378,7 @@ func clear_data() -> void:
 	for _i in range(Handle.layer_strings.size()):
 		Handle.layer_strings[_i] = ""
 	dialogue_edit.text = ""
+	current_color_node.color = Color.WHITE
 	current_font_node.value = current_font_node.min_value
 	current_box_node.value = current_box_node.min_value
 	current_color_node.color = Color.WHITE
@@ -366,14 +395,14 @@ func about_menu_selected(_id: int) -> void:
 			var _n: Label = Handle.show_info_window.get_node("Label")
 			var _n2: Label = Handle.show_info_window.get_node("Label2")
 			var _l: LineEdit = Handle.show_info_window.get_node("LineEdit")
-			var _l2: LineEdit = Handle.show_info_window.get_node("LineEdit2")
+			var _l2: TextEdit = Handle.show_info_window.get_node("LineEdit2")
 			if dialogue_selector.get_selected_items().size() > 0 && string_selector.get_selected_items().size() > 0:
 				var _ename := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
 				var _eindex := string_selector.get_selected_items()[0]
 				var _laste := (Handle.strings[_ename][_eindex] as IStringContainer).last_edited
 				var _td := Time.get_datetime_dict_from_unix_time(_laste.timestamp + int((Time.get_time_zone_from_system().bias as int) * 60)) # Local timezone?
 				if _laste.author == "" || _laste.timestamp == -1:
-					_n2.text = "No last edit was made."
+					_n2.text = "\n\n\nNo last edit was made."
 				else:
 					_n2.text = _n2.text \
 						.replace("AUTHOR_NAME", _laste.author) \

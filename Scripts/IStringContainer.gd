@@ -10,13 +10,12 @@ var layer_strings: Array[String] = []
 var layer_colors: Array[Color] = []
 var box_style := 0
 var font_style := 0
-var font_scale := 1.0
 var enable_portrait := false
 
 var equal_strings_index := -1
 
 func _init(json: IFormatEntry = null) -> void:
-	var _json := json.data
+	var _json := json.data if json != null else {}
 	if "ID" in _json:
 		id = _json["ID"] as int
 	if "OriginalContent" in _json:
@@ -52,8 +51,6 @@ func _init(json: IFormatEntry = null) -> void:
 		box_style = _json["BoxStyle"] as int
 	if "FontStyle" in _json:
 		font_style = _json["FontStyle"] as int
-	if "FontScale" in _json:
-		font_scale = _json["FontScale"] as int
 	if "EnablePortrait" in _json:
 		enable_portrait = _json["EnablePortrait"] as bool
 	if "EqualStringsIndex" in _json:
@@ -91,8 +88,6 @@ func _to_string() -> String:
 		_entry.data["BoxStyle"] = box_style
 	if font_style != 0:
 		_entry.data["FontStyle"] = font_style
-	if font_scale != 1:
-		_entry.data["FontScale"] = font_scale
 	if enable_portrait:
 		_entry.data["EnablePortrait"] = enable_portrait
 	if equal_strings_index != -1:

@@ -14,8 +14,8 @@ func _process(_delta: float) -> void:
 	if Handle.layer_colors != last_layer_colors:
 		last_layer_colors = Handle.layer_colors.duplicate()
 		_update = true
-	var _posx := box.portrait_offset.x if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.x
-	var _posy := box.portrait_offset.y if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.y
+	var _posx := (box.portrait_offset.x if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.x) * Handle.visual_scale
+	var _posy := (box.portrait_offset.y if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.y) * Handle.visual_scale
 	if Vector2(_posx, _posy) != last_pos:
 		last_pos = Vector2(_posx, _posy)
 		_update = true
@@ -24,6 +24,11 @@ func _process(_delta: float) -> void:
 
 func _draw() -> void:
 	custom_minimum_size = Vector2.ZERO
+	if box.spr.texture != null:
+		if box.spr.position.x + (box.spr.texture.get_width() * box.spr.scale.x) > custom_minimum_size.x:
+			custom_minimum_size.x = box.spr.position.x + (box.spr.texture.get_width() * box.spr.scale.x)
+		if box.spr.position.y + (box.spr.texture.get_height() * box.spr.scale.y) > custom_minimum_size.y:
+			custom_minimum_size.y = box.spr.position.y + (box.spr.texture.get_height() * box.spr.scale.y)
 	if Handle.font_data.is_empty():
 		return
 	if Handle.user_script is GDScript:
@@ -37,8 +42,8 @@ func _draw() -> void:
 		_data.glyph.layer_strings = _ls
 		_data.glyph.layer_colors = _lc
 		_data.glyph.vscale = Handle.visual_scale
-		_data.char.start_position.x = box.portrait_offset.x if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.x
-		_data.char.start_position.y = box.portrait_offset.y if box.supports_portrait && box.portrait_enabled else box.dialogue_offset.y
+		_data.char.start_position.x = last_pos.x
+		_data.char.start_position.y = last_pos.y
 		_data.font = Handle.font_data[Handle.current_font]
 		for _layer in range(Handle.layer_strings.size()):
 			_data.glyph.current_layer = _layer

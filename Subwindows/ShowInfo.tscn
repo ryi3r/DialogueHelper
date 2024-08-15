@@ -3,7 +3,7 @@
 [node name="ShowInfo" type="Window"]
 title = "String Information."
 initial_position = 2
-size = Vector2i(600, 220)
+size = Vector2i(700, 300)
 unresizable = true
 always_on_top = true
 
@@ -22,20 +22,23 @@ offset_left = 20.0
 offset_top = 124.0
 offset_right = 232.0
 offset_bottom = 199.0
-text = "Last Edit Details:
+text = "
+
+
+Last Edit Details:
 >    Author: AUTHOR_NAME
 >    Timestamp: TIMESTAMP"
 
 [node name="LineEdit" type="LineEdit" parent="."]
 offset_left = 140.0
 offset_top = 17.0
-offset_right = 565.0
+offset_right = 665.0
 offset_bottom = 48.0
 editable = false
 
-[node name="LineEdit2" type="LineEdit" parent="."]
+[node name="LineEdit2" type="TextEdit" parent="."]
 offset_left = 140.0
 offset_top = 70.0
-offset_right = 565.0
-offset_bottom = 101.0
+offset_right = 665.0
+offset_bottom = 195.0
 editable = false
