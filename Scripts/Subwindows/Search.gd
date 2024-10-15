@@ -4,7 +4,7 @@ extends Window
 @onready var search_for: TextEdit = $SearchForLabel/TextEdit
 @onready var case_sensitive: CheckBox = $CaseSensitive
 
-var searching_scene := preload("res://Subwindows/Progress bars/Searching.tscn")
+var searching_scene := preload("res://Subwindows/ProgressBars/Searching.tscn")
 var search_results_scene := preload("res://Subwindows/SearchResults.tscn")
 var searching_window: WLoading = null
 var search_results_window: WSearchResults = null
