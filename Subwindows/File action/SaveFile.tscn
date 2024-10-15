@@ -4,6 +4,6 @@
 initial_position = 2
 size = Vector2i(600, 600)
 access = 2
-filters = PackedStringArray("*.txt;New Data File")
+filters = PackedStringArray("*.txt;Data File")
 show_hidden_files = true
 use_native_dialog = true

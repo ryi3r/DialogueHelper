@@ -75,6 +75,7 @@ text = "About"
 flat = false
 item_count = 4
 popup/item_0/text = "Show String Info"
+popup/item_0/id = 0
 popup/item_1/text = "Set Author Details"
 popup/item_1/id = 1
 popup/item_2/id = 2

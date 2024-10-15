@@ -8,6 +8,6 @@ min_size = Vector2i(200, 300)
 ok_button_text = "Open"
 file_mode = 0
 access = 2
-filters = PackedStringArray("*.txt;New Data File", "*.json;Old Data File")
+filters = PackedStringArray("*.txt;Data File")
 show_hidden_files = true
 use_native_dialog = true
