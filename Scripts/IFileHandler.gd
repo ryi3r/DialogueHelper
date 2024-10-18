@@ -31,22 +31,14 @@ func save_file(_path: String) -> Thread:
 					for _entry: IStringContainer in _new_entry:
 						if _i < _old_entry.size():
 							var _oentry: IStringContainer = _old_entry[_i]
-							if _oentry.last_edited.timestamp > _entry.last_edited.timestamp:
-								if _entry.content != _entry.content:
-									if _oentry.content != _entry.content:
-										var _conflict := IGitConflict.new()
-										_conflict.string_id = _entry.id
-										_conflict.current_string = _entry.content
-										_conflict.git_string = _oentry.content
-										_conflicts.append(_conflict)
-								elif _oentry.content != _entry.content:
-									# The old entry was different, but the new entry
-									# contains the most recent string.
-									var _conflict := IGitConflict.new()
-									_conflict.string_id = _entry.id
-									_conflict.current_string = _entry.content
-									_conflict.git_string = _oentry.content
-									_conflicts.append(_conflict)
+							# Disabled until I figure out a better way to do this...
+							#if _oentry.last_edited.timestamp > _entry.last_edited.timestamp:
+							if _oentry.content != _entry.content:
+								var _conflict := IGitConflict.new()
+								_conflict.string_id = _entry.id
+								_conflict.current_string = _entry.content
+								_conflict.git_string = _oentry.content
+								_conflicts.append(_conflict)
 							_i += 1
 						else:
 							break
