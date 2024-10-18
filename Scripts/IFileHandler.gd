@@ -71,19 +71,6 @@ func save_file(_path: String) -> Thread:
 		_fe.kind = 9
 		_fe.data["Style"] = Handle.style
 		_data.append(_fe)
-		#Handle.saving_window.progress_bar.call_deferred("set_max", _size)
-		#_fe = IFormatEntry.new()
-		#_fe.kind = 3
-		#_data.append(str(_fe))
-		#var _eq_strings_map := {}
-		#for _i in range(Handle.string_sstr_arr.size()):
-			#_fe = IFormatEntry.new()
-			#_fe.disable_uri = ["Data"]
-			#_fe.kind = 2
-			#_fe.data["Data"] = ",".join(PackedStringArray(Handle.string_sstr_arr[_i]))
-			#_data.append(str(_fe))
-			#Handle.saving_window.progress_bar.call_deferred("set_value", _v)
-			#_v += 1
 		for key: String in Handle.strings.keys():
 			_fe = IFormatEntry.new()
 			_fe.kind = 0

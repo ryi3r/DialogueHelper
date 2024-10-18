@@ -58,21 +58,6 @@ offset_right = 254.0
 offset_bottom = 33.0
 text = "Resolve these merge conflicts."
 
-[node name="LabelEntry" type="Label" parent="."]
-offset_left = 20.0
-offset_top = 212.0
-offset_right = 130.0
-offset_bottom = 235.0
-text = "Selected entry:"
-
-[node name="LineEdit" type="LineEdit" parent="LabelEntry"]
-layout_mode = 0
-offset_left = 130.0
-offset_top = -3.0
-offset_right = 530.0
-offset_bottom = 28.0
-editable = false
-
 [node name="LabelCurrent" type="Label" parent="."]
 offset_left = 20.0
 offset_top = 45.0
@@ -84,7 +69,7 @@ text = "Current String:"
 layout_mode = 0
 offset_top = 30.0
 offset_right = 250.0
-offset_bottom = 150.0
+offset_bottom = 190.0
 editable = false
 
 [node name="LabelGit" type="Label" parent="."]
@@ -98,7 +83,7 @@ text = "Git String:"
 layout_mode = 0
 offset_top = 30.0
 offset_right = 250.0
-offset_bottom = 150.0
+offset_bottom = 190.0
 editable = false
 
 [node name="ButtonGit" type="Button" parent="."]

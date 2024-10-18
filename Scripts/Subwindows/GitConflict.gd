@@ -5,7 +5,6 @@ var conflicts: Array[IGitConflict] = []
 var entry := 0
 
 @onready var done_button: Button = $DoneButton
-@onready var selected_entry: LineEdit = $LabelEntry/LineEdit
 @onready var label_conflict: Label = $LabelConflict/Label
 @onready var entry_conflict: SpinBox = $LabelConflict/SpinBox
 @onready var current_string: TextEdit = $LabelCurrent/TextEdit
