@@ -107,6 +107,7 @@ func load_file(_path: String) -> Thread:
 		Handle.main_node.similar_entries.call_deferred("clear")
 		
 		Handle.entry_names.clear()
+		Handle.og_str = ""
 		for _i in range(Handle.layer_strings.size()):
 			Handle.layer_strings[_i] = ""
 		for _i in range(Handle.layer_colors.size()):

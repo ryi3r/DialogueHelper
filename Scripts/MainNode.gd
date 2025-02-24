@@ -8,6 +8,7 @@ var author := "DefaultUsername"
 @onready var similar_entries: ItemList = $SimilarEntries/ItemList
 @onready var box: WBox = $Box
 @onready var dialogue_edit: TextEdit = $DialogueEdit
+@onready var original_dialogue: TextEdit = $DialogueEdit/OriginalDialogue
 @onready var current_layer_node: SpinBox = $DisplaySettings/CurrentLayer/Num
 @onready var current_box_node: SpinBox = $DisplaySettings/CurrentBox/Num
 @onready var current_font_node: SpinBox = $DisplaySettings/CurrentFont/Num
@@ -88,6 +89,7 @@ func _process(_delta: float) -> void:
 		box.size.y = tree.root.size.y - (700 - 400)
 		dialogue_edit.position.y = tree.root.size.y - (700 - 530)
 		dialogue_edit.size.x = tree.root.size.x - (1100 - 587)
+		original_dialogue.size.x = tree.root.size.x - (1100 - 587)
 		add_string.position.x = (dialogue_edit.size.x - 587) + 449
 		replace_similar.position.x = (dialogue_edit.size.x - 587) + 353
 		dialogue_selector.size.y = tree.root.size.y - (700 - 602)
@@ -102,6 +104,7 @@ func _process(_delta: float) -> void:
 		current_layer = int(current_layer_node.value) - 1
 		current_color_node.color = Handle.layer_colors[current_layer]
 		dialogue_edit.text = Handle.layer_strings[current_layer]
+		original_dialogue.text = Handle.layer_strings[current_layer]
 	if current_font_node.value - 1 != current_font_id:
 		update_font(int(current_font_node.value - 1))
 		if dialogue_selector.get_selected_items().size() > 0:
@@ -131,6 +134,7 @@ func _process(_delta: float) -> void:
 	if Handle.layer_colors[current_layer] != current_color_node.color:
 		Handle.is_modified = true
 		Handle.layer_colors[current_layer] = current_color_node.color
+	original_dialogue.text = Handle.og_str
 	if dialogue_selector.get_selected_items().size() > 0:
 		var _item := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
 		if Handle.strings.has(_item):
@@ -183,6 +187,7 @@ func _on_item_list_item_selected_str(_index: int) -> void:
 		var _stri: IStringContainer = Handle.strings[_item][_index]
 		Handle.layer_strings = _stri.layer_strings
 		Handle.layer_colors = _stri.layer_colors
+		Handle.og_str = _stri.original_content
 		var _t := create_tween()
 		_t.tween_callback(func() -> void:
 			current_font_node.set_value(_stri.font_style + 1)
@@ -212,6 +217,7 @@ func change_to(item: String, index: int = 0) -> void:
 			var _stri: IStringContainer = _it[index]
 			Handle.layer_strings = _stri.layer_strings
 			Handle.layer_colors = _stri.layer_colors
+			Handle.og_str = _stri.original_content
 			var _t := create_tween()
 			_t.tween_callback(func() -> void:
 				current_font_node.set_value(_stri.font_style + 1)
@@ -390,6 +396,8 @@ func clear_data() -> void:
 		Handle.layer_colors[_i] = Color.WHITE
 	for _i in range(Handle.layer_strings.size()):
 		Handle.layer_strings[_i] = ""
+	Handle.og_str = ""
+	original_dialogue.text = ""
 	dialogue_edit.text = ""
 	current_color_node.color = Color.WHITE
 	current_font_node.value = current_font_node.min_value

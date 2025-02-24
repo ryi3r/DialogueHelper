@@ -50,6 +50,7 @@ var current_font := 0
 var layers := 5
 var layer_strings := []
 var layer_colors := []
+var og_str := ""
 
 var strings := {}
 var string_table := {}

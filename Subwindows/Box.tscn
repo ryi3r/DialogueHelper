@@ -1,11 +1,11 @@
 [gd_scene load_steps=3 format=3 uid="uid://d4chixre3rvi5"]
 
-[ext_resource type="Script" path="res://Scripts/Subwindows/Box.gd" id="1_lmt1w"]
-[ext_resource type="Script" path="res://Scripts/Subwindows/BoxHandler.gd" id="2_ao570"]
+[ext_resource type="Script" uid="uid://ju07hehhu3a" path="res://Scripts/Subwindows/Box.gd" id="1_lmt1w"]
+[ext_resource type="Script" uid="uid://8rqr5re51774" path="res://Scripts/Subwindows/BoxHandler.gd" id="2_ao570"]
 
 [node name="Box" type="ScrollContainer"]
 texture_filter = 1
-custom_minimum_size = Vector2(580, 400)
+custom_minimum_size = Vector2(64, 400)
 script = ExtResource("1_lmt1w")
 
 [node name="Handler" type="Control" parent="."]

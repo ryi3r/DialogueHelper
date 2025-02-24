@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://dsotjep87sau4"]
 
-[ext_resource type="Script" path="res://Scripts/MainNode.gd" id="1_4lgbp"]
+[ext_resource type="Script" uid="uid://dh8oq15koyek8" path="res://Scripts/MainNode.gd" id="1_4lgbp"]
 [ext_resource type="PackedScene" uid="uid://d4chixre3rvi5" path="res://Subwindows/Box.tscn" id="2_71puv"]
 
 [sub_resource type="Theme" id="Theme_8vexb"]
@@ -94,9 +94,19 @@ layout_mode = 0
 offset_left = 283.0
 offset_top = 530.0
 offset_right = 870.0
-offset_bottom = 688.0
+offset_bottom = 616.0
 focus_mode = 1
 placeholder_text = "Put your Dialogue text here to try it out."
+
+[node name="OriginalDialogue" type="TextEdit" parent="DialogueEdit"]
+clip_contents = false
+layout_mode = 0
+offset_top = 89.0
+offset_right = 587.0
+offset_bottom = 158.0
+focus_mode = 1
+placeholder_text = "The original dialogue does here."
+editable = false
 
 [node name="EnablePortrait" type="CheckBox" parent="DialogueEdit"]
 layout_mode = 0
@@ -310,6 +320,7 @@ offset_bottom = 210.0
 [connection signal="pressed" from="Panel/MenuBar/Container/Search" to="." method="open_search_menu"]
 [connection signal="pressed" from="Panel/MenuBar/Container/ReloadStyle" to="." method="_on_reload_style_pressed"]
 [connection signal="text_changed" from="DialogueEdit" to="." method="_on_dialogue_edit_text_changed"]
+[connection signal="text_changed" from="DialogueEdit/OriginalDialogue" to="." method="_on_dialogue_edit_text_changed"]
 [connection signal="pressed" from="DialogueEdit/AddEntry" to="." method="_on_add_entry_pressed"]
 [connection signal="pressed" from="DialogueEdit/AddString" to="." method="_on_add_string_pressed"]
 [connection signal="text_changed" from="EntrySearch" to="." method="entry_search_text_changed"]
