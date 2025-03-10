@@ -44,6 +44,7 @@ var style_metadata := {}
 var font_data := []
 var box_data := []
 var user_script := GDScript.new()
+var user_script_obj: RefCounted = null
 
 var visual_scale := 1.0
 var current_font := 0
@@ -74,6 +75,7 @@ func load_style(_style: Variant = null) -> void:
 	style_metadata.clear()
 	font_data.clear()
 	box_data.clear()
+	user_script_obj = null
 	var logs := PackedStringArray()
 	ls_window = ls_scene.instantiate()
 	add_child(ls_window)
@@ -133,11 +135,11 @@ func load_style(_style: Variant = null) -> void:
 		(se_window.get_node("TextEdit") as TextEdit).text = "\n".join(PackedStringArray(logs))
 		add_child(se_window)
 
-func style_get_path(_path: String) -> String:
-	return "res://Styles/%s/%s" % [style, _path]
+func style_get_path(_path: String, _style: String = style) -> String:
+	return "res://Styles/%s/%s" % [_style, _path]
 
-func style_get_relative_path(_path: String) -> String:
-	return "/%s/%s" % [style, _path]
+func style_get_relative_path(_path: String, _style: String = style) -> String:
+	return "/%s/%s" % [_style, _path]
 
 func handle_git_output(r: IGitResponse) -> void:
 	if !r.success:

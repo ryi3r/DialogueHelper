@@ -1,0 +1,8 @@
+{
+    "Name": "Shop Talk",
+    "Texture": "Box29.png",
+    "Scale": 1,
+    "SupportsPortrait": true,
+    "DialogueOffset": [60, 20],
+    "PortraitOffset": [176, 20]
+}

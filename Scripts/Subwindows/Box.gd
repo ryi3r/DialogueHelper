@@ -4,7 +4,7 @@ class_name WBox
 @export var current_box := 0
 var portrait_enabled := false
 @onready var spr: Sprite2D = $Handler/BoxSprite
-@onready var handle: Control = $Handler
+@onready var handle: BoxHandler = $Handler
 
 var supports_portrait := false
 var dialogue_offset := Vector2i(20, 20)

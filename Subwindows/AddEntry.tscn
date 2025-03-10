@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dbjdogx8g2c36"]
 
-[ext_resource type="Script" path="res://Scripts/Subwindows/AddEntry.gd" id="1_f471j"]
+[ext_resource type="Script" uid="uid://bsblybh7upmjm" path="res://Scripts/Subwindows/AddEntry.gd" id="1_f471j"]
 
 [node name="AddEntry" type="Window"]
 title = "Add a new Entry."

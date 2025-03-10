@@ -37,6 +37,7 @@ gdscript/warnings/unsafe_call_argument=1
 window/size/viewport_width=1100
 window/size/viewport_height=700
 window/subwindows/embed_subwindows=false
+window/per_pixel_transparency/allowed=true
 
 [dotnet]
 
@@ -58,6 +59,7 @@ limits/debugger/max_queued_messages=999999999
 
 [rendering]
 
+rendering_device/pipeline_cache/enable=false
 rendering_device/driver.windows="d3d12"
 shader_compiler/shader_cache/enabled=false
 environment/defaults/default_clear_color=Color(0.160784, 0.172549, 0.254902, 1)

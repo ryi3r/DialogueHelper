@@ -4,6 +4,7 @@ class_name IUserChar
 @warning_ignore("shadowed_global_identifier")
 var char := "" # 1-letter String "layer_string[layer][index]" [READ ONLY]
 var index := -1 # Char index contained in the current layer string "layer_string[layer]" [READ ONLY]
+var string := "" # The current layer string
 
 var start_position := Vector2.ZERO # Glyph starter position
 var position_offset := Vector2.ZERO # Glyph local offset

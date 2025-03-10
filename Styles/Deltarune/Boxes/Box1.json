@@ -1,0 +1,8 @@
+{
+    "Name": "Overworld",
+    "Texture": "Box1.png",
+    "Scale": 1,
+    "SupportsPortrait": true,
+    "DialogueOffset": [20, 20],
+    "PortraitOffset": [145, 20]
+}

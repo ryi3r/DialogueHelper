@@ -1,3 +1,4 @@
+extends RefCounted
 # This is the template for GameMaker fonts. (2022.2+ supported.)
 
 # This function will be called for each glyph (character)

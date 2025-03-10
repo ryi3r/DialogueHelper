@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://by5xyjcv5flmt"]
 
-[ext_resource type="Script" path="res://Scripts/Subwindows/AboutDh.gd" id="1_2nqyt"]
+[ext_resource type="Script" uid="uid://c0oafi6rmmrrb" path="res://Scripts/Subwindows/AboutDh.gd" id="1_2nqyt"]
 
 [node name="DhAuthor" type="Window"]
 title = "About DH..."
@@ -21,7 +21,7 @@ offset_bottom = 85.0
 grow_horizontal = 2
 text = "DH was made by ryi3r.
 
-Current Version: v1.1.0  (15/08/2024)"
+Current Version: v1.2.0  (3/9/2025)"
 horizontal_alignment = 1
 
 [node name="Button" type="Button" parent="."]

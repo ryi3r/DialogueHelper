@@ -1,3 +1,4 @@
+extends RefCounted
 # Template: GameMaker fonts
 
 # This function will be called for each glyph (character)
@@ -21,4 +22,4 @@ static func draw_glyph(data: IUserData) -> void:
 		if (glyph.shift + (glyph.shift % 2)) / max(glyph.rect.size.x, 1) >= 6:
 			data.char.position_offset.x += ((glyph.shift - data.font.size) + glyph.offset) * (data.glyph.vscale * data.font.scale)
 		else:
-			data.char.position_offset.x += glyph.shift * (data.glyph.vscale * data.font.scale)
+			data.char.position_offset.x += (glyph.shift + glyph.offset) * (data.glyph.vscale * data.font.scale)

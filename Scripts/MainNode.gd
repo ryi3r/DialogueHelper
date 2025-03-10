@@ -25,7 +25,7 @@ var author := "DefaultUsername"
 @onready var add_entry: Button = $DialogueEdit/AddEntry
 @onready var add_string: Button = $DialogueEdit/AddString
 
-@onready var tree := get_tree()
+@onready var tree: SceneTree = get_tree()
 @onready var panel: Control = $Panel
 @onready var display_settings: Control = $DisplaySettings
 @onready var string_selector_parent: Control = $StringSelector
@@ -43,6 +43,27 @@ var last_sthread: Thread = null
 var last_size := Vector2i.ZERO
 
 func _ready() -> void:
+	tree.root.files_dropped.connect(func(_files: PackedStringArray) -> void:
+		if _files.size() == 1 && _files.get(0).ends_with(".txt"):
+			var _t := create_tween()
+			_t.tween_callback(func() -> void:
+				if Handle.fd_window != null:
+					Handle.fd_window.free()
+					Handle.fd_window = null
+				Handle.loading_window = Handle.loading_scene.instantiate()
+				add_child(Handle.loading_window)
+				last_thread = IFileHandler.load_file(_files.get(0))
+			).set_delay(1.0 / 60.0)
+			_t.play()
+	)
+	tree.auto_accept_quit = false
+	tree.root.close_requested.connect(func() -> void:
+		if Handle.is_modified:
+			Handle.uc_window = Handle.uc_scene.instantiate()
+			add_child(Handle.uc_window)
+		else:
+			tree.quit(0)
+	)
 	tree.root.min_size = Vector2(1100, 700)
 	if OS.has_environment("USERNAME"):
 		author = OS.get_environment("USERNAME")
@@ -149,16 +170,17 @@ func _process(_delta: float) -> void:
 			last_thread.wait_to_finish()
 			last_thread = null
 
-func update_box(_i: int) -> void:
+func update_box(_i: int, _fu: bool = true) -> void:
 	if _i >= Handle.box_data.size():
 		return
 	current_box = _i
 	current_box_label.text = Handle.box_data[_i].name
 	current_box_node.value = _i + 1
 	box.current_box = _i
-	Handle.is_modified = true
+	if _fu:
+		Handle.is_modified = true
 
-func update_font(_i: int) -> void:
+func update_font(_i: int, _fu: bool = true) -> void:
 	if _i >= Handle.font_data.size():
 		return
 	current_font_id = _i
@@ -167,6 +189,8 @@ func update_font(_i: int) -> void:
 	current_font_node.value = _i + 1
 	font = IFont.get_font(Handle.current_font)
 	Handle.is_modified = true
+	if _fu:
+		box.handle.force_update = true
 
 func _on_item_list_item_selected(_index: int) -> void:
 	var _item := dialogue_selector.get_item_text(_index)
@@ -490,6 +514,7 @@ func entry_search_text_changed(_t: String) -> void:
 
 func _on_reload_style_pressed() -> void:
 	Handle.load_style()
+	Handle.main_node.box.handle.force_update = true
 
 func _on_add_entry_pressed() -> void:
 	Handle.ae_window = Handle.ae_scene.instantiate()

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://266kkhbj6iws"]
 
-[ext_resource type="Script" path="res://Scripts/Subwindows/AddString.gd" id="1_i17sd"]
+[ext_resource type="Script" uid="uid://c2g0x3o7g0ola" path="res://Scripts/Subwindows/AddString.gd" id="1_i17sd"]
 
 [node name="AddString" type="Window"]
 title = "Add a new String."

@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://bvn7h4if00yc2"]
 
-[ext_resource type="Script" path="res://Scripts/Subwindows/UnsavedChanges.gd" id="1_ane8r"]
+[ext_resource type="Script" uid="uid://cancyvi4h5hcf" path="res://Scripts/Subwindows/UnsavedChanges.gd" id="1_ane8r"]
 
 [node name="UnsavedChanges" type="Window"]
 title = "Do you really want to close the file?"
@@ -20,7 +20,7 @@ text = "Do you really want to close the file?
 This may lead to losing information
 made during the usage of DH.
 Things such as outdated strings,
-unfinished dialogues may ocur."
+unfinished dialogues may occur."
 
 [node name="OkButton" type="Button" parent="."]
 offset_left = 10.0

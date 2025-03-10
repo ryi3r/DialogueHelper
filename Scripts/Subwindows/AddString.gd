@@ -44,4 +44,5 @@ func _on_ok_button_pressed() -> void:
 	var _index_strs := _parent.string_selector.add_item(_sc.content)
 	_parent.string_selector.select(_index_strs)
 	_parent._on_item_list_item_selected_str(_index_strs)
+	Handle.is_modified = true
 	queue_free()

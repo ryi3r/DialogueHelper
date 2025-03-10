@@ -1,0 +1,7 @@
+{
+	"Name": "Deltarune",
+	"Author": "ryi3r",
+	"Script": "Script.gd",
+	"NewLines": ["&", "#", "\n"],
+	"Ignore": []
+}

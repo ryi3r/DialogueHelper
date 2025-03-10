@@ -1,0 +1,874 @@
+{
+    "Name": "Crypt of Tomorrow",
+    "Texture": "fnt_small.png",
+    "Size": 6,
+    "Scale": 1,
+    "Ascender": 0,
+    "AscenderOffset": 0,
+    "Glyphs": [
+        {
+            "Char": " ",
+            "X": 2,
+            "Y": 2,
+            "Width": 4,
+            "Height": 7,
+            "Shift": 4,
+            "Offset": 0
+        },
+        {
+            "Char": "!",
+            "X": 107,
+            "Y": 25,
+            "Width": 2,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "\"",
+            "X": 2,
+            "Y": 33,
+            "Width": 3,
+            "Height": 3,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "#",
+            "X": 22,
+            "Y": 33,
+            "Width": 0,
+            "Height": 0,
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "$",
+            "X": 14,
+            "Y": 2,
+            "Width": 4,
+            "Height": 6,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "%",
+            "X": 26,
+            "Y": 33,
+            "Width": 0,
+            "Height": 0,
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "&",
+            "X": 18,
+            "Y": 33,
+            "Width": 0,
+            "Height": 0,
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "'",
+            "X": 11,
+            "Y": 33,
+            "Width": 2,
+            "Height": 3,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "(",
+            "X": 68,
+            "Y": 25,
+            "Width": 3,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": ")",
+            "X": 78,
+            "Y": 25,
+            "Width": 3,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "*",
+            "X": 30,
+            "Y": 33,
+            "Width": 0,
+            "Height": 0,
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "+",
+            "X": 96,
+            "Y": 25,
+            "Width": 3,
+            "Height": 4,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": ",",
+            "X": 88,
+            "Y": 25,
+            "Width": 2,
+            "Height": 6,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "-",
+            "X": 101,
+            "Y": 25,
+            "Width": 4,
+            "Height": 3,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": ".",
+            "X": 111,
+            "Y": 25,
+            "Width": 2,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "/",
+            "X": 92,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "0",
+            "X": 8,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "1",
+            "X": 68,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "2",
+            "X": 74,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "3",
+            "X": 74,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "4",
+            "X": 44,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "5",
+            "X": 50,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "6",
+            "X": 92,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "7",
+            "X": 32,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "8",
+            "X": 80,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "9",
+            "X": 26,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": ":",
+            "X": 119,
+            "Y": 25,
+            "Width": 2,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": ";",
+            "X": 92,
+            "Y": 25,
+            "Width": 2,
+            "Height": 6,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "<",
+            "X": 116,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "=",
+            "X": 62,
+            "Y": 25,
+            "Width": 4,
+            "Height": 4,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": ">",
+            "X": 56,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "?",
+            "X": 32,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "@",
+            "X": 20,
+            "Y": 33,
+            "Width": 0,
+            "Height": 0,
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "A",
+            "X": 26,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "B",
+            "X": 110,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "C",
+            "X": 62,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "D",
+            "X": 8,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "E",
+            "X": 26,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "F",
+            "X": 38,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "G",
+            "X": 98,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "H",
+            "X": 116,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "I",
+            "X": 2,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "J",
+            "X": 26,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "K",
+            "X": 44,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "L",
+            "X": 14,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "M",
+            "X": 62,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "N",
+            "X": 92,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "O",
+            "X": 44,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "P",
+            "X": 14,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "Q",
+            "X": 20,
+            "Y": 2,
+            "Width": 4,
+            "Height": 6,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "R",
+            "X": 20,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "S",
+            "X": 20,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "T",
+            "X": 38,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "U",
+            "X": 2,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "V",
+            "X": 2,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "W",
+            "X": 68,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "X",
+            "X": 110,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "Y",
+            "X": 14,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "Z",
+            "X": 50,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "[",
+            "X": 73,
+            "Y": 25,
+            "Width": 3,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "\\",
+            "X": 38,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "]",
+            "X": 83,
+            "Y": 25,
+            "Width": 3,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "^",
+            "X": 34,
+            "Y": 33,
+            "Width": 0,
+            "Height": 0,
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "_",
+            "X": 104,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "`",
+            "X": 7,
+            "Y": 33,
+            "Width": 2,
+            "Height": 3,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "a",
+            "X": 50,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "b",
+            "X": 32,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "c",
+            "X": 116,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "d",
+            "X": 56,
+            "Y": 25,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "e",
+            "X": 50,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "f",
+            "X": 68,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "g",
+            "X": 80,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "h",
+            "X": 74,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "i",
+            "X": 86,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "j",
+            "X": 104,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "k",
+            "X": 38,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "l",
+            "X": 56,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "m",
+            "X": 32,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "n",
+            "X": 8,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "o",
+            "X": 80,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "p",
+            "X": 86,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "q",
+            "X": 8,
+            "Y": 2,
+            "Width": 4,
+            "Height": 6,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "r",
+            "X": 110,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "s",
+            "X": 98,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "t",
+            "X": 62,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "u",
+            "X": 86,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "v",
+            "X": 44,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "w",
+            "X": 20,
+            "Y": 11,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "x",
+            "X": 98,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "y",
+            "X": 56,
+            "Y": 2,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "z",
+            "X": 104,
+            "Y": 18,
+            "Width": 4,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "{",
+            "X": 28,
+            "Y": 33,
+            "Width": 0,
+            "Height": 0,
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "|",
+            "X": 115,
+            "Y": 25,
+            "Width": 2,
+            "Height": 5,
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "}",
+            "X": 24,
+            "Y": 33,
+            "Width": 0,
+            "Height": 0,
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "~",
+            "X": 32,
+            "Y": 33,
+            "Width": 0,
+            "Height": 0,
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "\u007f",
+            "X": 15,
+            "Y": 33,
+            "Width": 1,
+            "Height": 6,
+            "Shift": 4,
+            "Offset": 0
+        }
+    ]
+}

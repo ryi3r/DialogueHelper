@@ -12,4 +12,5 @@ func _on_ok_button_pressed() -> void:
 	var _item := Handle.main_node.dialogue_selector.add_item(txt)
 	Handle.main_node.dialogue_selector.select(_item)
 	Handle.main_node._on_item_list_item_selected(_item)
+	Handle.is_modified = true
 	queue_free()

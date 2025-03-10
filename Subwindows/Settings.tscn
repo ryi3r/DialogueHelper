@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dfk3iirt1ep8m"]
 
-[ext_resource type="Script" path="res://Scripts/Subwindows/Settings.gd" id="1_xvsog"]
+[ext_resource type="Script" uid="uid://b0u5hys5eclyl" path="res://Scripts/Subwindows/Settings.gd" id="1_xvsog"]
 
 [node name="Settings" type="Window"]
 title = "Settings"
@@ -95,7 +95,7 @@ offset_left = 20.0
 offset_top = 250.0
 offset_right = 101.0
 offset_bottom = 273.0
-text = "Font Style:"
+text = "Used Style:"
 
 [node name="OptionButton" type="OptionButton" parent="FontStyle"]
 layout_mode = 0
@@ -104,6 +104,7 @@ offset_top = -3.0
 offset_right = 400.0
 offset_bottom = 28.0
 selected = 0
+allow_reselect = true
 item_count = 2
 popup/item_0/text = "Template"
 popup/item_0/id = 1
