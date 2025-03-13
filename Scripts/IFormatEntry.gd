@@ -8,8 +8,17 @@ var disable_uri := []
 func _to_string() -> String:
 	var _str := ""
 	for key: Variant in data.keys():
-		var value: Variant = data[key]
+		var value := str(data[key])
 		if !_str.is_empty():
 			_str += ";"
-		_str += "%s:%s" % [key, str(value).uri_encode() if !disable_uri.has(key) else str(value)]
+		if !disable_uri.has(key):
+			for ad: Array in [
+				[&"%", &"%25"],
+				[&";", &"%3B"],
+				[&":", &"%3A"],
+				[&"\n", &"%0A"],
+				[&"\r", &"%0D"],
+			]:
+				value = value.replace(str(ad[0]), str(ad[1]))
+		_str += "%s:%s" % [key, value]
 	return "%s;%s" % [kind, _str]

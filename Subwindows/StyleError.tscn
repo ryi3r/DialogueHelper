@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://otc1yygycyfe"]
 
-[ext_resource type="Script" path="res://Scripts/Subwindows/StyleError.gd" id="1_xlv5r"]
+[ext_resource type="Script" uid="uid://vxkq1gjloko8" path="res://Scripts/Subwindows/StyleError.gd" id="1_xlv5r"]
 
 [node name="StyleError" type="Window"]
 title = "Font Style Error"

@@ -73,9 +73,9 @@ func _draw() -> void:
 				_data.char.index = _index
 				_data.char.string = _current_string
 				if Handle.style_metadata.has("NewLines"):
-					_data.char.is_newline = (Handle.style_metadata["NewLines"] as Array).has(_layer_char)
+					_data.char.is_newline = (Handle.style_metadata.NewLines as Array).has(_layer_char)
 				if Handle.style_metadata.has("Ignore"):
-					_data.char.is_ignore = (Handle.style_metadata["Ignore"] as Array).has(_layer_char)
+					_data.char.is_ignore = (Handle.style_metadata.Ignore as Array).has(_layer_char)
 				if Handle.user_script_obj.has_method("draw_glyph"):
 					@warning_ignore("unsafe_method_access")
 					Handle.user_script_obj.draw_glyph(_data)

@@ -296,8 +296,9 @@ static func draw_glyph(data: IUserData) -> void:
 		var _cpos := data.char.position_offset.x
 		#print(_fs)
 		for _char in _fs:
-			var glyph: IGlyph = data.font.glyphs[_char]
-			_cpos += ((data.env._sx if data.env._sx != -1 else glyph.shift) + glyph.offset) * scale
+			if data.font.glyphs.has(_char) || _char == "\t":
+				var glyph: IGlyph = data.font.glyphs[" " if _char == "\t" else _char]
+				_cpos += ((data.env._sx if data.env._sx != -1 else glyph.shift) + glyph.offset) * scale * (4.0 if _char == "\t" else 1.0)
 		if _cpos + 40 > data.box.texture.get_width() - (data.box.portrait_offset.x if data.get_box_portrait() else 0.0) && !data.env.first_drawn_char:
 			_act_as_newline = true
 			if data.env.started_asterisk:
@@ -318,14 +319,15 @@ static func draw_glyph(data: IUserData) -> void:
 		else:
 			data.char.position_offset.y += data.env._sy * scale
 	if !data.char.is_newline:
-		var glyph: IGlyph = data.font.glyphs[data.char.char]
-		data.char.glyph.position.x = data.char.start_position.x + data.char.position_offset.x + (glyph.offset * scale)
-		data.char.glyph.position.y = data.char.start_position.y + data.char.position_offset.y
-		data.char.glyph.size.x = glyph.rect.size.x * scale
-		data.char.glyph.size.y = glyph.rect.size.y * scale
-		data.draw_glyph()
-		if (data.env.last_newline || data.env.first_drawn_char) && data.char.char == "*":
-			data.env.started_asterisk = true
-		data.char.position_offset.x += ((data.env._sx if data.env._sx != -1 else glyph.shift) + glyph.offset) * scale
-		data.env.last_newline = false
-		data.env.first_drawn_char = false
+		if data.font.glyphs.has(data.char.char) || data.char.char == "\t":
+			var glyph: IGlyph = data.font.glyphs[" " if data.char.char == "\t" else data.char.char]
+			data.char.glyph.position.x = data.char.start_position.x + data.char.position_offset.x + (glyph.offset * scale)
+			data.char.glyph.position.y = data.char.start_position.y + data.char.position_offset.y
+			data.char.glyph.size.x = glyph.rect.size.x * scale * (4.0 if data.char.char == "\t" else 1.0)
+			data.char.glyph.size.y = glyph.rect.size.y * scale
+			data.draw_glyph()
+			if (data.env.last_newline || data.env.first_drawn_char) && data.char.char == "*":
+				data.env.started_asterisk = true
+			data.char.position_offset.x += ((data.env._sx if data.env._sx != -1 else glyph.shift) + glyph.offset) * scale * (4.0 if data.char.char == "\t" else 1.0)
+			data.env.last_newline = false
+			data.env.first_drawn_char = false

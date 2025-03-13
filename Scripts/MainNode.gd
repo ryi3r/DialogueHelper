@@ -34,6 +34,7 @@ var author := "DefaultUsername"
 var current_layer := 0
 var current_font_id := 0
 var current_box := 0
+var inner_selected := -1
 
 @onready var file_popup: PopupMenu = ($Panel/MenuBar/Container/File as MenuButton).get_popup()
 @onready var about_popup: PopupMenu = ($Panel/MenuBar/Container/About as MenuButton).get_popup()
@@ -118,7 +119,7 @@ func _process(_delta: float) -> void:
 	
 	current_font_node.max_value = Handle.font_data.size()
 	current_box_node.max_value = Handle.box_data.size()
-	add_string.disabled = dialogue_selector.get_selected_items().is_empty()
+	add_string.disabled = inner_selected == -1
 	enable_portrait.disabled = !box.supports_portrait
 	box.portrait_enabled = enable_portrait.button_pressed
 	if int(current_layer_node.value) - 1 != current_layer:
@@ -128,14 +129,14 @@ func _process(_delta: float) -> void:
 		original_dialogue.text = Handle.layer_strings[current_layer]
 	if current_font_node.value - 1 != current_font_id:
 		update_font(int(current_font_node.value - 1))
-		if dialogue_selector.get_selected_items().size() > 0:
-			var _item := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
+		if inner_selected != -1 && Handle.entry_names.size() > inner_selected:
+			var _item: String = Handle.entry_names[inner_selected]
 			if Handle.strings.has(_item):
 				Handle.strings[_item][string_selector.get_selected_items()[0]].font_style = current_font_id
 	if current_box_node.value - 1 != current_box:
 		update_box(int(current_box_node.value - 1))
-		if dialogue_selector.get_selected_items().size() > 0:
-			var _item := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
+		if inner_selected != -1 && Handle.entry_names.size() > inner_selected:
+			var _item: String = Handle.entry_names[inner_selected]
 			if Handle.strings.has(_item):
 				Handle.strings[_item][string_selector.get_selected_items()[0]].box_style = current_box
 	if current_scale_node.value != Handle.visual_scale:
@@ -155,9 +156,10 @@ func _process(_delta: float) -> void:
 	if Handle.layer_colors[current_layer] != current_color_node.color:
 		Handle.is_modified = true
 		Handle.layer_colors[current_layer] = current_color_node.color
-	original_dialogue.text = Handle.og_str
-	if dialogue_selector.get_selected_items().size() > 0:
-		var _item := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
+	if original_dialogue.text != Handle.og_str:
+		original_dialogue.text = Handle.og_str
+	if inner_selected != -1 && Handle.entry_names.size() > inner_selected:
+		var _item: String = Handle.entry_names[inner_selected]
 		if Handle.strings.has(_item):
 			var _s := string_selector.get_selected_items()
 			var _i := _s[0] if _s.size() > 0 else 0
@@ -194,16 +196,21 @@ func update_font(_i: int, _fu: bool = true) -> void:
 
 func _on_item_list_item_selected(_index: int) -> void:
 	var _item := dialogue_selector.get_item_text(_index)
+	inner_selected = Handle.entry_names.find(_item)
 	change_to(_item)
 	if Handle.strings.has(_item):
-		var _it: Array = Handle.strings[_item]
-		for _stri: IStringContainer in _it:
-			string_selector.add_item(_stri.content)
-		if !_it.is_empty():
-			string_selector.select(string_selector.get_item_at_position(Vector2(0, 0)))
+		last_thread = Thread.new()
+		last_thread.start(func() -> void:
+			string_selector.clear.call_deferred()
+			var _it: Array = Handle.strings[_item]
+			for _stri: IStringContainer in _it:
+				string_selector.add_item.call_deferred(_stri.content)
+			if !_it.is_empty():
+				string_selector.select.call_deferred(0)
+		)
 
 func _on_item_list_item_selected_str(_index: int) -> void:
-	var _item := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
+	var _item: String = Handle.entry_names[inner_selected]
 	if Handle.strings.has(_item):
 		current_layer = 0
 		current_layer_node.value = 1
@@ -224,18 +231,17 @@ func _on_item_list_item_selected_str(_index: int) -> void:
 			last_sthread.wait_to_finish()
 		last_sthread = Thread.new()
 		last_sthread.start(func() -> void:
-			similar_entries.call_deferred("clear")
+			similar_entries.clear.call_deferred()
 			for sstri in _stri.equal_strings:
 				if sstri != _stri.id:
 					var _r: IStringTable = Handle.string_table[sstri]
-					similar_entries.call_deferred("add_item", "%s:%s" % [_r.name, _r.index + 1])
+					similar_entries.add_item.call_deferred("%s:%s" % [_r.name, _r.index + 1])
 		)
 
 func change_to(item: String, index: int = 0) -> void:
 	if Handle.strings.has(item):
 		current_layer = 0
 		current_layer_node.value = 1
-		string_selector.clear()
 		var _it: Array = Handle.strings[item]
 		if _it.size() > index:
 			var _stri: IStringContainer = _it[index]
@@ -254,18 +260,18 @@ func change_to(item: String, index: int = 0) -> void:
 				last_sthread.wait_to_finish()
 			last_sthread = Thread.new()
 			last_sthread.start(func() -> void:
-				similar_entries.call_deferred("clear")
+				similar_entries.clear.call_deferred()
 				for sstri in _stri.equal_strings: # String ID
 					if sstri != _stri.id:
 						var r: IStringTable = Handle.string_table[sstri]
-						similar_entries.call_deferred("add_item", "%s:%s" % [r.name, r.index + 1])
+						similar_entries.add_item.call_deferred("%s:%s" % [r.name, r.index + 1])
 			)
 		else:
 			if last_sthread is Thread:
 				last_sthread.wait_to_finish()
 			last_sthread = Thread.new()
 			last_sthread.start(func() -> void:
-				similar_entries.call_deferred("clear")
+				similar_entries.clear.call_deferred()
 			)
 
 func _on_item_list_item_selected_similar(_index: int) -> void:
@@ -278,28 +284,29 @@ func _on_item_list_item_selected_similar(_index: int) -> void:
 			last_sthread.wait_to_finish()
 		last_sthread = Thread.new()
 		last_sthread.start(func() -> void:
-			similar_entries.call_deferred("clear")
+			similar_entries.clear.call_deferred()
 			for sstri: int in Handle.strings[_item[0]][_item[1] as int - 1].equal_strings:
 				if sstri != int((Handle.strings[_item[0]][_item[1] as int - 1] as IStringContainer).id):
 					var _r: IStringTable = Handle.string_table[sstri]
-					similar_entries.call_deferred("add_item", "%s:%s" % [_r.name, _r.index + 1])
+					similar_entries.add_item.call_deferred("%s:%s" % [_r.name, _r.index + 1])
+			string_selector.clear.call_deferred()
+			for _stri: IStringContainer in Handle.strings[_item[0]]:
+				string_selector.add_item.call_deferred(_stri.layer_strings[0])
+			string_selector.select.call_deferred(int(_item[1]) - 1)
+			string_selector.ensure_current_is_visible.call_deferred()
+			inner_selected = Handle.entry_names.find(_item[0])
+			dialogue_selector.deselect_all.call_deferred()
+			for _i in range(dialogue_selector.get_item_count()):
+				if dialogue_selector.get_item_text(_i) == _item[0]:
+					dialogue_selector.select.call_deferred(_i)
+					dialogue_selector.ensure_current_is_visible.call_deferred()
+					break
 		)
-		string_selector.clear()
-		for _stri: IStringContainer in Handle.strings[_item[0]]:
-			string_selector.add_item(_stri.layer_strings[0])
-		string_selector.select(int(_item[1]) - 1)
-		string_selector.ensure_current_is_visible()
-		for _i in range(dialogue_selector.get_item_count()):
-			if dialogue_selector.get_item_text(_i) == _item[0]:
-				dialogue_selector.select(_i)
-				dialogue_selector.ensure_current_is_visible()
-				break
 
 func _on_dialogue_edit_text_changed() -> void:
-	var _sel := dialogue_selector.get_selected_items()
 	var _sel1 := string_selector.get_selected_items()
-	if _sel.size() != 0 && _sel1.size() != 0:
-		var _c := dialogue_selector.get_item_text(_sel[0])
+	if inner_selected != -1 && Handle.entry_names.size() > inner_selected && _sel1.size() != 0:
+		var _c: String = Handle.entry_names[inner_selected]
 		if current_layer == 0:
 			var _e: Array = (Handle.strings[_c][_sel1[0]].equal_strings as Array).duplicate() if replace_similar.button_pressed else []
 			_e.append(Handle.strings[_c][_sel1[0]].id)
@@ -406,29 +413,33 @@ func file_menu_selected(_id: int) -> void:
 				clear_data()
 
 func clear_data() -> void:
-	dialogue_selector.clear()
-	string_selector.clear()
-	similar_entries.clear()
-	Handle.entry_names.clear()
-	Handle.strings.clear()
-	Handle.string_ids.clear()
-	Handle.string_table.clear()
-	Handle.string_sstr.clear()
-	Handle.string_sstr_arr.clear()
-	
-	for _i in range(Handle.layer_colors.size()):
-		Handle.layer_colors[_i] = Color.WHITE
-	for _i in range(Handle.layer_strings.size()):
-		Handle.layer_strings[_i] = ""
-	Handle.og_str = ""
-	original_dialogue.text = ""
-	dialogue_edit.text = ""
-	current_color_node.color = Color.WHITE
-	current_font_node.value = current_font_node.min_value
-	current_box_node.value = current_box_node.min_value
-	current_color_node.color = Color.WHITE
-	Handle.last_string_id = 0
-	Handle.is_modified = false
+	var t := Thread.new()
+	t.start(func() -> void:
+		dialogue_selector.clear.call_deferred()
+		string_selector.clear.call_deferred()
+		similar_entries.clear.call_deferred()
+		Handle.entry_names.clear.call_deferred()
+		Handle.strings.clear()
+		Handle.string_ids.clear()
+		Handle.string_table.clear()
+		Handle.string_sstr.clear()
+		Handle.string_sstr_arr.clear()
+		
+		for _i in range(Handle.layer_colors.size()):
+			Handle.layer_colors[_i] = Color.WHITE
+		for _i in range(Handle.layer_strings.size()):
+			Handle.layer_strings[_i] = ""
+		Handle.og_str = ""
+		original_dialogue.set_text.call_deferred("")
+		dialogue_edit.set_text.call_deferred("")
+		current_color_node.color = Color.WHITE
+		current_font_node.set_value.call_deferred(current_font_node.min_value)
+		current_box_node.set_value(current_box_node.min_value)
+		current_color_node.color = Color.WHITE
+		Handle.last_string_id = 0
+		Handle.is_modified = false
+	)
+	await t.wait_to_finish()
 
 func about_menu_selected(_id: int) -> void:
 	match _id:
@@ -442,8 +453,8 @@ func about_menu_selected(_id: int) -> void:
 			var _n2: Label = Handle.show_info_window.get_node("Label2")
 			var _l: LineEdit = Handle.show_info_window.get_node("LineEdit")
 			var _l2: TextEdit = Handle.show_info_window.get_node("LineEdit2")
-			if dialogue_selector.get_selected_items().size() > 0 && string_selector.get_selected_items().size() > 0:
-				var _ename := dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
+			if inner_selected != -1 && Handle.entry_names.size() > inner_selected && string_selector.get_selected_items().size() > 0:
+				var _ename: String = Handle.entry_names[inner_selected]
 				var _eindex := string_selector.get_selected_items()[0]
 				var _laste := (Handle.strings[_ename][_eindex] as IStringContainer).last_edited
 				var _td := Time.get_datetime_dict_from_unix_time(_laste.timestamp + int((Time.get_time_zone_from_system().bias as int) * 60)) # Local timezone?
@@ -483,8 +494,8 @@ func open_search_menu() -> void:
 func open_go_to_menu() -> void:
 	Handle.goto_window = Handle.goto_scene.instantiate()
 	add_child(Handle.goto_window)
-	(Handle.goto_window.get_node("GoTo/GoButton") as Button).pressed.connect(func() -> void:
-		var _te := (Handle.goto_window.get_node("GoTo/Str") as LineEdit).text
+	(Handle.goto_window.get_node(^"GoTo/GoButton") as Button).pressed.connect(func() -> void:
+		var _te := (Handle.goto_window.get_node(^"GoTo/Str") as LineEdit).text
 		if _te.length() > 0:
 			var _item := (_te + ":1").split(":")
 			if Handle.strings.has(_item[0]):
@@ -494,6 +505,7 @@ func open_go_to_menu() -> void:
 					string_selector.add_item(str(_stri.layer_strings[0]))
 				string_selector.select(int(_item[1]) - 1)
 				string_selector.ensure_current_is_visible()
+				dialogue_selector.deselect_all()
 				for _i in range(dialogue_selector.get_item_count()):
 					if dialogue_selector.get_item_text(_i) == _item[0]:
 						dialogue_selector.select(_i)
@@ -511,6 +523,13 @@ func entry_search_text_changed(_t: String) -> void:
 		for _e: String in Handle.entry_names:
 			if _e.to_lower().contains(_t.to_lower()):
 				dialogue_selector.add_item(_e)
+	if inner_selected != -1 && Handle.entry_names.size() > inner_selected:
+		dialogue_selector.deselect_all()
+		for _i in range(dialogue_selector.get_item_count()):
+			if dialogue_selector.get_item_text(_i) == Handle.entry_names[inner_selected]:
+				dialogue_selector.select(_i)
+				dialogue_selector.ensure_current_is_visible()
+				break
 
 func _on_reload_style_pressed() -> void:
 	Handle.load_style()
@@ -521,7 +540,7 @@ func _on_add_entry_pressed() -> void:
 	add_child(Handle.ae_window)
 
 func _on_add_string_pressed() -> void:
-	if !dialogue_selector.get_selected_items().is_empty():
+	if inner_selected != -1 && Handle.entry_names.size() > inner_selected:
 		Handle.as_window = Handle.as_scene.instantiate()
-		Handle.as_window.entry = dialogue_selector.get_item_text(dialogue_selector.get_selected_items()[0])
+		Handle.as_window.entry = Handle.entry_names[inner_selected]
 		add_child(Handle.as_window)

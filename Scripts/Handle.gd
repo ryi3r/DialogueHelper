@@ -79,24 +79,24 @@ func load_style(_style: Variant = null) -> void:
 	var logs := PackedStringArray()
 	ls_window = ls_scene.instantiate()
 	add_child(ls_window)
-	var progress_bar: ProgressBar = ls_window.get_node("ProgressBar")
-	if FileAccess.file_exists(style_get_path("Metadata.json")):
-		style_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Metadata.json")))
+	var progress_bar: ProgressBar = ls_window.get_node(^"ProgressBar")
+	if FileAccess.file_exists(style_get_path(&"Metadata.json")):
+		style_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path(&"Metadata.json")))
 		if style_metadata == null:
-			logs.append("%s had a JSON parsing error." % style_get_relative_path("Metadata.json"))
+			logs.append("%s had a JSON parsing error." % style_get_relative_path(&"Metadata.json"))
 			style_metadata = {}
-		elif style_metadata.has("Script"):
-				user_script.source_code = FileAccess.get_file_as_string(style_get_path(str(style_metadata["Script"])))
+		elif style_metadata.has(&"Script"):
+				user_script.source_code = FileAccess.get_file_as_string(style_get_path(str(style_metadata.Script)))
 				var error := user_script.reload()
 				if error != OK:
 					logs.append("Script failed to compile with error %s." % error)
-		if FileAccess.file_exists(style_get_path("Fonts/Metadata.json")):
-			font_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Fonts/Metadata.json")))
+		if FileAccess.file_exists(style_get_path(&"Fonts/Metadata.json")):
+			font_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path(&"Fonts/Metadata.json")))
 			if font_metadata == null:
-				logs.append("%s had a JSON parsing error." % style_get_relative_path("Metadata.json"))
-			elif font_metadata.has("Fonts"):
-				progress_bar.max_value += (font_metadata["Fonts"] as Array).size()
-				for font: String in font_metadata["Fonts"] as Array:
+				logs.append("%s had a JSON parsing error." % style_get_relative_path(&"Metadata.json"))
+			elif font_metadata.has(&"Fonts"):
+				progress_bar.max_value += (font_metadata.Fonts as Array).size()
+				for font: String in font_metadata.Fonts as Array:
 					if FileAccess.file_exists(style_get_path("Fonts/%s.json" % font)):
 						var font_json: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Fonts/%s.json" % font)))
 						if font_json == null:
@@ -107,14 +107,14 @@ func load_style(_style: Variant = null) -> void:
 					else:
 						logs.append("%s does not exist." % style_get_relative_path("Fonts/%s.json" % font))
 		else:
-			logs.append("%s does not exist." % style_get_relative_path("Fonts/Metadata.json"))
-		if FileAccess.file_exists(style_get_path("Boxes/Metadata.json")):
-			box_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Boxes/Metadata.json")))
+			logs.append("%s does not exist." % style_get_relative_path(&"Fonts/Metadata.json"))
+		if FileAccess.file_exists(style_get_path(&"Boxes/Metadata.json")):
+			box_metadata = JSON.parse_string(FileAccess.get_file_as_string(style_get_path(&"Boxes/Metadata.json")))
 			if box_metadata == null:
-				logs.append("%s had a JSON parsing error." % style_get_relative_path("Metadata.json"))
+				logs.append("%s had a JSON parsing error." % style_get_relative_path(&"Metadata.json"))
 			elif box_metadata.has("Boxes"):
-				progress_bar.max_value += (box_metadata["Boxes"] as Array).size()
-				for box: String in box_metadata["Boxes"] as Array:
+				progress_bar.max_value += (box_metadata.Boxes as Array).size()
+				for box: String in box_metadata.Boxes as Array:
 					if FileAccess.file_exists(style_get_path("Boxes/%s.json" % box)):
 						var box_json: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(style_get_path("Boxes/%s.json" % box)))
 						if box_json == null:
@@ -125,14 +125,14 @@ func load_style(_style: Variant = null) -> void:
 						logs.append("%s does not exist." % style_get_relative_path("Boxes/%s.json" % box))
 					progress_bar.value += 1
 		else:
-			logs.append("%s does not exist." % style_get_relative_path("Boxes/Metadata.json"))
+			logs.append("%s does not exist." % style_get_relative_path(&"Boxes/Metadata.json"))
 		progress_bar.value = progress_bar.max_value
 	else:
-		logs.append("Style Path \"%s\" was not found." % style_get_relative_path(""))
+		logs.append("Style Path \"%s\" was not found." % style_get_relative_path(&""))
 	ls_window.queue_free()
 	if !logs.is_empty(): # An error ocurred.
 		se_window = se_scene.instantiate()
-		(se_window.get_node("TextEdit") as TextEdit).text = "\n".join(PackedStringArray(logs))
+		(se_window.get_node(^"TextEdit") as TextEdit).text = "\n".join(PackedStringArray(logs))
 		add_child(se_window)
 
 func style_get_path(_path: String, _style: String = style) -> String:
@@ -145,4 +145,4 @@ func handle_git_output(r: IGitResponse) -> void:
 	if !r.success:
 		var w := preload("res://Subwindows/GitError.tscn").instantiate()
 		add_child(w)
-		(w.get_node("TextEdit") as TextEdit).text = "".join(PackedStringArray(r.output))
+		(w.get_node(^"TextEdit") as TextEdit).text = "".join(PackedStringArray(r.output))

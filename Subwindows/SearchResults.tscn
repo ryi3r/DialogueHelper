@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://dkxkfyqho8db7"]
 
-[ext_resource type="Script" path="res://Scripts/Subwindows/SearchResults.gd" id="1_4btke"]
+[ext_resource type="Script" uid="uid://be67ybrmm35u3" path="res://Scripts/Subwindows/SearchResults.gd" id="1_4btke"]
 
 [node name="SearchResults" type="Window"]
 title = "Search Results."

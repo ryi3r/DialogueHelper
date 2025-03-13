@@ -6,12 +6,13 @@ var author := ""
 
 func _init(_json: Variant = null, _timestamp: Variant = null, _author: Variant = null) -> void:
 	if _json is Dictionary:
-		if "Timestamp" in _json:
-			timestamp = _json["Timestamp"] as int
-		if "Author" in _json:
-			author = str(_json["Author"])
+		var _jd: Dictionary = _json
+		if _jd.has(&"Timestamp"):
+			timestamp = _jd.Timestamp as int
+		if _jd.has(&"Author"):
+			author = str(_jd.Author)
 	elif _json is String:
-		var _data := str(_json).split(",")
+		var _data := str(_json).split(&",")
 		author = _data[0].uri_decode()
 		timestamp = int(_data[1])
 	elif _timestamp is int && _author is String:

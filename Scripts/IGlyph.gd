@@ -7,19 +7,20 @@ var rect := Rect2i(0, 0, 0, 0)
 var shift := 0
 var offset := 0
 
-func _init(json: Variant = null) -> void:
-	if json is Dictionary:
-		if "Char" in json:
-			char = str(json["Char"])
-		if "X" in json:
-			rect.position.x = json["X"] as int
-		if "Y" in json:
-			rect.position.y = json["Y"] as int
-		if "Width" in json:
-			rect.size.x = json["Width"] as int
-		if "Height" in json:
-			rect.size.y = json["Height"] as int
-		if "Shift" in json:
-			shift = json["Shift"] as int
-		if "Offset" in json:
-			offset = json["Offset"] as int
+func _init(_json: Variant = null) -> void:
+	if _json is Dictionary:
+		var _jd: Dictionary = _json
+		if _jd.has(&"Char"):
+			char = str(_jd.Char)
+		if _jd.has(&"X"):
+			rect.position.x = _jd.X as int
+		if _jd.has(&"Y"):
+			rect.position.y = _jd.Y as int
+		if _jd.has(&"Width"):
+			rect.size.x = _jd.Width as int
+		if _jd.has(&"Height"):
+			rect.size.y = _jd.Height as int
+		if _jd.has(&"Shift"):
+			shift = _jd.Shift as int
+		if _jd.has(&"Offset"):
+			offset = _jd.Offset as int
