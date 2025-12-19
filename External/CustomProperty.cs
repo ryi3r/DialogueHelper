@@ -1,22 +1,32 @@
 using System;
 using System.Globalization;
 using Avalonia.Controls;
-using JetBrains.Annotations;
+using Lua;
 
 namespace DialogueHelper.External;
 
-[UsedImplicitly]
-public class CustomProperty(string visualName, string name, Type type, dynamic? defaultValue = null, bool readOnly = false)
+[LuaObject]
+public partial class CustomProperty(string visualName, string name, string type, dynamic? defaultValue = null, bool readOnly = false)
 {
+    [LuaMember("name")]
     public readonly string Name = name;
+    [LuaMember("visual_name")]
     public readonly string VisualName = visualName;
-    public readonly Type ValueType = type;
+    [LuaMember("value_type")]
+    public readonly string ValueType = type;
+    [LuaMember("value")]
     public dynamic? Value = defaultValue;
+    [LuaMember("default_value")]
     public readonly dynamic? DefaultValue = defaultValue;
     // ReSharper disable once FieldCanBeMadeReadOnly.Global
+    [LuaMember("readonly")]
     public bool ReadOnly = readOnly;
     public Control? Node;
 
+    [LuaMember("create")]
+    public static CustomProperty Create(string visualName, string name, string type, dynamic? defaultValue = null, bool readOnly = false) => new(visualName, name, type, defaultValue, readOnly);
+
+    [LuaMember("update_ui_value")]
     public void UpdateUiValue()
     {
         if (Node == null)
@@ -37,7 +47,8 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
                 break;
         }
     }
-    
+
+    [LuaMember("string_to_value")]
     public void StringToValue(string value)
     {
         if (value.Length <= 0)
@@ -48,31 +59,15 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
 
         Value = ValueType switch
         {
-            not null when ValueType == typeof(bool) => value == "true",
-            not null when ValueType == typeof(byte) => byte.Parse(value),
-            not null when ValueType == typeof(short) => short.Parse(value),
-            not null when ValueType == typeof(int) => int.Parse(value),
-            not null when ValueType == typeof(long) => long.Parse(value),
-            not null when ValueType == typeof(sbyte) => sbyte.Parse(value),
-            not null when ValueType == typeof(ushort) => ushort.Parse(value),
-            not null when ValueType == typeof(uint) => uint.Parse(value),
-            not null when ValueType == typeof(ulong) => ulong.Parse(value),
-            not null when ValueType == typeof(float) => float.Parse(value),
-            not null when ValueType == typeof(double) => double.Parse(value),
-            not null when ValueType == typeof(string) => value,
+            "boolean" => bool.Parse(value),
+            "number" => double.Parse(value),
+            "integer" => long.Parse(value),
+            "string" => value,
+            "nil" => null,
             _ => throw new NotSupportedException($"{ValueType}")
         };
     }
 
-    public string ValueToString()
-    {
-        if (Value == null)
-            return "";
-        
-        return ValueType switch
-        {
-            not null when ValueType == typeof(bool) => Value ? "true" : "false",
-            _ => Value.ToString(CultureInfo.InvariantCulture),
-        };
-    }
+    [LuaMember("value_to_string")]
+    public string ValueToString() => Value is null ? "" : Value.ToString(CultureInfo.InvariantCulture);
 }

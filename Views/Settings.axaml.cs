@@ -7,6 +7,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DialogueHelper.External;
 using DialogueHelper.StylesParser;
+using Lua;
 
 namespace DialogueHelper.Views;
 
@@ -15,27 +16,27 @@ public partial class Settings : Window
     public readonly MainWindow? MainWindow;
     public readonly List<StyleParser> StyleData = [];
     public List<string> IgnoreStyles = [];
-    
+
     public bool Init;
 
     public Settings()
     {
         InitializeComponent();
     }
-    
+
     public Settings(MainWindow mainWindow)
     {
         MainWindow = mainWindow;
-        
+
         InitializeComponent();
-        
+
         AuthorGroup.Text = mainWindow.AuthorGroup;
         AuthorName.Text = mainWindow.AuthorName;
-        
+
         EnableGit.IsChecked = mainWindow.GitOptions.IsEnabled;
         RepoUrl.Text = mainWindow.GitOptions.RepoUrl;
         SelectedBranch.Text = mainWindow.GitOptions.Branch;
-        
+
         StyleComboBox.Items.Clear();
     }
 
@@ -50,7 +51,7 @@ public partial class Settings : Window
         }
         if ((AuthorName.Text ?? "").Length <= 0)
             return;
-        
+
         if (MainWindow != null)
         {
             MainWindow.GitOptions.IsEnabled = (bool)EnableGit.IsChecked;
@@ -90,15 +91,14 @@ public partial class Settings : Window
                     args.Cancel = true;
             };
         }
-        
+
         foreach (var folder in Directory.EnumerateDirectories("Styles"))
         {
             if (IgnoreStyles.Contains(folder))
                 continue;
             try
             {
-                var style = new StyleParser(folder);
-                await Task.Run(() => style.CompileCode());
+                using var style = await StyleParser.Create(folder);
                 StyleData.Add(style);
                 StyleComboBox.Items.Add(new TextBlock()
                 {
@@ -106,8 +106,8 @@ public partial class Settings : Window
                 });
                 if (!MainWindow!.StyleSettings.ContainsKey(folder))
                     MainWindow.StyleSettings.Add(folder, []);
-                var res = (IEnumerable<CustomProperty>?)(style.ScriptType?.GetMethod("RegisterCustomSettings")
-                    ?.Invoke(null, [])) ?? [];
+                IEnumerable<CustomProperty> res = style.LuaState.Environment.TryGetValue("RegisterCustomSettings", out var f) ?
+                    (await style.LuaState.CallAsync(f, []))[0].Read<LuaTable>().Select(x => x.Value.Read<CustomProperty>()) : [];
                 var props = MainWindow.StyleSettings[folder];
                 foreach (var prop in res)
                 {

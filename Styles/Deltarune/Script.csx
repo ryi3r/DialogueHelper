@@ -31,13 +31,13 @@ public static class Script
     ];
     public static CustomProperty EnablePortrait = new("Enable Portrait", "enablePortrait", typeof(bool), false);
     
-    public static void Init(CustomToolWindowHandler wH)
+    public static async Task Init(CustomToolWindowHandler wH)
     {
         // This is called when the script is loaded and ready to go.
         //await wH.ShowDialog(new InfoWindow("Hello world!"));
     }
     
-    public static List<CustomProperty> RegisterCustomProperties()
+    public static async Task<List<CustomProperty>> RegisterCustomProperties()
     {
         // Store these somewhere if you're going to use them
         return [
@@ -45,12 +45,12 @@ public static class Script
         ];
     }
 
-    public static List<CustomTool> RegisterCustomTools()
+    public static async Task<List<CustomTool>> RegisterCustomTools()
     {
         return [/*new("Import from data.win", ImportFromDataWin), new("Export to data.win", CustomToolFileTest)*/];
     }
     
-    public static async void ImportFromDataWin(CustomToolWindowHandler wH)
+    public static async Task ImportFromDataWin(CustomToolWindowHandler wH)
     {
         if (wH.GetLoadedFileData() != null)
         {
@@ -92,7 +92,7 @@ public static class Script
         await wH.ShowDialog(new InfoWindow($"Imported data successfully."));
     }
 
-    public static void PrepareDraw(CustomToolWindowHandler wH, ExternalData data)
+    public static async Task PrepareDraw(CustomToolWindowHandler wH, ExternalData data)
     {
         data.Env["LastNewline"] = false;
         data.Env["StartedAsterisk"] = false;
@@ -118,7 +118,7 @@ public static class Script
         }
     }
 
-    public static void DrawGlyph(CustomToolWindowHandler wH, ExternalData data)
+    public static async Task DrawGlyph(CustomToolWindowHandler wH, ExternalData data)
     {
         if (data.Char.IsIgnore || (!data.Font.GlyphDictionary.ContainsKey(data.Char.Char) && !data.Char.IsNewline))
             return;

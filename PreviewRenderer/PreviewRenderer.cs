@@ -5,13 +5,14 @@ using Avalonia.Media.Imaging;
 using DialogueHelper.External;
 using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
+using Lua;
 
 namespace DialogueHelper.PreviewRenderer;
 
 public class PreviewRenderer(MainWindow mainWindow)
 {
     public readonly MainWindow MainWindow = mainWindow;
-    
+
     public async void CreateRender(StyleParser style, int selectedBox, int selectedFont, float boxScale, float fontScale, float previewScale, string str, Canvas canvas)
     {
         canvas.Children.Clear();
@@ -31,7 +32,7 @@ public class PreviewRenderer(MainWindow mainWindow)
 
         canvas.Width = 0.0;
         canvas.Height = 0.0;
-        
+
         foreach (var bImg in box.Images)
         {
             var imgAsset = style.ImageAssets[bImg.Path];
@@ -45,7 +46,7 @@ public class PreviewRenderer(MainWindow mainWindow)
             avImg.SetValue(Canvas.LeftProperty, bImg.Position[0]);
             avImg.SetValue(Canvas.TopProperty, bImg.Position[1]);
             canvas.Children.Add(avImg);
-            
+
             if (bImg.Position[0] + imgAsset.Size.Width > canvas.Width)
                 canvas.Width = bImg.Position[0] + imgAsset.Size.Width;
             if (bImg.Position[1] + imgAsset.Size.Height > canvas.Height)
@@ -57,41 +58,47 @@ public class PreviewRenderer(MainWindow mainWindow)
             Box = box,
             Char = new()
             {
-                Char = 'A',
+                Char = "A",
                 Index = 0,
                 String = str,
-                    
+
                 IsNewline = false,
                 IsIgnore = false,
-                    
-                StartPosition = ((int)box.TextOffset[0], (int)box.TextOffset[1]),
+
+                StartPosition = new((int)box.TextOffset[0], (int)box.TextOffset[1]),
             },
-            Env = new(),
+            Env = [],
             Font = font,
             Glyph = new()
             {
-                Scale = (fontScale * previewScale, fontScale * previewScale),
+                Scale = new(fontScale * previewScale, fontScale * previewScale),
             },
             Style = style,
         };
         try
         {
             var wh = new CustomToolWindowHandler(MainWindow, style);
-            style.ScriptType?.GetMethod("PrepareDraw")?.Invoke(null, [wh, eData]);
+            {
+                if (style.LuaState.Environment.TryGetValue("PrepareDraw", out var f))
+                    await style.LuaState.CallAsync(f, [wh, eData]);
+            }
             eData.Char.String = str;
             var i = 0;
             foreach (var chr in str)
             {
-                eData.Char.Char = chr;
+                eData.Char.Char = chr.ToString();
                 eData.Char.Index = i++;
                 eData.Char.IsNewline = style.Metadata.NewLines.Contains(chr);
                 eData.Char.IsIgnore = style.Metadata.Ignore.Contains(chr);
                 eData.Glyph = new()
                 {
-                    Scale = (fontScale * previewScale, fontScale * previewScale),
+                    Scale = new(fontScale * previewScale, fontScale * previewScale),
                 };
 
-                style.ScriptType?.GetMethod("DrawGlyph")?.Invoke(null, [wh, eData]);
+                {
+                    if (style.LuaState.Environment.TryGetValue("DrawGlyph", out var f))
+                        await style.LuaState.CallAsync(f, [wh, eData]);
+                }
             }
         }
         catch (Exception ex)

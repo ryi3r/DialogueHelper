@@ -1,13 +1,15 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Lua;
 
 namespace DialogueHelper.Views;
 
-public partial class InfoWindow : Window
+[LuaObject]
+public partial class InfoWindow : LuaWindow
 {
     public readonly TextBlock TitleBlock;
     public readonly TextBlock TextBlock;
-    
+
     public InfoWindow()
     {
         InitializeComponent();
@@ -27,4 +29,16 @@ public partial class InfoWindow : Window
     {
         Close();
     }
+
+    [LuaMember("create_empty")]
+    public static InfoWindow CreateEmpty() => new();
+
+    [LuaMember("create")]
+    public static InfoWindow Create(string text) => new(text);
+
+    [LuaMember("set_title_block_text")]
+    public void SetTitleBlockText(string text) => TitleBlock.Text = text;
+
+    [LuaMember("set_text_block_text")]
+    public void SetTextBlockText(string text) => TextBlock.Text = text;
 }

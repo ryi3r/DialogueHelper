@@ -1,11 +1,17 @@
+using Lua;
+
 namespace DialogueHelper.FileFormat;
 
-public class LastEdited
+[LuaObject]
+public partial class LastEdited
 {
+    [LuaMember("timestamp")]
     public long Timestamp = -1;
+    [LuaMember("author_id")]
     public int AuthorId = -1;
+    [LuaMember("legacy_author_name")]
     public string? LegacyAuthorName;
-    
+
     public LastEdited() { }
 
     public LastEdited(string data)
@@ -18,8 +24,12 @@ public class LastEdited
         Timestamp = long.Parse(sData[1]);
     }
 
-    public string OutputString()
-    {
-        return $"{AuthorId},{Timestamp}";
-    }
+    [LuaMember("create_empty")]
+    public static LastEdited CreateEmpty() => new();
+
+    [LuaMember("create")]
+    public static LastEdited Create(string data) => new(data);
+
+    [LuaMember("output_string")]
+    public string OutputString() => $"{AuthorId},{Timestamp}";
 }
