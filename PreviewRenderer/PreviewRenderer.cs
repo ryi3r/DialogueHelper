@@ -5,7 +5,8 @@ using Avalonia.Media.Imaging;
 using DialogueHelper.External;
 using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
-using Lua;
+using Microsoft.ClearScript;
+using Microsoft.ClearScript.JavaScript;
 
 namespace DialogueHelper.PreviewRenderer;
 
@@ -30,8 +31,8 @@ public class PreviewRenderer(MainWindow mainWindow)
         var box = style.BoxMetadata[selectedBox];
         var font = style.FontMetadata[selectedFont];
 
-        canvas.Width = 0.0;
-        canvas.Height = 0.0;
+        canvas.Width = 0;
+        canvas.Height = 0;
 
         foreach (var bImg in box.Images)
         {
@@ -79,8 +80,8 @@ public class PreviewRenderer(MainWindow mainWindow)
         {
             var wh = new CustomToolWindowHandler(MainWindow, style);
             {
-                if (style.LuaState.Environment.TryGetValue("PrepareDraw", out var f))
-                    await style.LuaState.CallAsync(f, [wh, eData]);
+                if (style.Engine.Script.PrepareDraw is ScriptObject s)
+                    await s.InvokeAsFunction(wh, eData).ToTask();
             }
             eData.Char.String = str;
             var i = 0;
@@ -96,8 +97,8 @@ public class PreviewRenderer(MainWindow mainWindow)
                 };
 
                 {
-                    if (style.LuaState.Environment.TryGetValue("DrawGlyph", out var f))
-                        await style.LuaState.CallAsync(f, [wh, eData]);
+                    if (style.Engine.Script.DrawGlyph is ScriptObject s)
+                        await s.InvokeAsFunction(wh, eData).ToTask();
                 }
             }
         }

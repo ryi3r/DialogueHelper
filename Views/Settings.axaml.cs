@@ -7,7 +7,8 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DialogueHelper.External;
 using DialogueHelper.StylesParser;
-using Lua;
+using Microsoft.ClearScript;
+using Microsoft.ClearScript.JavaScript;
 
 namespace DialogueHelper.Views;
 
@@ -52,6 +53,11 @@ public partial class Settings : Window
         if ((AuthorName.Text ?? "").Length <= 0)
             return;
 
+        foreach (var (i, s) in StyleData.Index())
+        {
+            if (i != StyleComboBox.SelectedIndex)
+                s.Dispose();
+        }
         if (MainWindow != null)
         {
             MainWindow.GitOptions.IsEnabled = (bool)EnableGit.IsChecked;
@@ -71,6 +77,8 @@ public partial class Settings : Window
             }
             MainWindow.SaveSettings();
         }
+        else
+            StyleData[StyleComboBox.SelectedIndex].Dispose();
         Close();
     }
 
@@ -80,7 +88,6 @@ public partial class Settings : Window
             Close();
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void OnOpened(object? sender, EventArgs e)
     {
         if (Init)
@@ -98,7 +105,8 @@ public partial class Settings : Window
                 continue;
             try
             {
-                using var style = await StyleParser.Create(folder);
+                // we dispose this later on
+                var style = await StyleParser.Create(folder);
                 StyleData.Add(style);
                 StyleComboBox.Items.Add(new TextBlock()
                 {
@@ -106,8 +114,8 @@ public partial class Settings : Window
                 });
                 if (!MainWindow!.StyleSettings.ContainsKey(folder))
                     MainWindow.StyleSettings.Add(folder, []);
-                IEnumerable<CustomProperty> res = style.LuaState.Environment.TryGetValue("RegisterCustomSettings", out var f) ?
-                    (await style.LuaState.CallAsync(f, []))[0].Read<LuaTable>().Select(x => x.Value.Read<CustomProperty>()) : [];
+                IEnumerable<CustomProperty> res = style.Engine.Script.RegisterCustomSettings is ScriptObject s ?
+                    ((ScriptObject)(await s.InvokeAsFunction().ToTask())).ToEnumerable().Select(x => (CustomProperty)x) : [];
                 var props = MainWindow.StyleSettings[folder];
                 foreach (var prop in res)
                 {

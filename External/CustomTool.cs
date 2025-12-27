@@ -1,17 +1,11 @@
 using System;
 using System.Threading.Tasks;
-using Lua;
+using Microsoft.ClearScript;
 
 namespace DialogueHelper.External;
 
-[LuaObject]
-public partial class CustomTool(string name, LuaValue luaFunc)
+public class CustomTool(string name, ScriptObject func)
 {
-    [LuaMember("name")]
     public string Name = name;
-    [LuaMember("func")]
-    public LuaValue LuaFunc = luaFunc;
-
-    [LuaMember("create")]
-    public static CustomTool Create(string name, LuaValue func) => new(name, func);
+    public ScriptObject Func = func;
 }

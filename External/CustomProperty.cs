@@ -1,32 +1,19 @@
 using System;
 using System.Globalization;
 using Avalonia.Controls;
-using Lua;
 
 namespace DialogueHelper.External;
 
-[LuaObject]
-public partial class CustomProperty(string visualName, string name, string type, dynamic? defaultValue = null, bool readOnly = false)
+public class CustomProperty(string visualName, string name, string type, dynamic? defaultValue = null, bool readOnly = false)
 {
-    [LuaMember("name")]
     public readonly string Name = name;
-    [LuaMember("visual_name")]
     public readonly string VisualName = visualName;
-    [LuaMember("value_type")]
     public readonly string ValueType = type;
-    [LuaMember("value")]
     public dynamic? Value = defaultValue;
-    [LuaMember("default_value")]
     public readonly dynamic? DefaultValue = defaultValue;
-    // ReSharper disable once FieldCanBeMadeReadOnly.Global
-    [LuaMember("readonly")]
     public bool ReadOnly = readOnly;
     public Control? Node;
 
-    [LuaMember("create")]
-    public static CustomProperty Create(string visualName, string name, string type, dynamic? defaultValue = null, bool readOnly = false) => new(visualName, name, type, defaultValue, readOnly);
-
-    [LuaMember("update_ui_value")]
     public void UpdateUiValue()
     {
         if (Node == null)
@@ -48,7 +35,6 @@ public partial class CustomProperty(string visualName, string name, string type,
         }
     }
 
-    [LuaMember("string_to_value")]
     public void StringToValue(string value)
     {
         if (value.Length <= 0)
@@ -68,6 +54,5 @@ public partial class CustomProperty(string visualName, string name, string type,
         };
     }
 
-    [LuaMember("value_to_string")]
     public string ValueToString() => Value is null ? "" : Value.ToString(CultureInfo.InvariantCulture);
 }

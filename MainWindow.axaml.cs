@@ -16,7 +16,8 @@ using DialogueHelper.FileFormat;
 using DialogueHelper.Options;
 using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
-using Lua;
+using Microsoft.ClearScript;
+using Microsoft.ClearScript.JavaScript;
 using FileInfo = DialogueHelper.Views.FileInfo;
 
 namespace DialogueHelper;
@@ -414,9 +415,9 @@ public partial class MainWindow : Window
                 StyleData = await StyleParser.Create(SelectedStyle);
                 if (!StyleSettings.ContainsKey(SelectedStyle))
                     StyleSettings.Add(SelectedStyle, []);
-                if (StyleData.LuaState.Environment.TryGetValue("RegisterCustomSettings", out var f))
+                if (StyleData.Engine.Script.RegisterCustomSettings is ScriptObject s)
                 {
-                    IEnumerable<CustomProperty> res = (await StyleData.LuaState.CallAsync(f, []))[0].Read<LuaTable>().Select(x => x.Value.Read<CustomProperty>()) ?? [];
+                    var res = ((ScriptObject)(await s.InvokeAsFunction().ToTask())).ToEnumerable().Select(x => (CustomProperty)x);
                     var props = StyleSettings[SelectedStyle];
                     foreach (var prop in res)
                     {
@@ -469,8 +470,8 @@ public partial class MainWindow : Window
         try
         {
             {
-                if (StyleData!.LuaState.Environment.TryGetValue("Init", out var f))
-                    await StyleData.LuaState.CallAsync(f, [new CustomToolWindowHandler(this, StyleData)]);
+                if (StyleData!.Engine.Script.Init is ScriptObject s)
+                    await s.InvokeAsFunction(new CustomToolWindowHandler(this, StyleData)).ToTask();
             }
             CustomTools.Clear();
             CustomProperties.Clear();
@@ -500,16 +501,14 @@ public partial class MainWindow : Window
             FontComboBox.SelectedIndex = lastFontSelected;
 
             {
-                if (StyleData.LuaState.Environment.TryGetValue("RegisterCustomTools", out var f))
-                    CustomTools = [.. (await StyleData.LuaState.CallAsync(f, []))[0].Read<LuaTable>().Select(x => x.Value.Read<CustomTool>())];
-                else
-                    CustomTools = [];
+                CustomTools = [];
+                if (StyleData.Engine.Script.RegisterCustomTools is ScriptObject s)
+                    CustomTools = [.. ((ScriptObject)(await s.InvokeAsFunction().ToTask())).ToEnumerable().Select(x => (CustomTool)x)];
             }
             {
-                if (StyleData.LuaState.Environment.TryGetValue("RegisterCustomProperties", out var f))
-                    CustomProperties = [.. (await StyleData.LuaState.CallAsync(f, []))[0].Read<LuaTable>().Select(x => x.Value.Read<CustomProperty>())];
-                else
-                    CustomProperties = [];
+                CustomProperties = [];
+                if (StyleData.Engine.Script.RegisterCustomProperties is ScriptObject s)
+                    CustomProperties = [.. ((ScriptObject)(await s.InvokeAsFunction().ToTask())).ToEnumerable().Select(x => (CustomProperty)x)];
             }
         }
         catch (Exception ex)
@@ -565,7 +564,7 @@ public partial class MainWindow : Window
                     {
                         try
                         {
-                            await StyleData!.LuaState.CallAsync(tool.LuaFunc!, [new CustomToolWindowHandler(this, StyleData!)]);
+                            await tool.Func!.InvokeAsFunction(new CustomToolWindowHandler(this, StyleData!)).ToTask();
                         }
                         catch (Exception ex)
                         {
@@ -606,11 +605,11 @@ public partial class MainWindow : Window
             var item = new StackPanel()
             {
                 Orientation = Orientation.Horizontal,
-                Margin = new(5.0),
+                Margin = new(5),
             };
             item.Children.Add(new TextBlock()
             {
-                Margin = new(7.0),
+                Margin = new(7),
                 Text = tool.VisualName,
             });
             switch (tool.ValueType)
@@ -620,7 +619,7 @@ public partial class MainWindow : Window
                         item.Children.Clear();
                         var node = new CheckBox()
                         {
-                            IsChecked = (bool?)tool.Value,
+                            IsChecked = (bool)(tool.Value ?? false),
                             IsThreeState = false,
                             Content = tool.VisualName,
                             IsEnabled = !tool.ReadOnly,
@@ -642,7 +641,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = (decimal?)tool.Value,
+                            Value = (decimal)(tool.Value ?? 0),
                             Minimum = -0x8000000000000000,
                             Maximum = 0x7fffffffffffffff,
                             FormatString = "0",
@@ -666,7 +665,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = (decimal)(tool.Value ?? 0.0),
+                            Value = (decimal)(tool.Value ?? 0),
                             FormatString = "0.00",
                             Increment = (decimal)0.01,
                             IsReadOnly = tool.ReadOnly,
@@ -812,16 +811,14 @@ public partial class MainWindow : Window
 
     void BoxComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (SelectedString != null)
-            SelectedString.BoxStyle = BoxComboBox.SelectedIndex;
+        SelectedString?.BoxStyle = BoxComboBox.SelectedIndex;
         EditableText_OnTextChanged(null, null);
         OriginalText_OnTextChanged(null, null);
     }
 
     void FontComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (SelectedString != null)
-            SelectedString.FontStyle = FontComboBox.SelectedIndex;
+        SelectedString?.FontStyle = FontComboBox.SelectedIndex;
         EditableText_OnTextChanged(null, null);
         OriginalText_OnTextChanged(null, null);
     }

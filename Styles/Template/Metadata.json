@@ -1,7 +1,9 @@
 {
 	"Name": "Template",
 	"Author": "ryi3r",
-	"ScriptPath": "Script.lua",
-	"NewLines": ["\n"],
+	"ScriptPath": "Script.js",
+	"NewLines": [
+		"\n"
+	],
 	"Ignore": []
 }

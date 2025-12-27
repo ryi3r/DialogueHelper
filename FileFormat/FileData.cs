@@ -2,90 +2,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DialogueHelper.Views;
-using Lua;
 
 namespace DialogueHelper.FileFormat;
 
-[LuaObject]
 public partial class FileData
 {
-    [LuaMember("theme_name")]
     public string? ThemeName;
-    [LuaMember("file_version")]
     public string? FileVersion;
     public readonly Dictionary<string, Dictionary<int, StringContainer>> Strings = [];
     public readonly Dictionary<int, StringContainer> StringIds = [];
-    [LuaMember("last_string_id")]
     public int LastStringId;
     public readonly List<string> AuthorList = [];
 
-    [LuaMember("get_strings")]
-    public StringContainer? GetStrings(string keyA, int keyB) => Strings.TryGetValue(keyA, out var a) && a.TryGetValue(keyB - 1, out var b) ? b : null;
-    
-    [LuaMember("size_strings")]
-    public int SizeStrings() => Strings.Count;
-
-    [LuaMember("keys_strings")]
-    public LuaTable KeysStrings()
-    {
-        var t = new LuaTable();
-        foreach (var (i, k) in Strings.Keys.Index())
-            t.Insert(i + 1, k);
-        return t;
-    }
-
-    [LuaMember("has_strings")]
-    public bool HasStrings(string key) => Strings.ContainsKey(key);
-
-    [LuaMember("size_strings_sub")]
-    public LuaValue SizeStringsSub(string key) => Strings.TryGetValue(key, out var v) ? v.Count : LuaValue.Nil;
-
-    [LuaMember("keys_strings_sub")]
-    public LuaTable? KeysStringsSub(string key)
-    {
-        if (Strings.TryGetValue(key, out var v))
-        {
-            var t = new LuaTable();
-            foreach (var (i, k) in v.Keys.Index())
-                t.Insert(i + 1, k);
-            return t;
-        }
-        return null;
-    }
-
-    [LuaMember("has_strings_sub")]
-    public bool HasStringsSub(string keyA, int keyB) => Strings.TryGetValue(keyA, out var v) && v.ContainsKey(keyB);
-
-    [LuaMember("get_string_ids")]
-    public StringContainer? GetStringIds(int key) => StringIds.TryGetValue(key - 1, out var v) ? v : null;
-
-    [LuaMember("size_string_ids")]
-    public int SizeStringIds() => StringIds.Count;
-
-    [LuaMember("keys_string_ids")]
-    public LuaTable KeysStringIds()
-    {
-        var t = new LuaTable();
-        foreach (var (i, k) in StringIds.Keys.Index())
-            t.Insert(i + 1, k);
-        return t;
-    }
-
-    [LuaMember("has_string_ids")]
-    public bool HasStringIds(int key) => StringIds.ContainsKey(key);
-
-    [LuaMember("get_author_list")]
-    public string? GetAuthorList(int key) => key - 1 < AuthorList.Count && key > 0 ? AuthorList[key - 1] : null;
-    
-    [LuaMember("size_author_list")]
-    public int SizeAuthorList() => AuthorList.Count;
-
-    [LuaMember("load_string")]
     public static FileData LoadString(List<FormatEntry> fileEntries, LoadingWindow? lWin = null)
     {
         var fData = new FileData();
-        if (lWin != null)
-            lWin.ProgressBar.Maximum = fileEntries.Count;
+        lWin?.ProgressBar.Maximum = fileEntries.Count;
 
         var loaded = 0;
         var currentEntry = "";
@@ -133,14 +65,12 @@ public partial class FileData
                     fData.AuthorList.Add(entry.Data[""]);
                     break;
             }
-            if (lWin != null)
-                lWin.ProgressBar.Value = loaded++;
+            lWin?.ProgressBar.Value = loaded++;
         }
 
         return fData;
     }
 
-    [LuaMember("output_string")]
     public string OutputString()
     {
         var fel = new List<FormatEntry>();
