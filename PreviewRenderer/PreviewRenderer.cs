@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -11,7 +12,7 @@ namespace DialogueHelper.PreviewRenderer;
 public class PreviewRenderer(MainWindow mainWindow)
 {
     public readonly MainWindow MainWindow = mainWindow;
-    
+
     public async void CreateRender(StyleParser style, int selectedBox, int selectedFont, float boxScale, float fontScale, float previewScale, string str, Canvas canvas)
     {
         canvas.Children.Clear();
@@ -31,7 +32,7 @@ public class PreviewRenderer(MainWindow mainWindow)
 
         canvas.Width = 0.0;
         canvas.Height = 0.0;
-        
+
         foreach (var bImg in box.Images)
         {
             var imgAsset = style.ImageAssets[bImg.Path];
@@ -45,12 +46,14 @@ public class PreviewRenderer(MainWindow mainWindow)
             avImg.SetValue(Canvas.LeftProperty, bImg.Position[0]);
             avImg.SetValue(Canvas.TopProperty, bImg.Position[1]);
             canvas.Children.Add(avImg);
-            
+
             if (bImg.Position[0] + imgAsset.Size.Width > canvas.Width)
                 canvas.Width = bImg.Position[0] + imgAsset.Size.Width;
             if (bImg.Position[1] + imgAsset.Size.Height > canvas.Height)
                 canvas.Height = bImg.Position[1] + imgAsset.Size.Height;
         }
+        if (!style.InitializedScript)
+            return;
         var eData = new ExternalData(MainWindow, canvas, style.ImageAssets[font.ImagePath])
         {
             GlobalEnv = style.GlobalEnv,
@@ -60,13 +63,13 @@ public class PreviewRenderer(MainWindow mainWindow)
                 Char = 'A',
                 Index = 0,
                 String = str,
-                    
+
                 IsNewline = false,
                 IsIgnore = false,
-                    
+
                 StartPosition = ((int)box.TextOffset[0], (int)box.TextOffset[1]),
             },
-            Env = new(),
+            Env = [],
             Font = font,
             Glyph = new()
             {
@@ -77,7 +80,7 @@ public class PreviewRenderer(MainWindow mainWindow)
         try
         {
             var wh = new CustomToolWindowHandler(MainWindow, style);
-            style.ScriptType?.GetMethod("PrepareDraw")?.Invoke(null, [wh, eData]);
+            await ((Task?)style.Script?.GetMethod("PrepareDraw")?.Invoke(null, [wh, eData]) ?? Task.CompletedTask);
             eData.Char.String = str;
             var i = 0;
             foreach (var chr in str)
@@ -91,7 +94,7 @@ public class PreviewRenderer(MainWindow mainWindow)
                     Scale = (fontScale * previewScale, fontScale * previewScale),
                 };
 
-                style.ScriptType?.GetMethod("DrawGlyph")?.Invoke(null, [wh, eData]);
+                await ((Task?)style.Script?.GetMethod("DrawGlyph")?.Invoke(null, [wh, eData]) ?? Task.CompletedTask);
             }
         }
         catch (Exception ex)

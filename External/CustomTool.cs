@@ -1,9 +1,10 @@
 using System;
+using System.Threading.Tasks;
 
 namespace DialogueHelper.External;
 
-public class CustomTool(string name, Action<CustomToolWindowHandler> func)
+public class CustomTool(string name, Func<CustomToolWindowHandler, Task> func)
 {
     public string Name = name;
-    public Action<CustomToolWindowHandler> Func = func;
+    public Func<CustomToolWindowHandler, Task> Func = func;
 }

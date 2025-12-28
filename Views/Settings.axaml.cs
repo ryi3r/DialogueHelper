@@ -15,27 +15,27 @@ public partial class Settings : Window
     public readonly MainWindow? MainWindow;
     public readonly List<StyleParser> StyleData = [];
     public List<string> IgnoreStyles = [];
-    
+
     public bool Init;
 
     public Settings()
     {
         InitializeComponent();
     }
-    
+
     public Settings(MainWindow mainWindow)
     {
         MainWindow = mainWindow;
-        
+
         InitializeComponent();
-        
+
         AuthorGroup.Text = mainWindow.AuthorGroup;
         AuthorName.Text = mainWindow.AuthorName;
-        
+
         EnableGit.IsChecked = mainWindow.GitOptions.IsEnabled;
         RepoUrl.Text = mainWindow.GitOptions.RepoUrl;
         SelectedBranch.Text = mainWindow.GitOptions.Branch;
-        
+
         StyleComboBox.Items.Clear();
     }
 
@@ -50,7 +50,7 @@ public partial class Settings : Window
         }
         if ((AuthorName.Text ?? "").Length <= 0)
             return;
-        
+
         if (MainWindow != null)
         {
             MainWindow.GitOptions.IsEnabled = (bool)EnableGit.IsChecked;
@@ -90,7 +90,7 @@ public partial class Settings : Window
                     args.Cancel = true;
             };
         }
-        
+
         foreach (var folder in Directory.EnumerateDirectories("Styles"))
         {
             if (IgnoreStyles.Contains(folder))
@@ -106,8 +106,8 @@ public partial class Settings : Window
                 });
                 if (!MainWindow!.StyleSettings.ContainsKey(folder))
                     MainWindow.StyleSettings.Add(folder, []);
-                var res = (IEnumerable<CustomProperty>?)(style.ScriptType?.GetMethod("RegisterCustomSettings")
-                    ?.Invoke(null, [])) ?? [];
+                var res = await ((Task<IEnumerable<CustomProperty>>?)(style.Script?.GetMethod("RegisterCustomSettings")
+                    ?.Invoke(null, [])) ?? Task.FromResult(Enumerable.Empty<CustomProperty>()));
                 var props = MainWindow.StyleSettings[folder];
                 foreach (var prop in res)
                 {

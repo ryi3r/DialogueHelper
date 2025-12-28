@@ -11,6 +11,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using CSScripting;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.Options;
@@ -41,7 +42,7 @@ public partial class MainWindow : Window
     public readonly Dictionary<TreeViewItem, int> EtvIndexes = [];
     public readonly Dictionary<TreeViewItem, Dictionary<int, TreeViewItem>> EtvTargetChildren = [];
     public bool EditableTextIgnoreUpdateOnce;
-    
+
     public MainWindow()
     {
         InitializeComponent();
@@ -60,7 +61,7 @@ public partial class MainWindow : Window
             }
         };
     }
-    
+
     // ReSharper disable once AsyncVoidMethod
     async void OpenFile_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -70,7 +71,7 @@ public partial class MainWindow : Window
             if ((await unsaved.ShowDialog<bool>(this)))
                 return;
         }
-        
+
         var file = await StorageProvider.OpenFilePickerAsync(new()
         {
             Title = "Open Dialogue Helper file...",
@@ -87,7 +88,7 @@ public partial class MainWindow : Window
         if (file.Count == 0)
             return;
         var fStorage = file[0];
-        
+
         EntryTreeView.Items.Clear();
         SimilarStringsPanel.Items.Clear();
         SimilarStringsNone.IsVisible = true;
@@ -124,7 +125,7 @@ public partial class MainWindow : Window
             }
             else
             {
-                arr = (List<int>) [strCont.Id];
+                arr = (List<int>)[strCont.Id];
                 eqStr.Add(strCont.OriginalText, arr);
                 strCont.EqStrings = arr;
             }
@@ -134,7 +135,7 @@ public partial class MainWindow : Window
 
         lWin.Text.Text = "Updating view...";
         PopulateEntryTreeView();
-        
+
         lWin.Close();
         IsFileModified = false;
         Title = "Dialogue Helper";
@@ -195,7 +196,7 @@ public partial class MainWindow : Window
             return;
         var key = EtvKeys[item];
         var strs = FileData.Strings[key];
-        
+
         var i = 0;
         var modified = 0;
         var list = EtvTargetChildren[item];
@@ -221,7 +222,7 @@ public partial class MainWindow : Window
     }
 
     void OnLayoutUpdated(object? sender, EventArgs e)
-    { 
+    {
         EntryTreeView.Height = LeftStackPanel.Bounds.Height - EntryTextBox.DesiredSize.Height - 11;
         //ScrollViewer.MaxHeight = LeftStackPanel.Bounds.Height - TextPanel.DesiredSize.Height;
     }
@@ -250,7 +251,7 @@ public partial class MainWindow : Window
                 else
                     prop.Value = prop.DefaultValue;
             }
-            
+
             try
             {
                 SimilarStringsPanel.Items.Clear();
@@ -265,7 +266,7 @@ public partial class MainWindow : Window
                 var s = FileData.StringIds[sstr];
                 SimilarStringsPanel.Items.Add($"({sstr}) {((s.Text != null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}");
             }
-            
+
             UpdateCustomScriptFields();
         }
         else
@@ -276,14 +277,14 @@ public partial class MainWindow : Window
     {
         if (ScrollViewerOriginal == null || ScrollViewer == null)
             return;
-        
+
         ScrollViewerOriginal.Height = Math.Max(PanelOriginal.Bounds.Height - OriginalLabel.DesiredSize.Height, 1.0);
-        
+
         ScrollViewer.Height = Math.Max(Panel.Bounds.Height - EditableLabel.DesiredSize.Height - OuterGridSplitter.Bounds.Height - 5.0, 1.0);
         Panel.Height = Math.Max(MiddleStackPanel.Bounds.Height - PanelOriginal.Bounds.Height - InnerGridSplitter.Bounds.Height, 1.0);
-        
+
         OuterMiddleStackPanel.MaxHeight = MainGrid.Bounds.Height - 10.0;
-        
+
     }
 
     // ReSharper disable once AsyncVoidMethod
@@ -302,7 +303,7 @@ public partial class MainWindow : Window
         if (!File.Exists(file))
             return;
         var f = File.ReadAllLines(file);
-        
+
         GitOptions.IsEnabled = f[0] == "1";
         GitOptions.RepoUrl = f[1];
         GitOptions.Branch = f[2];
@@ -389,11 +390,11 @@ public partial class MainWindow : Window
                 await Task.Run(() => StyleData.CompileCode());
                 if (!StyleSettings.ContainsKey(SelectedStyle))
                     StyleSettings.Add(SelectedStyle, []);
-                if (StyleData.ScriptType != null)
+                if (StyleData.Script != null)
                 {
-                    var res = (IEnumerable<CustomProperty>?)StyleData.ScriptType
+                    var res = await ((Task<IEnumerable<CustomProperty>>?)StyleData.Script
                         .GetMethod("RegisterCustomSettings")
-                        ?.Invoke(null, []) ?? [];
+                        ?.Invoke(null, []) ?? Task.FromResult(Enumerable.Empty<CustomProperty>()));
                     var props = StyleSettings[SelectedStyle];
                     foreach (var prop in res)
                     {
@@ -445,7 +446,7 @@ public partial class MainWindow : Window
 
         try
         {
-            StyleData!.ScriptType?.GetMethod("Init")?.Invoke(null, [new CustomToolWindowHandler(this, StyleData)]);
+            await ((Task?)StyleData!.Script?.GetMethod("Init")?.Invoke(null, [new CustomToolWindowHandler(this, StyleData)]) ?? Task.CompletedTask);
             CustomTools.Clear();
             CustomProperties.Clear();
 
@@ -475,13 +476,13 @@ public partial class MainWindow : Window
 
             CustomTools =
             [
-                ..(IEnumerable<CustomTool>)(StyleData.ScriptType?.GetMethod("RegisterCustomTools")
-                    ?.Invoke(null, []) ?? Array.Empty<CustomTool>())
+                ..await ((Task<IEnumerable<CustomTool>>?)(StyleData.Script?.GetMethod("RegisterCustomTools")
+                    ?.Invoke(null, [])) ?? Task.FromResult(Enumerable.Empty<CustomTool>()))
             ];
             CustomProperties =
             [
-                ..(IEnumerable<CustomProperty>)(StyleData.ScriptType?.GetMethod("RegisterCustomProperties")
-                    ?.Invoke(null, []) ?? Array.Empty<CustomProperty>())
+                ..await ((Task<IEnumerable<CustomProperty>>?)(StyleData.Script?.GetMethod("RegisterCustomProperties")
+                    ?.Invoke(null, [])) ?? Task.FromResult(Enumerable.Empty<CustomProperty>()))
             ];
         }
         catch (Exception ex)
@@ -489,7 +490,7 @@ public partial class MainWindow : Window
             // ensure that no custom tool (broken) data may trigger more errors down the line
             CustomTools.Clear();
             CustomProperties.Clear();
-            
+
             var se = new StyleError()
             {
                 MessageBlock =
@@ -505,6 +506,7 @@ public partial class MainWindow : Window
         }
 
         UpdateCustomScriptFields();
+        StyleData?.InitializedScript = true;
     }
 
     void BoxImages_OnLayoutUpdated(object? sender, EventArgs e)
@@ -537,7 +539,7 @@ public partial class MainWindow : Window
                     {
                         try
                         {
-                            tool.Func(new CustomToolWindowHandler(this, StyleData!));
+                            await tool.Func(new CustomToolWindowHandler(this, StyleData!));
                         }
                         catch (Exception ex)
                         {
@@ -588,288 +590,288 @@ public partial class MainWindow : Window
             switch (tool.ValueType)
             {
                 case not null when tool.ValueType == typeof(bool):
-                {
-                    item.Children.Clear();
-                    var node = new CheckBox()
                     {
-                        IsChecked = (bool?)tool.Value,
-                        IsThreeState = false,
-                        Content = tool.VisualName,
-                        IsEnabled = !tool.ReadOnly,
-                    };
-                    node.IsCheckedChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.IsChecked ?? false) ? "true" : "false");
-                        if (isString)
+                        item.Children.Clear();
+                        var node = new CheckBox()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            IsChecked = ((bool?)tool.Value) ?? false,
+                            IsThreeState = false,
+                            Content = tool.VisualName,
+                            IsEnabled = !tool.ReadOnly,
+                        };
+                        node.IsCheckedChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.IsChecked ?? false) ? "true" : "false");
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
 
                 case not null when tool.ValueType == typeof(byte):
-                {
-                                
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal)(tool.Value ?? 0),
-                        Minimum = 0,
-                        Maximum = 0xff,
-                        FormatString = "0",
-                        Increment = 1,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            Minimum = 0,
+                            Maximum = 0xff,
+                            FormatString = "0",
+                            Increment = 1,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
                 case not null when tool.ValueType == typeof(short):
-                {
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal)(tool.Value ?? 0),
-                        Minimum = -0x8000,
-                        Maximum = 0x7fff,
-                        FormatString = "0",
-                        Increment = 1,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            Minimum = -0x8000,
+                            Maximum = 0x7fff,
+                            FormatString = "0",
+                            Increment = 1,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
                 case not null when tool.ValueType == typeof(int):
-                {
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal)(tool.Value ?? 0),
-                        Minimum = -0x80000000,
-                        Maximum = 0x7fffffff,
-                        FormatString = "0",
-                        Increment = 1,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            Minimum = -0x80000000,
+                            Maximum = 0x7fffffff,
+                            FormatString = "0",
+                            Increment = 1,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
                 case not null when tool.ValueType == typeof(long):
-                {
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal?)tool.Value,
-                        Minimum = -0x8000000000000000,
-                        Maximum = 0x7fffffffffffffff,
-                        FormatString = "0",
-                        Increment = 1,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            Minimum = -0x8000000000000000,
+                            Maximum = 0x7fffffffffffffff,
+                            FormatString = "0",
+                            Increment = 1,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
-            
+
                 case not null when tool.ValueType == typeof(sbyte):
-                {
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal)(tool.Value ?? 0),
-                        Minimum = -0x80,
-                        Maximum = 0x7f,
-                        FormatString = "0",
-                        Increment = 1,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            Minimum = -0x80,
+                            Maximum = 0x7f,
+                            FormatString = "0",
+                            Increment = 1,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
                 case not null when tool.ValueType == typeof(ushort):
-                {
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal)(tool.Value ?? 0),
-                        Minimum = 0,
-                        Maximum = 0xffff,
-                        FormatString = "0",
-                        Increment = 1,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            Minimum = 0,
+                            Maximum = 0xffff,
+                            FormatString = "0",
+                            Increment = 1,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
                 case not null when tool.ValueType == typeof(uint):
-                {
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal)(tool.Value ?? 0),
-                        Minimum = 0,
-                        Maximum = 0xffffffff,
-                        FormatString = "0",
-                        Increment = 1,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            Minimum = 0,
+                            Maximum = 0xffffffff,
+                            FormatString = "0",
+                            Increment = 1,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
                 case not null when tool.ValueType == typeof(ulong):
-                {
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal)(tool.Value ?? 0),
-                        Minimum = 0,
-                        Maximum = 0xffffffffffffffff,
-                        FormatString = "0",
-                        Increment = 1,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            Minimum = 0,
+                            Maximum = 0xffffffffffffffff,
+                            FormatString = "0",
+                            Increment = 1,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
-            
+
                 case not null when tool.ValueType == typeof(float):
-                {
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal)(tool.Value ?? 0.0f),
-                        FormatString = "0.00",
-                        Increment = (decimal)0.01f,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            FormatString = "0.00",
+                            Increment = (decimal)0.01f,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
                 case not null when tool.ValueType == typeof(double):
-                {
-                    var node = new NumericUpDown()
                     {
-                        Value = (decimal)(tool.Value ?? 0.0),
-                        FormatString = "0.00",
-                        Increment = (decimal)0.01,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.ValueChanged += (_, _) =>
-                    {
-                        tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
-                        if (isString)
+                        var node = new NumericUpDown()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Value = ((decimal?)tool.Value) ?? 0,
+                            FormatString = "0.00",
+                            Increment = (decimal)0.01,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.ValueChanged += (_, _) =>
+                        {
+                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
-            
+
                 case not null when tool.ValueType == typeof(string):
-                {
-                    var node = new TextBox()
                     {
-                        Text = (string?)tool.Value,
-                        IsReadOnly = tool.ReadOnly,
-                    };
-                    node.TextChanged += (_, _) =>
-                    {
-                        tool.StringToValue(node.Text ?? ""); 
-                        if (isString)
+                        var node = new TextBox()
                         {
-                            EditableText_OnTextChanged(null, null);
-                            OriginalText_OnTextChanged(null, null);
-                        }
-                    };
-                    tool.Node = node;
-                    item.Children.Add(node);
-                }
+                            Text = (string?)tool.Value,
+                            IsReadOnly = tool.ReadOnly,
+                        };
+                        node.TextChanged += (_, _) =>
+                        {
+                            tool.StringToValue(node.Text ?? "");
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
                     break;
             }
             panel.Children.Add(item);
@@ -924,6 +926,7 @@ public partial class MainWindow : Window
     void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
     {
         StyleData = new StyleParser(StyleData!.Folder);
+        StyleData.CompileCode();
         InitializeCustomScript();
         UpdatingEntry = true;
         EditableText_OnTextChanged(null, null);
@@ -977,16 +980,14 @@ public partial class MainWindow : Window
 
     void BoxComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (SelectedString != null)
-            SelectedString.BoxStyle = BoxComboBox.SelectedIndex;
+        SelectedString?.BoxStyle = BoxComboBox.SelectedIndex;
         EditableText_OnTextChanged(null, null);
         OriginalText_OnTextChanged(null, null);
     }
 
     void FontComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (SelectedString != null)
-            SelectedString.FontStyle = FontComboBox.SelectedIndex;
+        SelectedString?.FontStyle = FontComboBox.SelectedIndex;
         EditableText_OnTextChanged(null, null);
         OriginalText_OnTextChanged(null, null);
     }
@@ -1041,14 +1042,14 @@ public partial class MainWindow : Window
         }
         var searchCasing = new List<string>(matches.Where(m => m.StartsWith("Casing:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[7..]).Where(m => m.Length > 0));
         var targetCasing = searchCasing.Any(casing => casing.Equals("sensible", StringComparison.InvariantCultureIgnoreCase)) ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase;
-        
+
         var searchGroup = new List<string>(matches.Where(m => m.StartsWith("Group:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[6..]).Where(m => m.Length > 0));
         var searchOgText = new List<string>(matches.Where(m => m.StartsWith("OgText:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[7..]).Where(m => m.Length > 0));
         var headerText = new List<string>(matches.Where(m => m.StartsWith("Header:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[7..]).Where(m => m.Length > 0));
         var stateText = new List<string>(matches.Where(m => m.StartsWith("State:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[6..]).Where(m => m.Length > 0));
-        
+
         var searchText = new List<string>(matches.Where(m => !m.StartsWith("Casing:", StringComparison.InvariantCultureIgnoreCase) && !m.StartsWith("Group:", StringComparison.InvariantCultureIgnoreCase) && !m.StartsWith("OgText:", StringComparison.InvariantCultureIgnoreCase) && !m.StartsWith("Header:", StringComparison.InvariantCultureIgnoreCase) && !m.StartsWith("State:", StringComparison.InvariantCultureIgnoreCase)).Where(m => m.Length > 0));
-        
+
         foreach (var value in EtvTargetChildren)
         {
             var key = EtvKeys[value.Key];
@@ -1090,9 +1091,9 @@ public partial class MainWindow : Window
                         ColorTreeItem(entry.Value, item.Text, item.OriginalText, item.MarkAsModified);
                     entry.Value.IsVisible = true;
                     continue;
-                
-                    NotFound:
-                        entry.Value.IsVisible = false;
+
+                NotFound:
+                    entry.Value.IsVisible = false;
                 }
             }
             value.Key.IsVisible = foundMatch;
@@ -1221,7 +1222,7 @@ public partial class MainWindow : Window
             EntryTreeView.ScrollIntoView(item);
             item.Focus();
             EntryTreeView_OnSelectionChanged(null, null);
-            
+
             IsFileModified = true;
             Title = "Dialogue Helper*";
         }
@@ -1279,7 +1280,7 @@ public partial class MainWindow : Window
             Title = "Dialogue Helper*";
         }
     }
-    
+
     // ReSharper disable once AsyncVoidMethod
     async void DeleteSelectedItem_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -1356,7 +1357,7 @@ public partial class MainWindow : Window
             {
                 SelectedDate = ts,
             },
-            TimeTime = 
+            TimeTime =
             {
                 SelectedTime = ts.TimeOfDay,
             },
@@ -1384,7 +1385,7 @@ public partial class MainWindow : Window
             },
             Authors =
             {
-                Text = $"Authors: {string.Join(", ", FileData.AuthorList)}", 
+                Text = $"Authors: {string.Join(", ", FileData.AuthorList)}",
             },
         };
         await fi.ShowDialog(this);

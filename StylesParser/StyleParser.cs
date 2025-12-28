@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Text.Json;
 using Avalonia.Media.Imaging;
 using CSScriptLib;
+using DialogueHelper.External;
 using SixLabors.ImageSharp;
 
 namespace DialogueHelper.StylesParser;
@@ -17,10 +18,11 @@ public class StyleParser
     public readonly string Folder;
     public readonly string? ScriptData;
     public readonly Dictionary<string, Bitmap> ImageAssets = [];
-    public Type? ScriptType;
-    public Assembly? ScriptAssembly;
-    public readonly Dictionary<string, dynamic> GlobalEnv = [];
-    
+    public Type? Script;
+    public Assembly? ScriptAsm;
+    public bool InitializedScript;
+    public readonly Dictionary<string, dynamic?> GlobalEnv = [];
+
     public StyleParser(string path)
     {
         Folder = path;
@@ -51,7 +53,7 @@ public class StyleParser
                     stream.Seek(0, SeekOrigin.Begin);
                     ImageAssets.Add(img.Path, new Bitmap(stream));
                 }
-            }            
+            }
         }
         foreach (var font in FontMetadata)
         {
@@ -69,16 +71,17 @@ public class StyleParser
 
     public void CompileCode()
     {
-        if (ScriptAssembly == null)
+        if (!Directory.Exists("RuntimeComp"))
+            Directory.CreateDirectory("RuntimeComp");
+        if (ScriptAsm == null)
         {
-            ScriptAssembly = CSScript.Evaluator
-                .ReferenceAssembly(typeof(Views.InfoWindow).Assembly)
+            ScriptAsm = CSScript.Evaluator
                 .CompileCode(ScriptData, new()
                 {
                     RootClass = "Script",
-                    AssemblyFile = "script.dll",
+                    AssemblyFile = $"RuntimeComp/IL-{Path.GetFileName(Folder)}.dll",
                 });
-            ScriptType = ScriptAssembly.GetType("Script+Script");
+            Script = ScriptAsm.GetType("Script");
         }
     }
 }

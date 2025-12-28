@@ -1,11 +1,9 @@
 using System;
 using System.Globalization;
 using Avalonia.Controls;
-using JetBrains.Annotations;
 
 namespace DialogueHelper.External;
 
-[UsedImplicitly]
 public class CustomProperty(string visualName, string name, Type type, dynamic? defaultValue = null, bool readOnly = false)
 {
     public readonly string Name = name;
@@ -37,7 +35,7 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
                 break;
         }
     }
-    
+
     public void StringToValue(string value)
     {
         if (value.Length <= 0)
@@ -68,11 +66,11 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
     {
         if (Value == null)
             return "";
-        
+
         return ValueType switch
         {
-            not null when ValueType == typeof(bool) => Value ? "true" : "false",
-            _ => Value.ToString(CultureInfo.InvariantCulture),
+            not null when ValueType == typeof(bool) => (bool)Value ? "true" : "false",
+            _ => Value.ToString()!,
         };
     }
 }

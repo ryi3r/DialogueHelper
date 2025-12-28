@@ -19,7 +19,7 @@ public class StringContainer
     public List<int> EqStrings = [];
 
     public StringContainer() { }
-    
+
     public StringContainer(FormatEntry fEntry)
     {
         if (fEntry.Data.TryGetValue("ID", out var id))
@@ -47,7 +47,7 @@ public class StringContainer
             }
         }
         if (fEntry.Data.TryGetValue("AuthorGroups", out var authorGroups))
-            AuthorGroups = [..authorGroups.Split('@').Select(WebUtility.UrlDecode)!];
+            AuthorGroups = [.. authorGroups.Split('@').Select(x => WebUtility.UrlDecode(x)!)];
         if (fEntry.Data.ContainsKey("MarkAsModified"))
             MarkAsModified = true;
     }
@@ -68,7 +68,7 @@ public class StringContainer
         if (FontStyle != 0)
             fe.Data["Font"] = FontStyle.ToString();
         if (CustomProperties.Count > 0)
-            fe.Data["CustomProperties"] = string.Join("@@@", CustomProperties.Select(p => 
+            fe.Data["CustomProperties"] = string.Join("@@@", CustomProperties.Select(p =>
                 $"{FormatEntry.GetSimpleUri(p.Key)}@@{FormatEntry.GetSimpleUri(p.Value)}"));
         if (AuthorGroups.Count > 0)
             fe.Data["AuthorGroups"] = string.Join('@', AuthorGroups.Select(WebUtility.UrlEncode));
