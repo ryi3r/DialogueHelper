@@ -29,7 +29,7 @@ public partial class CustomProperty(string visualName, string name, string type,
     [LuaMember("update_ui_value")]
     public void UpdateUiValue()
     {
-        if (Node == null)
+        if (Node is null)
             return;
         switch (Node)
         {

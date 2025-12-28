@@ -42,7 +42,7 @@ public partial class Settings : Window
 
     void Ok_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (StyleComboBox.SelectedItem == null)
+        if (StyleComboBox.SelectedItem is null)
             return;
         if ((bool)EnableGit.IsChecked!)
         {
@@ -80,7 +80,6 @@ public partial class Settings : Window
             Close();
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void OnOpened(object? sender, EventArgs e)
     {
         if (Init)
