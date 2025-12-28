@@ -11,13 +11,12 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
     public readonly Type ValueType = type;
     public dynamic? Value = defaultValue;
     public readonly dynamic? DefaultValue = defaultValue;
-    // ReSharper disable once FieldCanBeMadeReadOnly.Global
     public bool ReadOnly = readOnly;
     public Control? Node;
 
     public void UpdateUiValue()
     {
-        if (Node == null)
+        if (Node is null)
             return;
         switch (Node)
         {
@@ -64,7 +63,7 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
 
     public string ValueToString()
     {
-        if (Value == null)
+        if (Value is null)
             return "";
 
         return ValueType switch

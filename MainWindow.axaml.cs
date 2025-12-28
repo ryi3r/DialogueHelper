@@ -62,7 +62,6 @@ public partial class MainWindow : Window
         };
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void OpenFile_OnClick(object? sender, RoutedEventArgs e)
     {
         if (IsFileModified)
@@ -141,15 +140,15 @@ public partial class MainWindow : Window
         Title = "Dialogue Helper";
     }
 
-    public void PopulateEntryTreeView()
+    public async void PopulateEntryTreeView()
     {
         EntryTreeView.Items.Clear();
         EtvKeys.Clear();
         EtvIndexes.Clear();
         EtvTargetChildren.Clear();
-        if (FileData == null)
+        if (!await EnsureFileOpen())
             return;
-        foreach (var (key, strs) in new Dictionary<string, Dictionary<int, StringContainer>>(FileData.Strings))
+        foreach (var (key, strs) in new Dictionary<string, Dictionary<int, StringContainer>>(FileData!.Strings))
         {
             if (strs.Count <= 0)
             {
@@ -190,12 +189,12 @@ public partial class MainWindow : Window
         EntryTextBox_OnTextChanged(null, null);
     }
 
-    public void UpdateEtvItem(TreeViewItem item)
+    public async void UpdateEtvItem(TreeViewItem item)
     {
-        if (FileData == null)
+        if (!await EnsureFileOpen())
             return;
         var key = EtvKeys[item];
-        var strs = FileData.Strings[key];
+        var strs = FileData!.Strings[key];
 
         var i = 0;
         var modified = 0;
@@ -227,14 +226,19 @@ public partial class MainWindow : Window
         //ScrollViewer.MaxHeight = LeftStackPanel.Bounds.Height - TextPanel.DesiredSize.Height;
     }
 
-    public void EntryTreeView_OnSelectionChanged(object? sender, SelectionChangedEventArgs? e)
+    public async void EntryTreeView_OnSelectionChanged(object? sender, SelectionChangedEventArgs? e)
     {
-        if (EntryTreeView.SelectedItem == null || FileData == null)
+        if (!await EnsureFileOpen())
             return;
+        if (EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow("You need to select an item before trying to copy it to the clipboard.").ShowDialog(this);
+            return;
+        }
         if (EntryTreeView.SelectedItem is TreeViewItem { Parent: TreeViewItem parent } tBlock)
         {
             EditableTextIgnoreUpdateOnce = true;
-            SelectedString = FileData.Strings[EtvKeys[parent]][EtvIndexes[tBlock]];
+            SelectedString = FileData!.Strings[EtvKeys[parent]][EtvIndexes[tBlock]];
             MarkAsModified.IsChecked = SelectedString.MarkAsModified;
             if (OriginalText.Text != SelectedString.OriginalText)
                 OriginalText.Text = SelectedString.OriginalText;
@@ -275,7 +279,7 @@ public partial class MainWindow : Window
 
     void UpdateBoxBounds()
     {
-        if (ScrollViewerOriginal == null || ScrollViewer == null)
+        if (ScrollViewerOriginal is null || ScrollViewer is null)
             return;
 
         ScrollViewerOriginal.Height = Math.Max(PanelOriginal.Bounds.Height - OriginalLabel.DesiredSize.Height, 1.0);
@@ -287,7 +291,6 @@ public partial class MainWindow : Window
 
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void Settings_OnClick(object? sender, RoutedEventArgs e)
     {
         var settings = new Settings(this);
@@ -368,13 +371,12 @@ public partial class MainWindow : Window
         File.WriteAllLines($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt", l);
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void OnOpened(object? sender, EventArgs e)
     {
         MiddleStackPanel.RowDefinitions[0].Height = new GridLength((235.0 * ClientSize.Height) / 720.0);
         MiddleStackPanel.RowDefinitions[2].Height = new GridLength((235.0 * ClientSize.Height) / 720.0);
         LoadSettings();
-        if (SelectedStyle == null)
+        if (SelectedStyle is null)
         {
             var settings = new Settings(this)
             {
@@ -580,11 +582,11 @@ public partial class MainWindow : Window
             var item = new StackPanel()
             {
                 Orientation = Orientation.Horizontal,
-                Margin = new(5.0),
+                Margin = new(5),
             };
             item.Children.Add(new TextBlock()
             {
-                Margin = new(7.0),
+                Margin = new(7),
                 Text = tool.VisualName,
             });
             switch (tool.ValueType)
@@ -880,7 +882,7 @@ public partial class MainWindow : Window
 
     void EditableText_OnTextChanged(object? sender, TextChangedEventArgs? e)
     {
-        if (PreviewRenderer == null)
+        if (PreviewRenderer is null)
             return;
         if (SelectedString != null && !UpdatingEntry && FileData != null)
         {
@@ -899,7 +901,6 @@ public partial class MainWindow : Window
 
                 if (EntryTreeView.SelectedItem != null)
                     UpdateEtvItem((TreeViewItem)((Control)EntryTreeView.SelectedItem).Parent!);
-                // todo: figure out how to make this shit not update the file each time you select an entry
                 if (SelectedString.Text != SelectedString.OriginalText)
                 {
                     if (!FileData.AuthorList.Contains(AuthorName))
@@ -917,7 +918,7 @@ public partial class MainWindow : Window
 
     void OriginalText_OnTextChanged(object? sender, TextChangedEventArgs? e)
     {
-        if (PreviewRenderer == null)
+        if (PreviewRenderer is null)
             return;
         PreviewRenderer.CreateRender(StyleData!, BoxComboBox.SelectedIndex, FontComboBox.SelectedIndex, (float?)BoxScale.Value ?? 0.0f, (float?)FontScale.Value ?? 0.0f, (float?)PreviewScale.Value ?? 0.0f, OriginalText.Text ?? "", DisplayOriginalCanvas);
         UpdateBoxBounds();
@@ -940,10 +941,9 @@ public partial class MainWindow : Window
         OriginalText_OnTextChanged(null, null);
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void SaveFile_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (FileData == null)
+        if (!await EnsureFileOpen())
             return;
         var file = await StorageProvider.SaveFilePickerAsync(new()
         {
@@ -954,7 +954,7 @@ public partial class MainWindow : Window
             }],
         });
 
-        if (file == null)
+        if (file is null)
             return;
 
         var lWin = new LoadingWindow
@@ -966,12 +966,12 @@ public partial class MainWindow : Window
             if (!ev.IsProgrammatic)
                 ev.Cancel = true;
         };
-        lWin.ProgressBar.Value = 0.0;
+        lWin.ProgressBar.Value = 0;
         lWin.Show(this);
         lWin.Text.Text = "Saving the file...";
         {
             await using var stream = await file.OpenWriteAsync();
-            stream.Write(Encoding.UTF8.GetBytes(FileData.OutputString()));
+            stream.Write(Encoding.UTF8.GetBytes(FileData!.OutputString()));
         }
         lWin.Close();
         IsFileModified = false;
@@ -992,9 +992,9 @@ public partial class MainWindow : Window
         OriginalText_OnTextChanged(null, null);
     }
 
-    void EntryTextBox_OnTextChanged(object? sender, TextChangedEventArgs? e)
+    async void EntryTextBox_OnTextChanged(object? sender, TextChangedEventArgs? e)
     {
-        if (FileData == null)
+        if (!await EnsureFileOpen())
             return;
         var matches = new List<string>();
         {
@@ -1053,7 +1053,7 @@ public partial class MainWindow : Window
         foreach (var value in EtvTargetChildren)
         {
             var key = EtvKeys[value.Key];
-            if (!FileData.Strings.TryGetValue(key, out var list))
+            if (!FileData!.Strings.TryGetValue(key, out var list))
                 continue;
             var foundMatch = false;
             if (headerText.All(header => key.Contains(header, targetCasing)))
@@ -1074,7 +1074,7 @@ public partial class MainWindow : Window
                         switch (state.ToLowerInvariant())
                         {
                             case "modified":
-                                if (item.Text == null || item.Text == item.OriginalText)
+                                if (item.Text is null || item.Text == item.OriginalText)
                                     goto NotFound;
                                 break;
                             case "base" or "original":
@@ -1115,7 +1115,6 @@ public partial class MainWindow : Window
         }
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void AboutDialogueHelper_OnClick(object? sender, RoutedEventArgs e)
     {
         var dh = new AboutDialogueHelper();
@@ -1127,7 +1126,6 @@ public partial class MainWindow : Window
         Close();
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void CloseFile_OnClick(object? sender, RoutedEventArgs e)
     {
         if (IsFileModified)
@@ -1147,7 +1145,6 @@ public partial class MainWindow : Window
         Title = "Dialogue Helper";
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void CreateFile_OnClick(object? sender, RoutedEventArgs e)
     {
         if (IsFileModified)
@@ -1158,22 +1155,22 @@ public partial class MainWindow : Window
         }
 
         SelectedString = null;
-        // todo: make this usable lol
         FileData = new();
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void GoTo_OnClick(object? sender, RoutedEventArgs e)
     {
         var gt = new GoTo(this);
         await gt.ShowDialog(this);
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void CopyClipboardSelectedTreeItem_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (EntryTreeView.SelectedItem == null)
+        if (EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow("You need to select an item before trying to copy it to the clipboard.").ShowDialog(this);
             return;
+        }
         await Clipboard!.SetTextAsync(((TreeViewItem)EntryTreeView.SelectedItem).Header!.ToString() ?? "<null>");
     }
 
@@ -1189,10 +1186,9 @@ public partial class MainWindow : Window
             EntryTreeView.CollapseSubTree((TreeViewItem)item!);
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void CreateEntry_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (FileData == null)
+        if (!await EnsureFileOpen())
             return;
         var ce = new CreateEntry()
         {
@@ -1204,7 +1200,7 @@ public partial class MainWindow : Window
         if (await ce.ShowDialog<bool?>(this) ?? false)
         {
             var t = ce.TextBox.Text ?? "<null>";
-            if (!FileData.Strings.ContainsKey(t))
+            if (!FileData!.Strings.ContainsKey(t))
             {
                 var tvi = new TreeViewItem()
                 {
@@ -1221,6 +1217,7 @@ public partial class MainWindow : Window
             EntryTreeView.SelectedItem = item;
             EntryTreeView.ScrollIntoView(item);
             item.Focus();
+            UpdateEtvItem(item);
             EntryTreeView_OnSelectionChanged(null, null);
 
             IsFileModified = true;
@@ -1228,11 +1225,15 @@ public partial class MainWindow : Window
         }
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void CreateString_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (EntryTreeView.SelectedItem == null || FileData == null)
+        if (!await EnsureFileOpen())
             return;
+        if (EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow("You need to select an item before trying to copy it to the clipboard.").ShowDialog(this);
+            return;
+        }
         var ce = new CreateEntry()
         {
             Title = "Create String",
@@ -1262,7 +1263,7 @@ public partial class MainWindow : Window
             }
             var sc = new StringContainer()
             {
-                Id = FileData.LastStringId++,
+                Id = FileData!.LastStringId++,
                 OriginalText = t,
                 EqStrings = (FileData.StringIds.Values.FirstOrDefault(v => v.OriginalText == t) ?? new()).EqStrings,
             };
@@ -1274,6 +1275,7 @@ public partial class MainWindow : Window
             EntryTreeView.SelectedItem = tvi;
             EntryTreeView.ScrollIntoView(tvi);
             tvi.Focus();
+            UpdateEtvItem(parent);
             EntryTreeView_OnSelectionChanged(null, null);
 
             IsFileModified = true;
@@ -1281,11 +1283,15 @@ public partial class MainWindow : Window
         }
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void DeleteSelectedItem_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (EntryTreeView.SelectedItem == null || FileData == null)
+        if (!await EnsureFileOpen())
             return;
+        if (EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow("You need to select an item before trying to copy it to the clipboard.").ShowDialog(this);
+            return;
+        }
         var q = new QuestionWindow
         {
             InnerText =
@@ -1299,7 +1305,7 @@ public partial class MainWindow : Window
             if (EtvKeys.TryGetValue(item, out var key))
             {
                 EntryTreeView.Items.Remove(item);
-                foreach (var entry in FileData.Strings[key])
+                foreach (var entry in FileData!.Strings[key])
                     FileData.StringIds.Remove(entry.Key);
                 FileData.Strings.Remove(key);
                 EtvKeys.Remove(item);
@@ -1312,7 +1318,7 @@ public partial class MainWindow : Window
                 var parent = (TreeViewItem)item.Parent!;
                 if (EtvKeys.TryGetValue(parent, out key) && EtvIndexes.TryGetValue(item, out var index))
                 {
-                    FileData.Strings[key].Remove(index);
+                    FileData!.Strings[key].Remove(index);
                     FileData.StringIds.Remove(index);
                     var items = new List<TreeViewItem>(parent.ItemsSource!.Cast<TreeViewItem>());
                     items.Remove(item);
@@ -1328,10 +1334,13 @@ public partial class MainWindow : Window
         }
     }
 
-    void MarkAsModified_OnClick(object? sender, RoutedEventArgs e)
+    async void MarkAsModified_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (SelectedString == null || EntryTreeView.SelectedItem == null)
+        if (SelectedString is null || EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow("You need to select an item before trying to copy it to the clipboard.").ShowDialog(this);
             return;
+        }
         var item = (TreeViewItem)EntryTreeView.SelectedItem;
         if (EtvKeys.ContainsKey(item))
             return;
@@ -1341,17 +1350,18 @@ public partial class MainWindow : Window
         UpdateEtvItem((TreeViewItem)item.Parent!);
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void ShowEntryInfo_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (SelectedString == null || FileData == null)
+        if (!await EnsureFileOpen())
+            return;
+        if (SelectedString is null)
             return;
         var ts = DateTime.UnixEpoch.AddSeconds(SelectedString.LastEdited.Timestamp).ToLocalTime();
         var ei = new EntryInfo()
         {
             AuthorText =
             {
-                Text = SelectedString.LastEdited.AuthorId < 0 || SelectedString.LastEdited.AuthorId >= FileData.AuthorList.Count ? "<null>" : FileData.AuthorList[SelectedString.LastEdited.AuthorId],
+                Text = SelectedString.LastEdited.AuthorId < 0 || SelectedString.LastEdited.AuthorId >= FileData!.AuthorList.Count ? "<null>" : FileData.AuthorList[SelectedString.LastEdited.AuthorId],
             },
             TimeDate =
             {
@@ -1369,12 +1379,11 @@ public partial class MainWindow : Window
         await ei.ShowDialog(this);
     }
 
-    // ReSharper disable once AsyncVoidMethod
     async void ShowFileInfo_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (FileData == null)
+        if (!await EnsureFileOpen())
             return;
-        var modi = FileData.StringIds.Count(i =>
+        var modi = FileData!.StringIds.Count(i =>
             i.Value.MarkAsModified || (i.Value.Text != null && i.Value.OriginalText != i.Value.Text));
         var total = FileData.StringIds.Count;
         var fi = new FileInfo()
@@ -1398,7 +1407,7 @@ public partial class MainWindow : Window
 
     void SimilarStringsPanel_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (SelectedString == null || SimilarStringsPanel.SelectedItem == null || FileData == null || SimilarStringsPanel.SelectedIndex < 0 || SimilarStringsPanel.SelectedIndex >= SelectedString.EqStrings.Count)
+        if (SelectedString is null || SimilarStringsPanel.SelectedItem is null || FileData is null || SimilarStringsPanel.SelectedIndex < 0 || SimilarStringsPanel.SelectedIndex >= SelectedString.EqStrings.Count)
             return;
         var eqStr = FileData.StringIds[SelectedString.EqStrings[SimilarStringsPanel.SelectedIndex]];
         var key = EtvTargetChildren.FirstOrDefault(s => s.Value.ContainsKey(eqStr.Id)).Key;
@@ -1411,5 +1420,16 @@ public partial class MainWindow : Window
             child.Focus();
             EntryTreeView_OnSelectionChanged(null, null);
         }
+    }
+
+    ///<returns>returns true if file is open</returns>
+    public async Task<bool> EnsureFileOpen()
+    {
+        if (FileData is null)
+        {
+            await new InfoWindow("You need to have a file open to use this functionality.").ShowDialog(this);
+            return false;
+        }
+        return true;
     }
 }

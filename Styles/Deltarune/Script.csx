@@ -234,7 +234,7 @@ public static async Task DrawGlyph(CustomToolWindowHandler wH, ExternalData data
         foreach (var chr in fs)
         {
             var glyph = data.Font.Glyphs.FirstOrDefault(g => g.Char == chr);
-            if (glyph == null)
+            if (glyph is null)
                 continue;
             charPos += ((data.Env["_sx"] != -1.0 ? data.Env["_sx"] : glyph.Shift) + glyph.Offset) * 2d;
         }

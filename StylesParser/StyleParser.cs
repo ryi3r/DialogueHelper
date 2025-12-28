@@ -73,7 +73,7 @@ public class StyleParser
     {
         if (!Directory.Exists("RuntimeComp"))
             Directory.CreateDirectory("RuntimeComp");
-        if (ScriptAsm == null)
+        if (ScriptAsm is null)
         {
             ScriptAsm = CSScript.Evaluator
                 .CompileCode(ScriptData, new()
