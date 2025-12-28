@@ -111,33 +111,28 @@ public partial class GlyphMetadata
 public partial class KerningMetadata
 {
     [LuaMember("preceding_char")]
-    public required char PrecedingChar;
+    public required string PrecedingChar;
     [LuaMember("shift_modifier")]
     public required double ShiftModifier;
 }
 
-[UsedImplicitly]
 public class FontMetadataJson
 {
-    [UsedImplicitly]
     public required string Name;
-    [UsedImplicitly]
     public required string ImagePath;
-    public double Scale = 1.0;
-    public double Size = 10.0;
-    public double Ascender = 10.0;
-    public double AscenderOffset = 0.0;
-    [UsedImplicitly]
+    public double Scale = 1;
+    public double Size = 10;
+    public double Ascender = 10;
+    public double AscenderOffset = 0;
     public required List<GlyphMetadataJson> Glyphs;
 }
 
-[UsedImplicitly]
 public class GlyphMetadataJson
 {
-    [UsedImplicitly] public required string Char;
-    [UsedImplicitly] public required double[] Position;
-    [UsedImplicitly] public required double[] Size;
-    [UsedImplicitly] public required double Shift;
-    [UsedImplicitly] public required double Offset;
-    [UsedImplicitly] public List<KerningMetadata> Kerning = [];
+    public required string Char;
+    public required double[] Position;
+    public required double[] Size;
+    public required double Shift;
+    public required double Offset;
+    public List<KerningMetadata> Kerning = [];
 }

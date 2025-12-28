@@ -105,7 +105,7 @@ public partial class StyleParser : IDisposable
         };
         @this.LuaState.Environment["KerningMetadata"] = new KerningMetadata()
         {
-            PrecedingChar = '\0',
+            PrecedingChar = "\0",
             ShiftModifier = 0,
         };
         @this.LuaState.Environment["StyleParser"] = new StyleParser();

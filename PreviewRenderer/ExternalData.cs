@@ -149,16 +149,17 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
     [LuaMember("draw_glyph")]
     public LuaImage DrawGlyph()
     {
-        var glyph = Font.GlyphDictionary[Char.Char];
+        var fontGlyph = Font.GlyphDictionary[Char.Char];
         var targetTexture = fontTexture;
         var alpha = Math.Round(Glyph.Alpha, 2);
         if (Glyph.Color != LuaColor.White || alpha < 1.0)
             targetTexture = ModifyImageAndCache(new(targetTexture), Glyph.Color, alpha).Bitmap;
         var glyphImg = new Avalonia.Controls.Image()
         {
-            Source = new CroppedBitmap(targetTexture, new((int)glyph.Position.Item1, (int)glyph.Position.Item2, (int)glyph.Size.Item1, (int)glyph.Size.Item2)),
-            Width = Glyph.Size.Item1 * Glyph.Scale.Item1,
-            Height = Glyph.Size.Item2 * Glyph.Scale.Item2,
+            Source = new CroppedBitmap(targetTexture, new((int)fontGlyph.Position.Item1, (int)fontGlyph.Position.Item2, (int)fontGlyph.Size.Item1, (int)fontGlyph.Size.Item2)),
+            Width = Glyph.Size.Item1,
+            Height = Glyph.Size.Item2,
+            RenderTransform = new ScaleTransform(Glyph.Scale.Item1, Glyph.Scale.Item2),
         };
 
         RenderOptions.SetBitmapInterpolationMode(glyphImg, BitmapInterpolationMode.None);
@@ -169,16 +170,16 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
         glyphImg.RenderTransformOrigin = Avalonia.RelativePoint.TopLeft;
         canvas.Children.Add(glyphImg);
 
-        if (Glyph.Position.Item1 + glyphImg.Width > canvas.Width)
-            canvas.Width = Glyph.Position.Item1 + glyphImg.Width;
-        if (Glyph.Position.Item2 + glyphImg.Height > canvas.Height)
-            canvas.Height = Glyph.Position.Item2 + glyphImg.Height;
+        if (x + glyphImg.Width > canvas.Width)
+            canvas.Width = x + glyphImg.Width;
+        if (y + glyphImg.Height > canvas.Height)
+            canvas.Height = y + glyphImg.Height;
 
         return new(glyphImg);
     }
 
     [LuaMember("draw_texture")]
-    public LuaImage DrawTexture(Bitmap img, LuaIntTuple position)
+    public LuaImage DrawTexture(Bitmap img, LuaDoubleTuple position)
     {
         var node = new Avalonia.Controls.Image()
         {
@@ -188,6 +189,7 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
+        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
         node.SetValue(Canvas.LeftProperty, position.Item1);
         node.SetValue(Canvas.TopProperty, position.Item2);
         canvas.Children.Add(node);
@@ -201,7 +203,7 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
     }
 
     [LuaMember("draw_texture_scaled")]
-    public LuaImage DrawTextureScaled(Bitmap img, LuaIntTuple position, LuaFloatTuple scale)
+    public LuaImage DrawTextureScaled(Bitmap img, LuaDoubleTuple position, LuaDoubleTuple scale)
     {
         var node = new Avalonia.Controls.Image()
         {
@@ -211,6 +213,7 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
+        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
         node.SetValue(Canvas.LeftProperty, position.Item1);
         node.SetValue(Canvas.TopProperty, position.Item2);
         canvas.Children.Add(node);
@@ -224,7 +227,7 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
     }
 
     [LuaMember("draw_texture_sized")]
-    public LuaImage DrawTextureSized(Bitmap img, LuaIntTuple position, LuaIntTuple size)
+    public LuaImage DrawTextureSized(Bitmap img, LuaDoubleTuple position, LuaDoubleTuple  size)
     {
         var node = new Avalonia.Controls.Image()
         {
@@ -234,6 +237,7 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
+        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
         node.SetValue(Canvas.LeftProperty, position.Item1);
         node.SetValue(Canvas.TopProperty, position.Item2);
         canvas.Children.Add(node);
@@ -247,7 +251,7 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
     }
 
     [LuaMember("draw_texture_cropped")]
-    public LuaImage DrawTextureCropped(Bitmap img, LuaIntTuple position, LuaIntTuple size, LuaIntTuple srcPosition, LuaIntTuple srcSize)
+    public LuaImage DrawTextureCropped(Bitmap img, LuaDoubleTuple position, LuaDoubleTuple size, LuaIntTuple srcPosition, LuaIntTuple srcSize)
     {
         var node = new Avalonia.Controls.Image()
         {
@@ -257,6 +261,7 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
+        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
         node.SetValue(Canvas.LeftProperty, position.Item1);
         node.SetValue(Canvas.TopProperty, position.Item2);
         canvas.Children.Add(node);
@@ -314,19 +319,19 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
     [LuaMember("get_current_scale")]
     public float GetCurrentScale()
     {
-        return (float?)mainWindow.PreviewScale.Value ?? 0.0f;
+        return (float?)mainWindow.PreviewScale.Value ?? 0f;
     }
 
     [LuaMember("get_current_box_scale")]
     public float GetCurrentBoxScale()
     {
-        return (float?)mainWindow.BoxScale.Value ?? 0.0f;
+        return (float?)mainWindow.BoxScale.Value ?? 0f;
     }
 
     [LuaMember("get_current_font_scale")]
     public float GetCurrentFontScale()
     {
-        return (float?)mainWindow.FontScale.Value ?? 0.0f;
+        return (float?)mainWindow.FontScale.Value ?? 0f;
     }
 
     [LuaMember("set_changeable_box")]

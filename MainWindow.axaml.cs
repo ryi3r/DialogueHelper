@@ -581,6 +581,7 @@ public partial class MainWindow : Window
         }
 
         UpdateCustomScriptFields();
+        //StyleData?.InitializedScript = true;
     }
 
     void BoxImages_OnLayoutUpdated(object? sender, EventArgs e)
@@ -665,7 +666,7 @@ public partial class MainWindow : Window
                         item.Children.Clear();
                         var node = new CheckBox()
                         {
-                            IsChecked = (bool?)tool.Value,
+                            IsChecked = ((bool?)tool.Value) ?? false,
                             IsThreeState = false,
                             Content = tool.VisualName,
                             IsEnabled = !tool.ReadOnly,
@@ -687,7 +688,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = (decimal?)tool.Value,
+                            Value = ((decimal?)tool.Value) ?? 0,
                             Minimum = -0x8000000000000000,
                             Maximum = 0x7fffffffffffffff,
                             FormatString = "0",
@@ -713,7 +714,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = (decimal)(tool.Value ?? 0.0),
+                            Value = ((decimal?)tool.Value) ?? 0,
                             FormatString = "0.00",
                             Increment = (decimal)0.01,
                             IsReadOnly = tool.ReadOnly,
@@ -890,16 +891,14 @@ public partial class MainWindow : Window
 
     void BoxComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (SelectedString != null)
-            SelectedString.BoxStyle = BoxComboBox.SelectedIndex;
+        SelectedString?.BoxStyle = BoxComboBox.SelectedIndex;
         EditableText_OnTextChanged(null, null);
         OriginalText_OnTextChanged(null, null);
     }
 
     void FontComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (SelectedString != null)
-            SelectedString.FontStyle = FontComboBox.SelectedIndex;
+        SelectedString?.FontStyle = FontComboBox.SelectedIndex;
         EditableText_OnTextChanged(null, null);
         OriginalText_OnTextChanged(null, null);
     }

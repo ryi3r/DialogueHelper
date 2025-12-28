@@ -1,11 +1,8 @@
 using System;
 using System.IO;
 using Avalonia;
-using JetBrains.Annotations;
-
 namespace DialogueHelper;
 
-[UsedImplicitly]
 class Program
 {
     // Initialization code. Don't use any Avalonia, third-party APIs or any

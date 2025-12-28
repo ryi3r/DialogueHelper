@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -52,6 +53,8 @@ public class PreviewRenderer(MainWindow mainWindow)
             if (bImg.Position[1] + imgAsset.Size.Height > canvas.Height)
                 canvas.Height = bImg.Position[1] + imgAsset.Size.Height;
         }
+        if (!style.InitializedScript)
+            return;
         var eData = new ExternalData(MainWindow, canvas, style.ImageAssets[font.ImagePath])
         {
             GlobalEnv = style.GlobalEnv,
