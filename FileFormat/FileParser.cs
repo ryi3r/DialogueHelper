@@ -8,7 +8,7 @@ public static class FileParser
 {
     public static List<FormatEntry> ParseString(string data)
     {
-        return (from line in data.Replace("\r", "").Split('\n') where line.Trim().Length > 0 select ParseLine(line)).ToList();
+        return [.. data.Replace("\r", "").Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0).Select(ParseLine)];
     }
 
     public static FormatEntry ParseLine(string line)

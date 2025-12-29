@@ -53,7 +53,7 @@ public partial class MainWindow : Window
             {
                 ev.Cancel = true;
                 var unsaved = new UnsavedChanges();
-                if (!(await unsaved.ShowDialog<bool>(this)))
+                if (!await unsaved.ShowDialog<bool>(this))
                 {
                     IsFileModified = false;
                     Close();
@@ -103,37 +103,56 @@ public partial class MainWindow : Window
         };
         lWin.ProgressBar.Value = 0.0;
         lWin.Show(this);
-        lWin.Text.Text = "Loading the file...";
-        using var stream = new StreamReader(await fStorage.OpenReadAsync());
-        var fStr = await stream.ReadToEndAsync();
-        lWin.Text.Text = "Parsing the file...";
-        var fParse = FileParser.ParseString(fStr);
-        lWin.Text.Text = "Loading data...";
-        FileData = FileData.LoadString(fParse, lWin);
-        lWin.Text.Text = "Caching base entries...";
-        lWin.ProgressBar.Value = 0.0;
-        lWin.ProgressBar.Maximum = FileData.Strings.Count;
-        var eqStr = new Dictionary<string, List<int>>();
-        var cur = 0;
-        foreach (var strCont in FileData.StringIds.Values)
+        try
         {
-            if (eqStr.TryGetValue(strCont.OriginalText, out var arr))
+            lWin.Text.Text = "Loading the file...";
+            using var stream = new StreamReader(await fStorage.OpenReadAsync());
+            var fStr = await stream.ReadToEndAsync();
+            lWin.Text.Text = "Parsing the file...";
+            var fParse = FileParser.ParseString(fStr);
+            lWin.Text.Text = "Loading data...";
+            FileData = FileData.LoadString(fParse, lWin);
+            lWin.Text.Text = "Caching base entries...";
+            lWin.ProgressBar.Value = 0.0;
+            lWin.ProgressBar.Maximum = FileData.Strings.Count;
+            var eqStr = new Dictionary<string, List<int>>();
+            var cur = 0;
+            foreach (var strCont in FileData.StringIds.Values)
             {
-                strCont.EqStrings = arr;
-                arr.Add(strCont.Id);
-            }
-            else
-            {
-                arr = (List<int>)[strCont.Id];
-                eqStr.Add(strCont.OriginalText, arr);
-                strCont.EqStrings = arr;
+                if (eqStr.TryGetValue(strCont.OriginalText, out var arr))
+                {
+                    strCont.EqStrings = arr;
+                    arr.Add(strCont.Id);
+                }
+                else
+                {
+                    arr = [strCont.Id];
+                    eqStr.Add(strCont.OriginalText, arr);
+                    strCont.EqStrings = arr;
+                }
+
+                lWin.ProgressBar.Value = cur++;
             }
 
-            lWin.ProgressBar.Value = cur++;
+            lWin.Text.Text = "Updating view...";
+            PopulateEntryTreeView();
         }
-
-        lWin.Text.Text = "Updating view...";
-        PopulateEntryTreeView();
+        catch (Exception ex)
+        {
+            var se = new StyleError()
+            {
+                Title = "Load error",
+                MessageBlock =
+                {
+                    Text = "DialogueHelper has encountered an error while loading a file",
+                },
+                ErrorBox =
+                {
+                    Text = ex.ToString(),
+                }
+            };
+            await se.ShowDialog(this);
+        }
 
         lWin.Close();
         IsFileModified = false;
@@ -969,9 +988,26 @@ public partial class MainWindow : Window
         lWin.ProgressBar.Value = 0;
         lWin.Show(this);
         lWin.Text.Text = "Saving the file...";
+        try
         {
             await using var stream = await file.OpenWriteAsync();
             stream.Write(Encoding.UTF8.GetBytes(FileData!.OutputString()));
+        }
+        catch (Exception ex)
+        {
+            var se = new StyleError()
+            {
+                Title = "Save error",
+                MessageBlock =
+                {
+                    Text = "DialogueHelper has encountered an error while saving a file",
+                },
+                ErrorBox =
+                {
+                    Text = ex.ToString(),
+                }
+            };
+            await se.ShowDialog(this);
         }
         lWin.Close();
         IsFileModified = false;

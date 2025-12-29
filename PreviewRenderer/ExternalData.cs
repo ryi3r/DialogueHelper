@@ -100,8 +100,8 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap fontTextu
             RenderTransform = new ScaleTransform(Glyph.Scale.Item1, Glyph.Scale.Item2),
         };
         RenderOptions.SetBitmapInterpolationMode(glyphImg, BitmapInterpolationMode.None);
-        var x = (Glyph.Position.Item1 * Glyph.Scale.Item1);
-        var y = (Glyph.Position.Item2 * Glyph.Scale.Item2);
+        var x = Glyph.Position.Item1 * Glyph.Scale.Item1;
+        var y = Glyph.Position.Item2 * Glyph.Scale.Item2;
         glyphImg.SetValue(Canvas.LeftProperty, x);
         glyphImg.SetValue(Canvas.TopProperty, y);
         glyphImg.RenderTransformOrigin = Avalonia.RelativePoint.TopLeft;

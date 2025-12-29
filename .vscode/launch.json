@@ -5,17 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": ".NET Core Debugger (launch)",
-            "type": "coreclr",
+            "name": "C#: DialogueHelper Debug",
+            "type": "dotnet",
             "request": "launch",
-            "program": "${command:dotrush.activeTargetPath}",
-            "preLaunchTask": "dotrush: Build"
-        },
-        {
-            "name": ".NET Core Debugger (attach)",
-            "type": "coreclr",
-            "request": "attach",
-            "processId": "${command:dotrush.pickProcess}"
+            "projectPath": "${workspaceFolder}/DialogueHelper.csproj"
         }
     ]
 }
