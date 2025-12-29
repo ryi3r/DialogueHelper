@@ -162,8 +162,11 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
         };
 
         RenderOptions.SetBitmapInterpolationMode(glyphImg, BitmapInterpolationMode.None);
-        glyphImg.SetValue(Canvas.LeftProperty, Glyph.Position.Item1);
-        glyphImg.SetValue(Canvas.TopProperty, Glyph.Position.Item2);
+        var x = Glyph.Position.Item1 * Glyph.Scale.Item1;
+        var y = Glyph.Position.Item2 * Glyph.Scale.Item2;
+        glyphImg.SetValue(Canvas.LeftProperty, x);
+        glyphImg.SetValue(Canvas.TopProperty, y);
+        glyphImg.RenderTransformOrigin = Avalonia.RelativePoint.TopLeft;
         canvas.Children.Add(glyphImg);
 
         if (Glyph.Position.Item1 + glyphImg.Width > canvas.Width)

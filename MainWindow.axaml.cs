@@ -112,55 +112,56 @@ public partial class MainWindow : Window
         };
         lWin.ProgressBar.Value = 0.0;
         lWin.Show(this);
-        lWin.Text.Text = "Loading the file...";
-        using var stream = new StreamReader(file is not null ? await file.OpenReadAsync() : File.OpenRead(path!));
-        var fStr = await stream.ReadToEndAsync();
-    }
-
-    public void LoadStringToProject(string data, LoadingWindow? lWin = null)
-    {
-        if (lWin == null)
+        try
         {
-            lWin = new LoadingWindow
-            {
-                CanResize = false
-            };
-            lWin.Closing += (_, ev) =>
-            {
-                if (!ev.IsProgrammatic)
-                    ev.Cancel = true;
-            };
+            lWin.Text.Text = "Loading the file...";
+            using var stream = new StreamReader(file is not null ? await file.OpenReadAsync() : File.OpenRead(path!));
+            var fStr = await stream.ReadToEndAsync();
+            lWin.Text.Text = "Parsing the file...";
+            var fParse = FileParser.ParseString(fStr);
+            lWin.Text.Text = "Loading data...";
+            FileData = FileData.LoadString(fParse, lWin);
+            lWin.Text.Text = "Caching base entries...";
             lWin.ProgressBar.Value = 0.0;
-            lWin.Show(this);
+            lWin.ProgressBar.Maximum = FileData.Strings.Count;
+            var eqStr = new Dictionary<string, List<int>>();
+            var cur = 0;
+            foreach (var strCont in FileData.StringIds.Values)
+            {
+                if (eqStr.TryGetValue(strCont.OriginalText, out var arr))
+                {
+                    strCont.EqStrings = arr;
+                    arr.Add(strCont.Id);
+                }
+                else
+                {
+                    arr = [strCont.Id];
+                    eqStr.Add(strCont.OriginalText, arr);
+                    strCont.EqStrings = arr;
+                }
+
+                lWin.ProgressBar.Value = cur++;
+            }
+
+            lWin.Text.Text = "Updating view...";
+            PopulateEntryTreeView();
         }
-        lWin.Text.Text = "Parsing the file...";
-        var fParse = FileParser.ParseString(data);
-        lWin.Text.Text = "Loading data...";
-        FileData = FileData.LoadString(fParse, lWin);
-        lWin.Text.Text = "Caching base entries...";
-        lWin.ProgressBar.Value = 0.0;
-        lWin.ProgressBar.Maximum = FileData.Strings.Count;
-        var eqStr = new Dictionary<string, List<int>>();
-        var cur = 0;
-        foreach (var strCont in FileData.StringIds.Values)
+        catch (Exception ex)
         {
-            if (eqStr.TryGetValue(strCont.OriginalText, out var arr))
+            var se = new StyleError()
             {
-                strCont.EqStrings = arr;
-                arr.Add(strCont.Id);
-            }
-            else
-            {
-                arr = [strCont.Id];
-                eqStr.Add(strCont.OriginalText, arr);
-                strCont.EqStrings = arr;
-            }
-
-            lWin.ProgressBar.Value = cur++;
+                Title = "Load error",
+                MessageBlock =
+                {
+                    Text = "DialogueHelper has encountered an error while loading a file",
+                },
+                ErrorBox =
+                {
+                    Text = ex.ToString(),
+                }
+            };
+            await se.ShowDialog(this);
         }
-
-        lWin.Text.Text = "Updating view...";
-        PopulateEntryTreeView();
 
         lWin.Close();
         IsFileModified = false;
@@ -880,7 +881,10 @@ public partial class MainWindow : Window
                 {
                     Text = "DialogueHelper has encountered an error while saving a file",
                 },
-                ErrorBox = { Text = ex.ToString() },
+                ErrorBox =
+                {
+                    Text = ex.ToString(),
+                }
             };
             await se.ShowDialog(this);
         }
