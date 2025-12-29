@@ -7,12 +7,15 @@
         Title="About Dialogue Helper">
     <Panel Margin="5">
         <TextBlock TextWrapping="Wrap">
-            <Span FontWeight="Bold">Dialogue Helper v2.0.0</Span>
+            <Span FontWeight="Bold">Dialogue Helper v2.0-b3</Span>
             <LineBreak/>Developed by <Span FontWeight="Bold" Foreground="CornflowerBlue">ryi3r</Span>.
             <LineBreak/><LineBreak/>
             Proudly using <Span FontWeight="Bold">Avalonia</Span>, <Span FontWeight="Bold">CS-Script</Span> and <Span FontWeight="Bold">ImageSharp</Span>.
-            <LineBreak/>Developed using <Span FontWeight="Bold">JetBrains Rider</Span>.
+            <LineBreak/>Developed using <Span FontWeight="Bold">NeoVim</Span>.
         </TextBlock>
-        <Button Click="Close_OnClick" VerticalAlignment="Bottom" HorizontalAlignment="Right">Close</Button>
+        <StackPanel Orientation="Horizontal" Spacing="7" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+            <Button Click="OpenProgRepo_OnClick">Open Program Repo</Button>
+            <Button Click="Close_OnClick">Close</Button>
+        </StackPanel>
     </Panel>
 </Window>

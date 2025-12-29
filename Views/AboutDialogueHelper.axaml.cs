@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 
@@ -13,5 +14,14 @@ public partial class AboutDialogueHelper : Window
     void Close_OnClick(object? sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    void OpenProgRepo_OnClick(object? sender, RoutedEventArgs e)
+    {
+        Process.Start(new ProcessStartInfo()
+        {
+            FileName = "https://git.crystal-server.co/ryi3r/DialogueHelper",
+            UseShellExecute = true,
+        });
     }
 }
