@@ -11,7 +11,6 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
-using CSScripting;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.Options;
@@ -260,7 +259,7 @@ public partial class MainWindow : Window
 
     void OnLayoutUpdated(object? sender, EventArgs e)
     {
-        EntryTreeView.Height = LeftStackPanel.Bounds.Height - EntryTextBox.DesiredSize.Height - 11;
+        EntryTreeView.Height = double.Max(LeftStackPanel.Bounds.Height - EntryTextBox.DesiredSize.Height - 11, 0);
         //ScrollViewer.MaxHeight = LeftStackPanel.Bounds.Height - TextPanel.DesiredSize.Height;
     }
 
@@ -324,26 +323,26 @@ public partial class MainWindow : Window
         if (ScrollViewerOriginal is null || ScrollViewer is null)
             return;
 
-        ScrollViewerOriginal.Height = Math.Max(
+        ScrollViewerOriginal.Height = double.Max(
             PanelOriginal.Bounds.Height - OriginalLabel.DesiredSize.Height,
-            1.0
+            0
         );
 
-        ScrollViewer.Height = Math.Max(
+        ScrollViewer.Height = double.Max(
             Panel.Bounds.Height
                 - EditableLabel.DesiredSize.Height
                 - OuterGridSplitter.Bounds.Height
-                - 5.0,
-            1.0
+                - 5,
+            0
         );
-        Panel.Height = Math.Max(
+        Panel.Height = double.Max(
             MiddleStackPanel.Bounds.Height
                 - PanelOriginal.Bounds.Height
                 - InnerGridSplitter.Bounds.Height,
-            1.0
+            0
         );
 
-        OuterMiddleStackPanel.MaxHeight = MainGrid.Bounds.Height - 10.0;
+        OuterMiddleStackPanel.MaxHeight = double.Max(MainGrid.Bounds.Height - 10, 0);
     }
 
     async void Settings_OnClick(object? sender, RoutedEventArgs e)
@@ -530,12 +529,12 @@ public partial class MainWindow : Window
             CustomTools.Clear();
             CustomProperties.Clear();
 
-            var lastBoxSelected = Math.Clamp(
+            var lastBoxSelected = int.Clamp(
                 BoxComboBox.SelectedIndex,
                 0,
                 StyleData.BoxMetadata.Count - 1
             );
-            var lastFontSelected = Math.Clamp(
+            var lastFontSelected = int.Clamp(
                 FontComboBox.SelectedIndex,
                 0,
                 StyleData.FontMetadata.Count - 1
@@ -1576,7 +1575,7 @@ public partial class MainWindow : Window
     void SimilarStringsPanel_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
         SimilarStringsPanel.MaxHeight =
-            SimilarStringsBase.Bounds.Height - SimilarStringsTitle.Bounds.Height - 7.0;
+            double.Max(SimilarStringsBase.Bounds.Height - (SimilarStringsTitle.Bounds.Height - 7), 0);
     }
 
     void SimilarStringsPanel_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
