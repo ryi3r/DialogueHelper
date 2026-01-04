@@ -11,10 +11,17 @@ public class FormatEntry
 
     public static string GetSimpleUri(string data)
     {
-        return new string[][] { ["%", "%25"], [";", "%3B"], [":", "%3A"], ["\n", "%0A"], ["\r", "%0D"], ["@", "%40"] }
-            .Aggregate(data, (current, repl) => current.Replace(repl[0], repl[1]));
+        return new string[][]
+        {
+            ["%", "%25"],
+            [";", "%3B"],
+            [":", "%3A"],
+            ["\n", "%0A"],
+            ["\r", "%0D"],
+            ["@", "%40"],
+        }.Aggregate(data, (current, repl) => current.Replace(repl[0], repl[1]));
     }
-    
+
     public string OutputString()
     {
         var sb = new StringBuilder();

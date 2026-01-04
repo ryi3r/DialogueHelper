@@ -8,7 +8,14 @@ public static class FileParser
 {
     public static List<FormatEntry> ParseString(string data)
     {
-        return [.. data.Replace("\r", "").Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0).Select(ParseLine)];
+        return
+        [
+            .. data.Replace("\r", "")
+                .Split('\n')
+                .Select(x => x.Trim())
+                .Where(x => x.Length > 0)
+                .Select(ParseLine),
+        ];
     }
 
     public static FormatEntry ParseLine(string line)
@@ -18,7 +25,7 @@ public static class FileParser
         var gotName = false;
         var name = "";
         var fEntry = new FormatEntry();
-        
+
         foreach (var chr in line)
         {
             if (chr == ':' && !gotName) // New entry

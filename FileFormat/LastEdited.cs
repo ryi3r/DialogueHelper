@@ -5,7 +5,7 @@ public class LastEdited
     public long Timestamp = -1;
     public int AuthorId = -1;
     public string? LegacyAuthorName;
-    
+
     public LastEdited() { }
 
     public LastEdited(string data)
