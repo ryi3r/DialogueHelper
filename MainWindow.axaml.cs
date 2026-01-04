@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
@@ -72,18 +73,18 @@ public partial class MainWindow : Window
                 return;
         }
 
-        var file = await StorageProvider.OpenFilePickerAsync(new()
-        {
-            Title = "Open Dialogue Helper file...",
-            AllowMultiple = false,
-            FileTypeFilter = [new("DH File")
+        var file = await StorageProvider.OpenFilePickerAsync(
+            new()
             {
-                Patterns = ["*.dh"],
-            }, new("Legacy DH File")
-            {
-                Patterns = ["*.txt"]
-            }],
-        });
+                Title = "Open Dialogue Helper file...",
+                AllowMultiple = false,
+                FileTypeFilter =
+                [
+                    new("DH File") { Patterns = ["*.dh"] },
+                    new("Legacy DH File") { Patterns = ["*.txt"] },
+                ],
+            }
+        );
 
         if (file.Count == 0)
             return;
@@ -183,10 +184,7 @@ public partial class MainWindow : Window
                     FileData.StringIds.Remove(str.Key);
                 continue;
             }
-            var cont = new TreeViewItem()
-            {
-                Header = key,
-            };
+            var cont = new TreeViewItem() { Header = key };
             EntryTreeView.Items.Add(cont);
             EtvKeys.Add(cont, key);
             var data = new Dictionary<int, TreeViewItem>();
@@ -199,10 +197,18 @@ public partial class MainWindow : Window
                 {
                     Header = str.Value.Text ?? str.Value.OriginalText,
                 };
-                ColorTreeItem(tBlock, str.Value.Text, str.Value.OriginalText, str.Value.MarkAsModified);
+                ColorTreeItem(
+                    tBlock,
+                    str.Value.Text,
+                    str.Value.OriginalText,
+                    str.Value.MarkAsModified
+                );
                 if (str.Value.Text != null && str.Value.Text != str.Value.OriginalText)
                     tBlock.Header = str.Value.Text;
-                if ((str.Value.Text != null && str.Value.Text != str.Value.OriginalText) || str.Value.MarkAsModified)
+                if (
+                    (str.Value.Text != null && str.Value.Text != str.Value.OriginalText)
+                    || str.Value.MarkAsModified
+                )
                     modified++;
                 i++;
                 EtvIndexes.Add(tBlock, str.Value.Id);
@@ -210,7 +216,9 @@ public partial class MainWindow : Window
             }
 
             cont.ItemsSource = data.OrderBy(v => strs[v.Key].Id).Select(v => v.Value).ToArray();
-            cont.Foreground = SolidColorBrush.Parse(modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral");
+            cont.Foreground = SolidColorBrush.Parse(
+                modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral"
+            );
         }
         EntryTextBox_OnTextChanged(null, null);
     }
@@ -227,7 +235,12 @@ public partial class MainWindow : Window
         var list = EtvTargetChildren[item];
         foreach (var str in strs)
         {
-            ColorTreeItem(list[str.Key], str.Value.Text, str.Value.OriginalText, str.Value.MarkAsModified);
+            ColorTreeItem(
+                list[str.Key],
+                str.Value.Text,
+                str.Value.OriginalText,
+                str.Value.MarkAsModified
+            );
             if (str.Value.Text != null)
             {
                 list[str.Key].Header = str.Value.Text;
@@ -237,13 +250,22 @@ public partial class MainWindow : Window
             i++;
         }
 
-        item.Foreground = SolidColorBrush.Parse(modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral");
+        item.Foreground = SolidColorBrush.Parse(
+            modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral"
+        );
         EntryTextBox_OnTextChanged(null, null);
     }
 
-    public static void ColorTreeItem(TreeViewItem item, string? text, string ogText, bool markAsModified)
+    public static void ColorTreeItem(
+        TreeViewItem item,
+        string? text,
+        string ogText,
+        bool markAsModified
+    )
     {
-        item.Foreground = SolidColorBrush.Parse((text != null && text != ogText) || markAsModified ? "LightGreen" : "White");
+        item.Foreground = SolidColorBrush.Parse(
+            (text != null && text != ogText) || markAsModified ? "LightGreen" : "White"
+        );
     }
 
     void OnLayoutUpdated(object? sender, EventArgs e)
@@ -252,10 +274,17 @@ public partial class MainWindow : Window
         //ScrollViewer.MaxHeight = LeftStackPanel.Bounds.Height - TextPanel.DesiredSize.Height;
     }
 
-    public void EntryTreeView_OnSelectionChanged(object? sender, SelectionChangedEventArgs? e)
+    public async void EntryTreeView_OnSelectionChanged(object? sender, SelectionChangedEventArgs? e)
     {
         if (EntryTreeView.SelectedItem == null || FileData == null)
             return;
+        if (EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow(
+                "You need to select an item before trying to copy it to the clipboard."
+            ).ShowDialog(this);
+            return;
+        }
         if (EntryTreeView.SelectedItem is TreeViewItem { Parent: TreeViewItem parent } tBlock)
         {
             EditableTextIgnoreUpdateOnce = true;
@@ -289,7 +318,9 @@ public partial class MainWindow : Window
             foreach (var sstr in SelectedString.EqStrings)
             {
                 var s = FileData.StringIds[sstr];
-                SimilarStringsPanel.Items.Add($"({sstr}) {((s.Text != null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}");
+                SimilarStringsPanel.Items.Add(
+                    $"({sstr}) {((s.Text != null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}"
+                );
             }
 
             UpdateCustomScriptFields();
@@ -365,7 +396,14 @@ public partial class MainWindow : Window
                             entryType = "";
                         else
                         {
-                            var folder = WebUtility.UrlDecode(entryType[(entryType.IndexOf("@@", StringComparison.InvariantCulture) + 2)..]);
+                            var folder = WebUtility.UrlDecode(
+                                entryType[
+                                    (
+                                        entryType.IndexOf("@@", StringComparison.InvariantCulture)
+                                        + 2
+                                    )..
+                                ]
+                            );
                             if (!StyleSettings.ContainsKey(folder))
                                 StyleSettings.Add(folder, []);
                             var spl = f[i].Split("@@");
@@ -382,7 +420,8 @@ public partial class MainWindow : Window
     public void SaveSettings()
     {
         {
-            var dir = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/";
+            var dir =
+                $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/";
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
         }
@@ -391,33 +430,39 @@ public partial class MainWindow : Window
             GitOptions.IsEnabled ? "1" : "0",
             GitOptions.RepoUrl,
             GitOptions.Branch,
-
             AuthorGroup,
             AuthorName,
-
             SelectedStyle ?? "",
         ];
         foreach (var ss in StyleSettings)
         {
             l.Add($"StyleSettings@@{WebUtility.UrlEncode(ss.Key)}");
-            l.AddRange(ss.Value.Select(prop => $"{WebUtility.UrlEncode(prop.Name)}@@{WebUtility.UrlEncode(prop.ValueToString())}"));
+            l.AddRange(
+                ss.Value.Select(prop =>
+                    $"{WebUtility.UrlEncode(prop.Name)}@@{WebUtility.UrlEncode(prop.ValueToString())}"
+                )
+            );
             l.Add("@@end@@");
         }
-        File.WriteAllLines($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt", l);
+        File.WriteAllLines(
+            $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt",
+            l
+        );
     }
 
     // ReSharper disable once AsyncVoidMethod
     async void OnOpened(object? sender, EventArgs e)
     {
-        MiddleStackPanel.RowDefinitions[0].Height = new GridLength((235.0 * ClientSize.Height) / 720.0);
-        MiddleStackPanel.RowDefinitions[2].Height = new GridLength((235.0 * ClientSize.Height) / 720.0);
+        MiddleStackPanel.RowDefinitions[0].Height = new GridLength(
+            (235.0 * ClientSize.Height) / 720.0
+        );
+        MiddleStackPanel.RowDefinitions[2].Height = new GridLength(
+            (235.0 * ClientSize.Height) / 720.0
+        );
         LoadSettings();
         if (SelectedStyle == null)
         {
-            var settings = new Settings(this)
-            {
-                Init = true,
-            };
+            var settings = new Settings(this) { Init = true };
             await settings.ShowDialog(this);
         }
         else
@@ -450,20 +495,13 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                var sErr = new StyleError
-                {
-                    ErrorBox =
-                    {
-                        Text = ex.ToString()
-                    },
-                };
-                sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", SelectedStyle);
+                var sErr = new StyleError { ErrorBox = { Text = ex.ToString() } };
+                sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace(
+                    "StyleName",
+                    SelectedStyle
+                );
                 await sErr.ShowDialog(this);
-                var settings = new Settings(this)
-                {
-                    Init = true,
-                    IgnoreStyles = [SelectedStyle],
-                };
+                var settings = new Settings(this) { Init = true, IgnoreStyles = [SelectedStyle] };
                 await settings.ShowDialog(this);
             }
         }
@@ -503,18 +541,12 @@ public partial class MainWindow : Window
 
             foreach (var box in StyleData.BoxMetadata)
             {
-                BoxComboBox.Items.Add(new ComboBoxItem()
-                {
-                    Content = box.Name,
-                });
+                BoxComboBox.Items.Add(new ComboBoxItem() { Content = box.Name });
             }
 
             foreach (var font in StyleData.FontMetadata)
             {
-                FontComboBox.Items.Add(new ComboBoxItem()
-                {
-                    Content = font.Name,
-                });
+                FontComboBox.Items.Add(new ComboBoxItem() { Content = font.Name });
             }
 
             BoxComboBox.SelectedIndex = lastBoxSelected;
@@ -545,10 +577,7 @@ public partial class MainWindow : Window
                 {
                     Text = "While trying to initialize the style, the program encountered an error",
                 },
-                ErrorBox =
-                {
-                    Text = ex.ToString(),
-                }
+                ErrorBox = { Text = ex.ToString() },
             };
             await se.ShowDialog(this);
         }
@@ -567,21 +596,13 @@ public partial class MainWindow : Window
             CustomToolsMenu.Items.Clear();
             if (CustomTools.Count <= 0)
             {
-
-                CustomToolsMenu.Items.Add(new MenuItem()
-                {
-                    IsEnabled = false,
-                    Header = "Empty",
-                });
+                CustomToolsMenu.Items.Add(new MenuItem() { IsEnabled = false, Header = "Empty" });
             }
             else
             {
                 foreach (var tool in CustomTools)
                 {
-                    var item = new MenuItem()
-                    {
-                        Header = tool.Name,
-                    };
+                    var item = new MenuItem() { Header = tool.Name };
                     item.Click += async (_, _) =>
                     {
                         try
@@ -596,10 +617,7 @@ public partial class MainWindow : Window
                                 {
                                     Text = "The custom tool has encountered an error",
                                 },
-                                ErrorBox =
-                                {
-                                    Text = ex.ToString(),
-                                }
+                                ErrorBox = { Text = ex.ToString() },
                             };
                             await se.ShowDialog(this);
                         }
@@ -615,12 +633,20 @@ public partial class MainWindow : Window
             else
             {
                 CustomPropertiesNone.IsVisible = false;
-                UpdateCustomProperties(CustomPropertiesPanel, CustomProperties.AsEnumerable(), true);
+                UpdateCustomProperties(
+                    CustomPropertiesPanel,
+                    CustomProperties.AsEnumerable(),
+                    true
+                );
             }
         }
     }
 
-    public void UpdateCustomProperties(Panel panel, IEnumerable<CustomProperty> props, bool isString = false)
+    public void UpdateCustomProperties(
+        Panel panel,
+        IEnumerable<CustomProperty> props,
+        bool isString = false
+    )
     {
         foreach (var tool in props)
         {
@@ -672,7 +698,9 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            tool.StringToValue(
+                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
+                            );
                             if (isString)
                             {
                                 EditableText_OnTextChanged(null, null);
@@ -694,7 +722,9 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue((node.Value ?? 0).ToString(CultureInfo.InvariantCulture));
+                            tool.StringToValue(
+                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
+                            );
                             if (isString)
                             {
                                 EditableText_OnTextChanged(null, null);
@@ -764,7 +794,16 @@ public partial class MainWindow : Window
             else
                 EditableTextIgnoreUpdateOnce = false;
         }
-        PreviewRenderer.CreateRender(StyleData!, BoxComboBox.SelectedIndex, FontComboBox.SelectedIndex, (float?)BoxScale.Value ?? 0.0f, (float?)FontScale.Value ?? 0.0f, (float?)PreviewScale.Value ?? 0.0f, EditableText.Text ?? "", DisplayEditableCanvas);
+        PreviewRenderer.CreateRender(
+            StyleData!,
+            BoxComboBox.SelectedIndex,
+            FontComboBox.SelectedIndex,
+            (float?)BoxScale.Value ?? 0.0f,
+            (float?)FontScale.Value ?? 0.0f,
+            (float?)PreviewScale.Value ?? 0.0f,
+            EditableText.Text ?? "",
+            DisplayEditableCanvas
+        );
         UpdateBoxBounds();
     }
 
@@ -772,7 +811,16 @@ public partial class MainWindow : Window
     {
         if (PreviewRenderer == null)
             return;
-        PreviewRenderer.CreateRender(StyleData!, BoxComboBox.SelectedIndex, FontComboBox.SelectedIndex, (float?)BoxScale.Value ?? 0.0f, (float?)FontScale.Value ?? 0.0f, (float?)PreviewScale.Value ?? 0.0f, OriginalText.Text ?? "", DisplayOriginalCanvas);
+        PreviewRenderer.CreateRender(
+            StyleData!,
+            BoxComboBox.SelectedIndex,
+            FontComboBox.SelectedIndex,
+            (float?)BoxScale.Value ?? 0.0f,
+            (float?)FontScale.Value ?? 0.0f,
+            (float?)PreviewScale.Value ?? 0.0f,
+            OriginalText.Text ?? "",
+            DisplayOriginalCanvas
+        );
         UpdateBoxBounds();
     }
 
@@ -798,22 +846,18 @@ public partial class MainWindow : Window
     {
         if (FileData == null)
             return;
-        var file = await StorageProvider.SaveFilePickerAsync(new()
-        {
-            Title = "Save Dialogue Helper file...",
-            FileTypeChoices = [new("DH File")
+        var file = await StorageProvider.SaveFilePickerAsync(
+            new()
             {
-                Patterns = ["*.dh"],
-            }],
-        });
+                Title = "Save Dialogue Helper file...",
+                FileTypeChoices = [new("DH File") { Patterns = ["*.dh"] }],
+            }
+        );
 
         if (file == null)
             return;
 
-        var lWin = new LoadingWindow
-        {
-            CanResize = false
-        };
+        var lWin = new LoadingWindow { CanResize = false };
         lWin.Closing += (_, ev) =>
         {
             if (!ev.IsProgrammatic)
@@ -822,9 +866,23 @@ public partial class MainWindow : Window
         lWin.ProgressBar.Value = 0.0;
         lWin.Show(this);
         lWin.Text.Text = "Saving the file...";
+        try
         {
             await using var stream = await file.OpenWriteAsync();
             stream.Write(Encoding.UTF8.GetBytes(FileData.OutputString()));
+        }
+        catch (Exception ex)
+        {
+            var se = new StyleError()
+            {
+                Title = "Save error",
+                MessageBlock =
+                {
+                    Text = "DialogueHelper has encountered an error while saving a file",
+                },
+                ErrorBox = { Text = ex.ToString() },
+            };
+            await se.ShowDialog(this);
         }
         lWin.Close();
         IsFileModified = false;
@@ -895,15 +953,54 @@ public partial class MainWindow : Window
                 i++;
             }
         }
-        var searchCasing = new List<string>(matches.Where(m => m.StartsWith("Casing:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[7..]).Where(m => m.Length > 0));
-        var targetCasing = searchCasing.Any(casing => casing.Equals("sensible", StringComparison.InvariantCultureIgnoreCase)) ? StringComparison.InvariantCulture : StringComparison.InvariantCultureIgnoreCase;
+        var searchCasing = new List<string>(
+            matches
+                .Where(m => m.StartsWith("Casing:", StringComparison.InvariantCultureIgnoreCase))
+                .Select(m => m[7..])
+                .Where(m => m.Length > 0)
+        );
+        var targetCasing = searchCasing.Any(casing =>
+            casing.Equals("sensible", StringComparison.InvariantCultureIgnoreCase)
+        )
+            ? StringComparison.InvariantCulture
+            : StringComparison.InvariantCultureIgnoreCase;
 
-        var searchGroup = new List<string>(matches.Where(m => m.StartsWith("Group:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[6..]).Where(m => m.Length > 0));
-        var searchOgText = new List<string>(matches.Where(m => m.StartsWith("OgText:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[7..]).Where(m => m.Length > 0));
-        var headerText = new List<string>(matches.Where(m => m.StartsWith("Header:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[7..]).Where(m => m.Length > 0));
-        var stateText = new List<string>(matches.Where(m => m.StartsWith("State:", StringComparison.InvariantCultureIgnoreCase)).Select(m => m[6..]).Where(m => m.Length > 0));
+        var searchGroup = new List<string>(
+            matches
+                .Where(m => m.StartsWith("Group:", StringComparison.InvariantCultureIgnoreCase))
+                .Select(m => m[6..])
+                .Where(m => m.Length > 0)
+        );
+        var searchOgText = new List<string>(
+            matches
+                .Where(m => m.StartsWith("OgText:", StringComparison.InvariantCultureIgnoreCase))
+                .Select(m => m[7..])
+                .Where(m => m.Length > 0)
+        );
+        var headerText = new List<string>(
+            matches
+                .Where(m => m.StartsWith("Header:", StringComparison.InvariantCultureIgnoreCase))
+                .Select(m => m[7..])
+                .Where(m => m.Length > 0)
+        );
+        var stateText = new List<string>(
+            matches
+                .Where(m => m.StartsWith("State:", StringComparison.InvariantCultureIgnoreCase))
+                .Select(m => m[6..])
+                .Where(m => m.Length > 0)
+        );
 
-        var searchText = new List<string>(matches.Where(m => !m.StartsWith("Casing:", StringComparison.InvariantCultureIgnoreCase) && !m.StartsWith("Group:", StringComparison.InvariantCultureIgnoreCase) && !m.StartsWith("OgText:", StringComparison.InvariantCultureIgnoreCase) && !m.StartsWith("Header:", StringComparison.InvariantCultureIgnoreCase) && !m.StartsWith("State:", StringComparison.InvariantCultureIgnoreCase)).Where(m => m.Length > 0));
+        var searchText = new List<string>(
+            matches
+                .Where(m =>
+                    !m.StartsWith("Casing:", StringComparison.InvariantCultureIgnoreCase)
+                    && !m.StartsWith("Group:", StringComparison.InvariantCultureIgnoreCase)
+                    && !m.StartsWith("OgText:", StringComparison.InvariantCultureIgnoreCase)
+                    && !m.StartsWith("Header:", StringComparison.InvariantCultureIgnoreCase)
+                    && !m.StartsWith("State:", StringComparison.InvariantCultureIgnoreCase)
+                )
+                .Where(m => m.Length > 0)
+        );
 
         foreach (var value in EtvTargetChildren)
         {
@@ -918,11 +1015,23 @@ public partial class MainWindow : Window
                 foreach (var entry in value.Value)
                 {
                     var item = list[EtvIndexes[entry.Value]];
-                    if (searchGroup.Any(group => !item.AuthorGroups.Any(ag => ag.Contains(group, targetCasing))))
+                    if (
+                        searchGroup.Any(group =>
+                            !item.AuthorGroups.Any(ag => ag.Contains(group, targetCasing))
+                        )
+                    )
                         goto NotFound;
-                    if (searchOgText.Any(ogText => !item.OriginalText.Contains(ogText, targetCasing)))
+                    if (
+                        searchOgText.Any(ogText =>
+                            !item.OriginalText.Contains(ogText, targetCasing)
+                        )
+                    )
                         goto NotFound;
-                    if (searchText.Any(text => !(item.Text ?? item.OriginalText).Contains(text, targetCasing)))
+                    if (
+                        searchText.Any(text =>
+                            !(item.Text ?? item.OriginalText).Contains(text, targetCasing)
+                        )
+                    )
                         goto NotFound;
                     foreach (var state in stateText)
                     {
@@ -943,7 +1052,12 @@ public partial class MainWindow : Window
                     if (searchGroup.Count > 0 && searchOgText.Count > 0 && searchText.Count > 0)
                         entry.Value.Foreground = SolidColorBrush.Parse("Goldenrod");
                     else
-                        ColorTreeItem(entry.Value, item.Text, item.OriginalText, item.MarkAsModified);
+                        ColorTreeItem(
+                            entry.Value,
+                            item.Text,
+                            item.OriginalText,
+                            item.MarkAsModified
+                        );
                     entry.Value.IsVisible = true;
                     continue;
 
@@ -1027,9 +1141,16 @@ public partial class MainWindow : Window
     // ReSharper disable once AsyncVoidMethod
     async void CopyClipboardSelectedTreeItem_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (EntryTreeView.SelectedItem == null)
+        if (EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow(
+                "You need to select an item before trying to copy it to the clipboard."
+            ).ShowDialog(this);
             return;
-        await Clipboard!.SetTextAsync(((TreeViewItem)EntryTreeView.SelectedItem).Header!.ToString() ?? "<null>");
+        }
+        await Clipboard!.SetTextAsync(
+            ((TreeViewItem)EntryTreeView.SelectedItem).Header!.ToString() ?? "<null>"
+        );
     }
 
     void ExpandTreeItems_OnClick(object? sender, RoutedEventArgs e)
@@ -1049,22 +1170,13 @@ public partial class MainWindow : Window
     {
         if (FileData == null)
             return;
-        var ce = new CreateEntry()
-        {
-            TextBox =
-            {
-                AcceptsReturn = false,
-            },
-        };
+        var ce = new CreateEntry() { TextBox = { AcceptsReturn = false } };
         if (await ce.ShowDialog<bool?>(this) ?? false)
         {
             var t = ce.TextBox.Text ?? "<null>";
             if (!FileData.Strings.ContainsKey(t))
             {
-                var tvi = new TreeViewItem()
-                {
-                    Header = t,
-                };
+                var tvi = new TreeViewItem() { Header = t };
                 EntryTreeView.Items.Add(tvi);
                 FileData.Strings.Add(t, []);
                 EtvTargetChildren.Add(tvi, []);
@@ -1088,13 +1200,17 @@ public partial class MainWindow : Window
     {
         if (EntryTreeView.SelectedItem == null || FileData == null)
             return;
+        if (EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow(
+                "You need to select an item before trying to copy it to the clipboard."
+            ).ShowDialog(this);
+            return;
+        }
         var ce = new CreateEntry()
         {
             Title = "Create String",
-            EntryText =
-            {
-                Text = "Set the string content",
-            },
+            EntryText = { Text = "Set the string content" },
             AcceptEmpty = true,
         };
         TreeViewItem parent;
@@ -1107,19 +1223,21 @@ public partial class MainWindow : Window
         if (await ce.ShowDialog<bool?>(this) ?? false)
         {
             var t = ce.TextBox.Text ?? "<null>";
-            var tvi = new TreeViewItem()
+            var tvi = new TreeViewItem() { Header = t };
             {
-                Header = t,
-            };
-            {
-                var items = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? []) { tvi };
+                var items = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? [])
+                {
+                    tvi,
+                };
                 parent.ItemsSource = items;
             }
             var sc = new StringContainer()
             {
                 Id = FileData.LastStringId++,
                 OriginalText = t,
-                EqStrings = (FileData.StringIds.Values.FirstOrDefault(v => v.OriginalText == t) ?? new()).EqStrings,
+                EqStrings = (
+                    FileData.StringIds.Values.FirstOrDefault(v => v.OriginalText == t) ?? new()
+                ).EqStrings,
             };
             FileData.Strings[key].Add(sc.Id, sc);
             EtvTargetChildren[parent].Add(sc.Id, tvi);
@@ -1141,11 +1259,19 @@ public partial class MainWindow : Window
     {
         if (EntryTreeView.SelectedItem == null || FileData == null)
             return;
+        if (EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow(
+                "You need to select an item before trying to copy it to the clipboard."
+            ).ShowDialog(this);
+            return;
+        }
         var q = new QuestionWindow
         {
             InnerText =
             {
-                Text = "Are you sure that you want to delete this item?\nThis action is irreversible.",
+                Text =
+                    "Are you sure that you want to delete this item?\nThis action is irreversible.",
             },
         };
         if (await q.ShowDialog<bool?>(this) ?? false)
@@ -1165,7 +1291,10 @@ public partial class MainWindow : Window
             else
             {
                 var parent = (TreeViewItem)item.Parent!;
-                if (EtvKeys.TryGetValue(parent, out key) && EtvIndexes.TryGetValue(item, out var index))
+                if (
+                    EtvKeys.TryGetValue(parent, out key)
+                    && EtvIndexes.TryGetValue(item, out var index)
+                )
                 {
                     FileData.Strings[key].Remove(index);
                     FileData.StringIds.Remove(index);
@@ -1183,10 +1312,15 @@ public partial class MainWindow : Window
         }
     }
 
-    void MarkAsModified_OnClick(object? sender, RoutedEventArgs e)
+    async void MarkAsModified_OnClick(object? sender, RoutedEventArgs e)
     {
-        if (SelectedString == null || EntryTreeView.SelectedItem == null)
+        if (SelectedString is null || EntryTreeView.SelectedItem is null)
+        {
+            await new InfoWindow(
+                "You need to select an item before trying to copy it to the clipboard."
+            ).ShowDialog(this);
             return;
+        }
         var item = (TreeViewItem)EntryTreeView.SelectedItem;
         if (EtvKeys.ContainsKey(item))
             return;
@@ -1206,20 +1340,15 @@ public partial class MainWindow : Window
         {
             AuthorText =
             {
-                Text = SelectedString.LastEdited.AuthorId < 0 || SelectedString.LastEdited.AuthorId >= FileData.AuthorList.Count ? "<null>" : FileData.AuthorList[SelectedString.LastEdited.AuthorId],
+                Text =
+                    SelectedString.LastEdited.AuthorId < 0
+                    || SelectedString.LastEdited.AuthorId >= FileData!.AuthorList.Count
+                        ? "<null>"
+                        : FileData.AuthorList[SelectedString.LastEdited.AuthorId],
             },
-            TimeDate =
-            {
-                SelectedDate = ts,
-            },
-            TimeTime =
-            {
-                SelectedTime = ts.TimeOfDay,
-            },
-            StringId =
-            {
-                Text = $"String ID: {SelectedString.Id}",
-            },
+            TimeDate = { SelectedDate = ts },
+            TimeTime = { SelectedTime = ts.TimeOfDay },
+            StringId = { Text = $"String ID: {SelectedString.Id}" },
         };
         await ei.ShowDialog(this);
     }
@@ -1230,18 +1359,17 @@ public partial class MainWindow : Window
         if (FileData == null)
             return;
         var modi = FileData.StringIds.Count(i =>
-            i.Value.MarkAsModified || (i.Value.Text != null && i.Value.OriginalText != i.Value.Text));
+            i.Value.MarkAsModified || (i.Value.Text != null && i.Value.OriginalText != i.Value.Text)
+        );
         var total = FileData.StringIds.Count;
         var fi = new FileInfo()
         {
             EditInfo =
             {
-                Text = $"Edited {modi} strings out of {total} ({modi / (double)total:P} completion)",
+                Text =
+                    $"Edited {modi} strings out of {total} ({modi / (double)total:P} completion)",
             },
-            Authors =
-            {
-                Text = $"Authors: {string.Join(", ", FileData.AuthorList)}",
-            },
+            Authors = { Text = $"Authors: {string.Join(", ", FileData.AuthorList)}" },
         };
         await fi.ShowDialog(this);
     }
@@ -1254,7 +1382,13 @@ public partial class MainWindow : Window
 
     void SimilarStringsPanel_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (SelectedString == null || SimilarStringsPanel.SelectedItem == null || FileData == null || SimilarStringsPanel.SelectedIndex < 0 || SimilarStringsPanel.SelectedIndex >= SelectedString.EqStrings.Count)
+        if (
+            SelectedString is null
+            || SimilarStringsPanel.SelectedItem is null
+            || FileData is null
+            || SimilarStringsPanel.SelectedIndex < 0
+            || SimilarStringsPanel.SelectedIndex >= SelectedString.EqStrings.Count
+        )
             return;
         var eqStr = FileData.StringIds[SelectedString.EqStrings[SimilarStringsPanel.SelectedIndex]];
         var key = EtvTargetChildren.FirstOrDefault(s => s.Value.ContainsKey(eqStr.Id)).Key;
@@ -1267,5 +1401,18 @@ public partial class MainWindow : Window
             child.Focus();
             EntryTreeView_OnSelectionChanged(null, null);
         }
+    }
+
+    ///<returns>returns true if file is open</returns>
+    public async Task<bool> EnsureFileOpen()
+    {
+        if (FileData is null)
+        {
+            await new InfoWindow(
+                "You need to have a file open to use this functionality."
+            ).ShowDialog(this);
+            return false;
+        }
+        return true;
     }
 }
