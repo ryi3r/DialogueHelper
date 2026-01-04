@@ -248,7 +248,7 @@ public partial class MainWindow : Window
 
     void OnLayoutUpdated(object? sender, EventArgs e)
     {
-        EntryTreeView.Height = LeftStackPanel.Bounds.Height - EntryTextBox.DesiredSize.Height - 11;
+        EntryTreeView.Height = double.Max(LeftStackPanel.Bounds.Height - EntryTextBox.DesiredSize.Height - 11, 0);
         //ScrollViewer.MaxHeight = LeftStackPanel.Bounds.Height - TextPanel.DesiredSize.Height;
     }
 
@@ -303,13 +303,26 @@ public partial class MainWindow : Window
         if (ScrollViewerOriginal == null || ScrollViewer == null)
             return;
 
-        ScrollViewerOriginal.Height = Math.Max(PanelOriginal.Bounds.Height - OriginalLabel.DesiredSize.Height, 1.0);
+        ScrollViewerOriginal.Height = double.Max(
+            PanelOriginal.Bounds.Height - OriginalLabel.DesiredSize.Height,
+            0
+        );
 
-        ScrollViewer.Height = Math.Max(Panel.Bounds.Height - EditableLabel.DesiredSize.Height - OuterGridSplitter.Bounds.Height - 5.0, 1.0);
-        Panel.Height = Math.Max(MiddleStackPanel.Bounds.Height - PanelOriginal.Bounds.Height - InnerGridSplitter.Bounds.Height, 1.0);
+        ScrollViewer.Height = double.Max(
+            Panel.Bounds.Height
+                - EditableLabel.DesiredSize.Height
+                - OuterGridSplitter.Bounds.Height
+                - 5,
+            0
+        );
+        Panel.Height = double.Max(
+            MiddleStackPanel.Bounds.Height
+                - PanelOriginal.Bounds.Height
+                - InnerGridSplitter.Bounds.Height,
+            0
+        );
 
-        OuterMiddleStackPanel.MaxHeight = MainGrid.Bounds.Height - 10.0;
-
+        OuterMiddleStackPanel.MaxHeight = double.Max(MainGrid.Bounds.Height - 10, 0);
     }
 
     // ReSharper disable once AsyncVoidMethod
@@ -475,8 +488,16 @@ public partial class MainWindow : Window
             CustomTools.Clear();
             CustomProperties.Clear();
 
-            var lastBoxSelected = Math.Clamp(BoxComboBox.SelectedIndex, 0, StyleData!.BoxMetadata.Count - 1);
-            var lastFontSelected = Math.Clamp(FontComboBox.SelectedIndex, 0, StyleData.FontMetadata.Count - 1);
+            var lastBoxSelected = int.Clamp(
+                BoxComboBox.SelectedIndex,
+                0,
+                StyleData.BoxMetadata.Count - 1
+            );
+            var lastFontSelected = int.Clamp(
+                FontComboBox.SelectedIndex,
+                0,
+                StyleData.FontMetadata.Count - 1
+            );
             BoxComboBox.Items.Clear();
             FontComboBox.Items.Clear();
 
@@ -1227,7 +1248,8 @@ public partial class MainWindow : Window
 
     void SimilarStringsPanel_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        SimilarStringsPanel.MaxHeight = SimilarStringsBase.Bounds.Height - SimilarStringsTitle.Bounds.Height - 7.0;
+        SimilarStringsPanel.MaxHeight =
+            double.Max(SimilarStringsBase.Bounds.Height - (SimilarStringsTitle.Bounds.Height - 7), 0);
     }
 
     void SimilarStringsPanel_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
