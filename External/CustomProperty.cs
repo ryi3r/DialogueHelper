@@ -24,7 +24,12 @@ public partial class CustomProperty(string visualName, string name, string type,
     public Control? Node;
 
     [LuaMember("create")]
-    public static CustomProperty Create(string visualName, string name, string type, dynamic? defaultValue = null, bool readOnly = false) => new(visualName, name, type, defaultValue, readOnly);
+    public static CustomProperty Create(string visualName, string name, string type, dynamic? defaultValue = null, bool readOnly = false)
+    {
+        if (type == "boolean" && defaultValue is double num)
+            defaultValue = num >= 0.5;
+        return new(visualName, name, type, defaultValue, readOnly);
+    }
 
     [LuaMember("update_ui_value")]
     public void UpdateUiValue()

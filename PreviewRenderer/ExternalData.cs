@@ -17,8 +17,10 @@ namespace DialogueHelper.PreviewRenderer;
 [LuaObject]
 public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap fontTexture)
 {
-    public Dictionary<string, dynamic> Env = [];
-    public Dictionary<string, dynamic> GlobalEnv = [];
+    [LuaMember("env")]
+    public LuaTable Env = [];
+    [LuaMember("global_env")]
+    public LuaTable GlobalEnv = [];
     [LuaMember("style")]
     public required StyleParser Style;
     [LuaMember("font")]
@@ -29,57 +31,6 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
     public required ExternalChar Char;
     [LuaMember("glyph")]
     public required ExternalGlyph Glyph;
-
-    [LuaMember("set_env")]
-    public void SetEnv(string key, LuaValue value)
-    {
-        Env[key] = value;
-    }
-
-    [LuaMember("get_env")]
-    public LuaValue GetEnv(string key) => Env.TryGetValue(key, out var v) ? v : LuaValue.Nil;
-
-    [LuaMember("has_env")]
-    public bool HasEnv(string key) => Env.ContainsKey(key);
-
-    [LuaMember("remove_env")]
-    public void RemoveEnv(string key) => Env.Remove(key);
-
-    [LuaMember("size_env")]
-    public int SizeEnv() => Env.Count;
-
-    [LuaMember("keys_env")]
-    public LuaTable KeysEnv()
-    {
-        var t = new LuaTable();
-        foreach (var (i, v) in Env.Keys.Index())
-            t.Insert(i + 1, v);
-        return t;
-    }
-
-    [LuaMember("set_global_env")]
-    public void SetGlobalEnv(string key, LuaValue value) => GlobalEnv[key] = value;
-
-    [LuaMember("get_global_env")]
-    public LuaValue GetGlobalEnv(string key) => GlobalEnv.TryGetValue(key, out var v) ? v : LuaValue.Nil;
-
-    [LuaMember("has_global_env_entry")]
-    public bool HasGlobalEnvEntry(string key) => GlobalEnv.ContainsKey(key);
-
-    [LuaMember("remove_global_env_entry")]
-    public void RemoveGlobalEnvEntry(string key) => GlobalEnv.Remove(key);
-
-    [LuaMember("size_global_env")]
-    public int SizeGlobalEnv() => GlobalEnv.Count;
-
-    [LuaMember("keys_global_env")]
-    public LuaTable KeysGlobalEnv()
-    {
-        var t = new LuaTable();
-        foreach (var (i, v) in GlobalEnv.Keys.Index())
-            t.Insert(i + 1, v);
-        return t;
-    }
 
     [LuaMember("load_texture")]
     public LuaBitmap LoadTexture(string path)
@@ -149,22 +100,22 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
     [LuaMember("draw_glyph")]
     public LuaImage DrawGlyph()
     {
-        var fontGlyph = Font.GlyphDictionary[Char.Char];
+        var fontGlyph = Font.GlyphDictionary[Char.Char].Read<GlyphMetadata>();
         var targetTexture = fontTexture;
         var alpha = Math.Round(Glyph.Alpha, 2);
         if (Glyph.Color != LuaColor.White || alpha < 1.0)
             targetTexture = ModifyImageAndCache(new(targetTexture), Glyph.Color, alpha).Bitmap;
         var glyphImg = new Avalonia.Controls.Image()
         {
-            Source = new CroppedBitmap(targetTexture, new((int)fontGlyph.Position.Item1, (int)fontGlyph.Position.Item2, (int)fontGlyph.Size.Item1, (int)fontGlyph.Size.Item2)),
-            Width = Glyph.Size.Item1,
-            Height = Glyph.Size.Item2,
-            RenderTransform = new ScaleTransform(Glyph.Scale.Item1, Glyph.Scale.Item2),
+            Source = new CroppedBitmap(targetTexture, new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y)),
+            Width = Glyph.Size.X,
+            Height = Glyph.Size.Y,
+            RenderTransform = new ScaleTransform(Glyph.Scale.X, Glyph.Scale.Y),
         };
 
         RenderOptions.SetBitmapInterpolationMode(glyphImg, BitmapInterpolationMode.None);
-        var x = Glyph.Position.Item1 * Glyph.Scale.Item1;
-        var y = Glyph.Position.Item2 * Glyph.Scale.Item2;
+        var x = Glyph.Position.X * Glyph.Scale.X;
+        var y = Glyph.Position.Y * Glyph.Scale.Y;
         glyphImg.SetValue(Canvas.LeftProperty, x);
         glyphImg.SetValue(Canvas.TopProperty, y);
         glyphImg.RenderTransformOrigin = Avalonia.RelativePoint.TopLeft;
@@ -189,15 +140,15 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
-        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
-        node.SetValue(Canvas.LeftProperty, position.Item1);
-        node.SetValue(Canvas.TopProperty, position.Item2);
+        position = new(position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        node.SetValue(Canvas.LeftProperty, position.X);
+        node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
 
-        if (position.Item1 + node.Width > canvas.Width)
-            canvas.Width = position.Item1 + node.Width;
-        if (position.Item2 + node.Height > canvas.Height)
-            canvas.Height = position.Item2 + node.Height;
+        if (position.X + node.Width > canvas.Width)
+            canvas.Width = position.X + node.Width;
+        if (position.Y + node.Height > canvas.Height)
+            canvas.Height = position.Y + node.Height;
 
         return new(node);
     }
@@ -208,44 +159,44 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
         var node = new Avalonia.Controls.Image()
         {
             Source = img,
-            Width = img.Size.Width * GetCurrentScale() * scale.Item1,
-            Height = img.Size.Height * GetCurrentScale() * scale.Item2,
+            Width = img.Size.Width * GetCurrentScale() * scale.X,
+            Height = img.Size.Height * GetCurrentScale() * scale.Y,
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
-        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
-        node.SetValue(Canvas.LeftProperty, position.Item1);
-        node.SetValue(Canvas.TopProperty, position.Item2);
+        position = new(position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        node.SetValue(Canvas.LeftProperty, position.X);
+        node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
 
-        if (position.Item1 + node.Width > canvas.Width)
-            canvas.Width = position.Item1 + node.Width;
-        if (position.Item2 + node.Height > canvas.Height)
-            canvas.Height = position.Item2 + node.Height;
+        if (position.X + node.Width > canvas.Width)
+            canvas.Width = position.X + node.Width;
+        if (position.Y + node.Height > canvas.Height)
+            canvas.Height = position.Y + node.Height;
 
         return new(node);
     }
 
     [LuaMember("draw_texture_sized")]
-    public LuaImage DrawTextureSized(Bitmap img, LuaDoubleTuple position, LuaDoubleTuple  size)
+    public LuaImage DrawTextureSized(Bitmap img, LuaDoubleTuple position, LuaDoubleTuple size)
     {
         var node = new Avalonia.Controls.Image()
         {
             Source = img,
-            Width = size.Item1 * GetCurrentScale(),
-            Height = size.Item2 * GetCurrentScale(),
+            Width = size.X * GetCurrentScale(),
+            Height = size.Y * GetCurrentScale(),
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
-        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
-        node.SetValue(Canvas.LeftProperty, position.Item1);
-        node.SetValue(Canvas.TopProperty, position.Item2);
+        position = new(position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        node.SetValue(Canvas.LeftProperty, position.X);
+        node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
 
-        if (position.Item1 + node.Width > canvas.Width)
-            canvas.Width = position.Item1 + node.Width;
-        if (position.Item2 + node.Height > canvas.Height)
-            canvas.Height = position.Item2 + node.Height;
+        if (position.X + node.Width > canvas.Width)
+            canvas.Width = position.X + node.Width;
+        if (position.Y + node.Height > canvas.Height)
+            canvas.Height = position.Y + node.Height;
 
         return new(node);
     }
@@ -255,21 +206,21 @@ public partial class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap f
     {
         var node = new Avalonia.Controls.Image()
         {
-            Source = new CroppedBitmap(img, new(srcPosition.Item1, srcPosition.Item2, srcSize.Item1, srcSize.Item2)),
-            Width = size.Item1 * GetCurrentScale(),
-            Height = size.Item2 * GetCurrentScale(),
+            Source = new CroppedBitmap(img, new(srcPosition.X, srcPosition.Y, srcSize.X, srcSize.Y)),
+            Width = size.X * GetCurrentScale(),
+            Height = size.Y * GetCurrentScale(),
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
-        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
-        node.SetValue(Canvas.LeftProperty, position.Item1);
-        node.SetValue(Canvas.TopProperty, position.Item2);
+        position = new(position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        node.SetValue(Canvas.LeftProperty, position.X);
+        node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
 
-        if (position.Item1 + node.Width > canvas.Width)
-            canvas.Width = position.Item1 + node.Width;
-        if (position.Item2 + node.Height > canvas.Height)
-            canvas.Height = position.Item2 + node.Height;
+        if (position.X + node.Width > canvas.Width)
+            canvas.Width = position.X + node.Width;
+        if (position.Y + node.Height > canvas.Height)
+            canvas.Height = position.Y + node.Height;
 
         return new(node);
     }

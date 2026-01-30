@@ -13,72 +13,23 @@ public partial class FileData
     public string? ThemeName;
     [LuaMember("file_version")]
     public string? FileVersion;
-    public readonly Dictionary<string, Dictionary<int, StringContainer>> Strings = [];
-    public readonly Dictionary<int, StringContainer> StringIds = [];
+    /// <summary>
+    /// <string, LuaTable<int, StringContainer>>
+    /// </summary>
+    [LuaMember("strings")]
+    public readonly LuaTable Strings = [];
+    /// <summary>
+    /// <int, StringContainer>
+    /// </summary>
+    [LuaMember("string_ids")]
+    public readonly LuaTable StringIds = [];
     [LuaMember("last_string_id")]
     public int LastStringId;
-    public readonly List<string> AuthorList = [];
-
-    [LuaMember("get_strings")]
-    public StringContainer? GetStrings(string keyA, int keyB) => Strings.TryGetValue(keyA, out var a) && a.TryGetValue(keyB - 1, out var b) ? b : null;
-    
-    [LuaMember("size_strings")]
-    public int SizeStrings() => Strings.Count;
-
-    [LuaMember("keys_strings")]
-    public LuaTable KeysStrings()
-    {
-        var t = new LuaTable();
-        foreach (var (i, k) in Strings.Keys.Index())
-            t.Insert(i + 1, k);
-        return t;
-    }
-
-    [LuaMember("has_strings")]
-    public bool HasStrings(string key) => Strings.ContainsKey(key);
-
-    [LuaMember("size_strings_sub")]
-    public LuaValue SizeStringsSub(string key) => Strings.TryGetValue(key, out var v) ? v.Count : LuaValue.Nil;
-
-    [LuaMember("keys_strings_sub")]
-    public LuaTable? KeysStringsSub(string key)
-    {
-        if (Strings.TryGetValue(key, out var v))
-        {
-            var t = new LuaTable();
-            foreach (var (i, k) in v.Keys.Index())
-                t.Insert(i + 1, k);
-            return t;
-        }
-        return null;
-    }
-
-    [LuaMember("has_strings_sub")]
-    public bool HasStringsSub(string keyA, int keyB) => Strings.TryGetValue(keyA, out var v) && v.ContainsKey(keyB);
-
-    [LuaMember("get_string_ids")]
-    public StringContainer? GetStringIds(int key) => StringIds.TryGetValue(key - 1, out var v) ? v : null;
-
-    [LuaMember("size_string_ids")]
-    public int SizeStringIds() => StringIds.Count;
-
-    [LuaMember("keys_string_ids")]
-    public LuaTable KeysStringIds()
-    {
-        var t = new LuaTable();
-        foreach (var (i, k) in StringIds.Keys.Index())
-            t.Insert(i + 1, k);
-        return t;
-    }
-
-    [LuaMember("has_string_ids")]
-    public bool HasStringIds(int key) => StringIds.ContainsKey(key);
-
-    [LuaMember("get_author_list")]
-    public string? GetAuthorList(int key) => key - 1 < AuthorList.Count && key > 0 ? AuthorList[key - 1] : null;
-    
-    [LuaMember("size_author_list")]
-    public int SizeAuthorList() => AuthorList.Count;
+    /// <summary>
+    /// string
+    /// </summary>
+    [LuaMember("author_list")]
+    public readonly LuaList AuthorList = [];
 
     [LuaMember("load_string")]
     public static FileData LoadString(List<FormatEntry> fileEntries, LoadingWindow? lWin = null)
@@ -89,7 +40,8 @@ public partial class FileData
 
         var loaded = 0;
         var currentEntry = "";
-        var entries = new Dictionary<int, StringContainer>();
+        // <int, StringContainer>
+        var entries = new LuaTable();
         var isEntry = false;
 
         foreach (var entry in fileEntries)
@@ -105,12 +57,12 @@ public partial class FileData
             {
                 case 9: // Settings
                     if (entry.Data.TryGetValue("Style", out var themeName))
-                        fData.ThemeName = themeName;
+                        fData.ThemeName = themeName.Read<string>();
                     if (entry.Data.TryGetValue("Version", out var ver))
-                        fData.FileVersion = ver;
+                        fData.FileVersion = ver.Read<string>();
                     break;
                 case 0: // New entry
-                    currentEntry = entry.Data["ID"];
+                    currentEntry = entry.Data["ID"].Read<string>();
                     isEntry = true;
                     break;
                 case 1: // Add a string to the current entry
@@ -118,8 +70,8 @@ public partial class FileData
                         var id = fData.LastStringId++;
                         entry.Data["ID"] = id.ToString();
                         var sCont = new StringContainer(entry);
-                        entries.Add(id, sCont);
-                        fData.StringIds.Add(id, sCont);
+                        entries[id] = sCont;
+                        fData.StringIds[id] = sCont;
                         if (sCont.LastEdited.LegacyAuthorName != null)
                         {
                             if (!fData.AuthorList.Contains(sCont.LastEdited.LegacyAuthorName))
@@ -165,10 +117,10 @@ public partial class FileData
                     ["ID"] = entry.Key,
                 },
             });
-            fel.AddRange(entry.Value.Select(str => str.Value.OutputFormatEntry()));
+            fel.AddRange(entry.Value.Read<LuaTable>().Select(str => str.Value.Read<StringContainer>().OutputFormatEntry()));
         }
 
-        fel.AddRange(AuthorList.Select(author => new FormatEntry() { Kind = 2, Data = { [""] = author, } }));
+        fel.AddRange(AuthorList.Select(author => new FormatEntry() { Kind = 2, Data = { [""] = author.Read<string>(), } }));
         fel.Add(new()
         {
             Kind = 8,

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
@@ -24,7 +25,8 @@ public partial class StyleParser : IDisposable
     public string? ScriptData;
     public Dictionary<string, Bitmap> ImageAssets = [];
     public LuaState LuaState = LuaState.Create();
-    public Dictionary<string, dynamic> GlobalEnv = [];
+    public LuaTable GlobalEnv = [];
+    public bool InitializedScript;
     private bool disposedValue;
 
     public static async Task<StyleParser> Create(string path)
@@ -41,7 +43,14 @@ public partial class StyleParser : IDisposable
             AllowTrailingCommas = true,
         };
         @this.Metadata = JsonSerializer.Deserialize<StyleMetadata>(File.ReadAllText($"{path}/Metadata.json"), jsonSeri)!;
-        @this.BoxMetadata = JsonSerializer.Deserialize<List<BoxMetadata>>(File.ReadAllText($"{path}/Boxes.json"), jsonSeri)!;
+        @this.BoxMetadata = [.. JsonSerializer.Deserialize<List<BoxMetadataJson>>(File.ReadAllText($"{path}/Boxes.json"), jsonSeri)!.Select(x => new BoxMetadata()
+        {
+            Name = x.Name,
+            Images = [.. x.Images.Select(x => LuaValue.FromObject(x))],
+            Scale = x.Scale,
+            CustomProperties = [.. x.CustomProperties.Select(x => new KeyValuePair<LuaValue, LuaValue>(x.Key, LuaValue.FromObject(x.Value)))],
+            TextOffset = x.TextOffset,
+        })];
         var list = JsonSerializer.Deserialize<List<FontMetadataJson>>(File.ReadAllText($"{path}/Fonts.json"),
             jsonSeri)!;
         @this.FontMetadata = new(list.Capacity);
@@ -77,7 +86,6 @@ public partial class StyleParser : IDisposable
         @this.LuaState.Environment["Bitmap"] = new LuaBitmap(null!);
         @this.LuaState.Environment["Image"] = new LuaImage(null!);
         @this.LuaState.Environment["IntTuple"] = new LuaIntTuple(0, 0);
-        @this.LuaState.Environment["FloatTuple"] = new LuaFloatTuple(0, 0);
         @this.LuaState.Environment["DoubleTuple"] = new LuaDoubleTuple(0, 0);
         @this.LuaState.Environment["Color"] = new LuaColor(Color.White);
         @this.LuaState.Environment["BoxMetadata"] = new BoxMetadata()
@@ -115,7 +123,7 @@ public partial class StyleParser : IDisposable
         //@this.LuaState.Environment[""] = new();
         foreach (var box in @this.BoxMetadata)
         {
-            foreach (var img in box.Images)
+            foreach (var img in box.Images.Select(x => x.Read<ImageMetadata>()))
             {
                 if (!@this.ImageAssets.ContainsKey(img.Path))
                 {

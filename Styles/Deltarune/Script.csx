@@ -1,4 +1,4 @@
-using System;
+                baseImage.SaveAsWebp(stream);using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;

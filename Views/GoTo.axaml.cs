@@ -7,12 +7,12 @@ namespace DialogueHelper.Views;
 public partial class GoTo : Window
 {
     public readonly MainWindow? MainWindow;
-    
+
     public GoTo()
     {
         InitializeComponent();
     }
-    
+
     public GoTo(MainWindow mainWindow)
     {
         MainWindow = mainWindow;
@@ -31,11 +31,11 @@ public partial class GoTo : Window
             if (MainWindow is { FileData: not null })
             {
                 var key = EntryName.Text ?? "";
-                if (MainWindow.FileData.Strings.TryGetValue(key, out var entry))
+                if (MainWindow.FileData.Strings.TryGetValue(key, out var entryLua))
                 {
                     var parent = MainWindow.EtvKeys.First(v => v.Value == key).Key;
                     var node = MainWindow.EtvTargetChildren[parent];
-                    if (index >= entry.Count)
+                    if (index >= entryLua.Read<LuaDictionary>().Count)
                         return;
                     Close();
                     MainWindow.EntryTreeView.ExpandSubTree(parent);

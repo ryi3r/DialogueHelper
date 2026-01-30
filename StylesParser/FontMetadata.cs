@@ -21,30 +21,17 @@ public partial class FontMetadata
     public readonly double Ascender;
     [LuaMember("ascender_offset")]
     public readonly double AscenderOffset;
-    public readonly List<GlyphMetadata> Glyphs;
-    public readonly Dictionary<string, GlyphMetadata> GlyphDictionary;
+    /// <summary>
+    /// GlyphMetadata
+    /// </summary>
+    [LuaMember("glyphs")]
+    public readonly LuaList Glyphs;
+    /// <summary>
+    /// <string, GlyphMetadata>
+    /// </summary>
+    [LuaMember("glyph_dictionary")]
+    public readonly LuaDictionary GlyphDictionary;
 
-    [LuaMember("get_glyphs")]
-    public GlyphMetadata? GetGlyphs(int idx) => idx - 1 < Glyphs.Count ? Glyphs[idx - 1] : null;
-
-    [LuaMember("size_glyphs")]
-    public int SizeGlyphs() => Glyphs.Count;
-
-    [LuaMember("get_glyph_dictionary")]
-    public GlyphMetadata? GetGlyphDictionary(string key) => GlyphDictionary.TryGetValue(key, out var v) ? v : null;
-
-    [LuaMember("has_glyph_dictionary")]
-    public bool HasGlyphDictionary(string key) => GlyphDictionary.ContainsKey(key);
-
-    [LuaMember("keys_glyph_dictionary")]
-    public LuaTable KeysGlyphDictionary()
-    {
-        var t = new LuaTable();
-        foreach (var (i, v) in GlyphDictionary.Keys.Index())
-            t.Insert(i + 1, v);
-        return t;
-    }
-    
     public FontMetadata(FontMetadataJson font)
     {
         Name = font.Name;
@@ -58,10 +45,10 @@ public partial class FontMetadata
         {
             foreach (var glyph in font.Glyphs)
             {
-                Glyphs.Add(new()
+                Glyphs.Add(new GlyphMetadata()
                 {
                     Char = glyph.Char,
-                    Kerning = glyph.Kerning,
+                    Kerning = [.. glyph.Kerning],
                     Offset = glyph.Offset,
                     Position = new(glyph.Position[0], glyph.Position[1]),
                     Shift = glyph.Shift,
@@ -71,7 +58,7 @@ public partial class FontMetadata
         }
         GlyphDictionary = [];
         foreach (var glyph in Glyphs)
-            GlyphDictionary.Add(glyph.Char, glyph);
+            GlyphDictionary.Add(glyph.Read<GlyphMetadata>().Char, glyph.Read<GlyphMetadata>());
     }
 }
 
@@ -88,23 +75,11 @@ public partial class GlyphMetadata
     public required double Shift;
     [LuaMember("offset")]
     public required double Offset;
-    public List<KerningMetadata> Kerning = [];
-
-    [LuaMember("add_kerning")]
-    public void AddKerning(KerningMetadata kern) => Kerning.Add(kern);
-
-    [LuaMember("get_kerning")]
-    public KerningMetadata? GetKerning(int idx) => idx - 1 < Kerning.Count ? Kerning[idx - 1] : null;
-
-    [LuaMember("size_kerning")]
-    public int SizeKerning() => Kerning.Count;
-
-    [LuaMember("remove_kerning")]
-    public void RemoveKerning(int idx)
-    {
-        if (idx - 1 < Kerning.Count)
-            Kerning.RemoveAt(idx);
-    }
+    /// <summary>
+    /// KerningMetadata
+    /// </summary>
+    [LuaMember("kerning")]
+    public LuaList Kerning = [];
 }
 
 [LuaObject]

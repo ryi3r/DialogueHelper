@@ -1,5 +1,5 @@
 using System;
-using System.Threading.Tasks;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -34,7 +34,7 @@ public class PreviewRenderer(MainWindow mainWindow)
         canvas.Width = 0.0;
         canvas.Height = 0.0;
 
-        foreach (var bImg in box.Images)
+        foreach (var bImg in box.Images.Select(x => x.Read<ImageMetadata>()))
         {
             var imgAsset = style.ImageAssets[bImg.Path];
             var avImg = new Image()

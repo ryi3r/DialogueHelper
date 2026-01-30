@@ -1,5 +1,7 @@
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -136,34 +138,22 @@ public partial class LuaImage(Avalonia.Controls.Image img)
 [LuaObject]
 public partial class LuaIntTuple(int item1, int item2)
 {
-    [LuaMember("first")]
-    public int Item1 = item1;
-    [LuaMember("last")]
-    public int Item2 = item2;
+    [LuaMember("x")]
+    public int X = item1;
+    [LuaMember("y")]
+    public int Y = item2;
 
     [LuaMember("create")]
     public static LuaIntTuple Create(int first, int last) => new(first, last);
 }
 
 [LuaObject]
-public partial class LuaFloatTuple(float item1, float item2)
-{
-    [LuaMember("first")]
-    public float Item1 = item1;
-    [LuaMember("last")]
-    public float Item2 = item2;
-
-    [LuaMember("create")]
-    public static LuaFloatTuple Create(float first, float last) => new(first, last);
-}
-
-[LuaObject]
 public partial class LuaDoubleTuple(double item1, double item2)
 {
-    [LuaMember("first")]
-    public double Item1 = item1;
-    [LuaMember("last")]
-    public double Item2 = item2;
+    [LuaMember("x")]
+    public double X = item1;
+    [LuaMember("y")]
+    public double Y = item2;
 
     [LuaMember("create")]
     public static LuaDoubleTuple Create(double first, double last) => new(first, last);
@@ -182,6 +172,32 @@ public partial class LuaWindow : Window
     public void LuaShow() => Show();
 }
 
+[LuaObject]
+public partial class LuaList : List<LuaValue>
+{
+    [LuaMember("add")]
+    public void AddAuthorGroups(LuaValue val) => Add(val);
+
+    [LuaMember("set")]
+    public void SetAuthorGroups(int idx, LuaValue val)
+    {
+        if (idx - 1 > Count && idx > 0)
+            this[idx - 1] = val;
+    }
+
+    [LuaMember("get")]
+    public LuaValue GetAuthorGroups(int idx) => idx - 1 > Count && idx > 0 ? this[idx - 1] : LuaValue.Nil;
+
+    [LuaMember("len")]
+    public int Len() => Count;
+
+    [LuaMember("remove")]
+    public void RemoveAuthorGroups(int idx)
+    {
+        if (idx - 1 > Count && idx > 0)
+            RemoveAt(idx - 1);
+    }
+}
 [LuaObject]
 public partial class LuaColor(SixLabors.ImageSharp.Color color)
 {

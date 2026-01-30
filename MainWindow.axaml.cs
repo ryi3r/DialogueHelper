@@ -111,11 +111,29 @@ public partial class MainWindow : Window
         };
         lWin.ProgressBar.Value = 0.0;
         lWin.Show(this);
+        lWin.Text.Text = "Loading the file...";
+        using var stream = new StreamReader(file is not null ? await file.OpenReadAsync() : File.OpenRead(path!));
+        LoadStringToProject(await stream.ReadToEndAsync(), lWin);
+    }
+
+    public async void LoadStringToProject(string fStr, LoadingWindow? lWin = null)
+    {
+        if (lWin is null)
+        {
+            lWin = new LoadingWindow
+            {
+                CanResize = false
+            };
+            lWin.Closing += (_, ev) =>
+            {
+                if (!ev.IsProgrammatic)
+                    ev.Cancel = true;
+            };
+            lWin.ProgressBar.Value = 0.0;
+            lWin.Show(this);
+        }
         try
         {
-            lWin.Text.Text = "Loading the file...";
-            using var stream = new StreamReader(file is not null ? await file.OpenReadAsync() : File.OpenRead(path!));
-            var fStr = await stream.ReadToEndAsync();
             lWin.Text.Text = "Parsing the file...";
             var fParse = FileParser.ParseString(fStr);
             lWin.Text.Text = "Loading data...";
@@ -125,18 +143,18 @@ public partial class MainWindow : Window
             lWin.ProgressBar.Maximum = FileData.Strings.Count;
             var eqStr = new Dictionary<string, List<int>>();
             var cur = 0;
-            foreach (var strCont in FileData.StringIds.Values)
+            foreach (var strCont in FileData.StringIds.Values.Select(x => x.Read<StringContainer>()))
             {
                 if (eqStr.TryGetValue(strCont.OriginalText, out var arr))
                 {
-                    strCont.EqStrings = arr;
+                    strCont.EqStrings = [.. arr];
                     arr.Add(strCont.Id);
                 }
                 else
                 {
                     arr = [strCont.Id];
                     eqStr.Add(strCont.OriginalText, arr);
-                    strCont.EqStrings = arr;
+                    strCont.EqStrings = [.. arr];
                 }
 
                 lWin.ProgressBar.Value = cur++;
@@ -175,13 +193,15 @@ public partial class MainWindow : Window
         EtvTargetChildren.Clear();
         if (!await EnsureFileOpen())
             return;
-        foreach (var (key, strs) in new Dictionary<string, Dictionary<int, StringContainer>>(FileData!.Strings))
+        // LuaDictionary<int, StringContainer>
+        foreach (var (key, strs) in FileData!.Strings.Select(x => (x.Key.Read<string>(), x.Value.Read<LuaTable>())).ToArray())
         {
-            if (strs.Count <= 0)
+            if (strs.ArrayLength <= 0)
             {
-                FileData.Strings.Remove(key);
+                // todo: how do i do this
+                //FileData.Strings.(key);
                 foreach (var str in strs)
-                    FileData.StringIds.Remove(str.Key);
+                    //FileData.StringIds.Remove(str.Key);
                 continue;
             }
             var cont = new TreeViewItem() { Header = key };
@@ -191,7 +211,7 @@ public partial class MainWindow : Window
             EtvTargetChildren.Add(cont, data);
             var i = 0;
             var modified = 0;
-            foreach (var str in strs)
+            foreach (var str in strs.Select(x => new KeyValuePair<int, StringContainer>(x.Key.Read<int>(), x.Value.Read<StringContainer>())))
             {
                 var tBlock = new TreeViewItem()
                 {
@@ -215,7 +235,7 @@ public partial class MainWindow : Window
                 data.Add(str.Value.Id, tBlock);
             }
 
-            cont.ItemsSource = data.OrderBy(v => strs[v.Key].Id).Select(v => v.Value).ToArray();
+            cont.ItemsSource = data.OrderBy(v => strs[v.Key].Read<StringContainer>().Id).Select(v => v.Value).ToArray();
             cont.Foreground = SolidColorBrush.Parse(
                 modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral"
             );
@@ -233,7 +253,7 @@ public partial class MainWindow : Window
         var i = 0;
         var modified = 0;
         var list = EtvTargetChildren[item];
-        foreach (var str in strs)
+        foreach (var str in strs.Read<LuaDictionary>().Select(x => new KeyValuePair<int, StringContainer>(x.Key.Read<int>(), x.Value.Read<StringContainer>())))
         {
             ColorTreeItem(
                 list[str.Key],
@@ -288,7 +308,7 @@ public partial class MainWindow : Window
         if (EntryTreeView.SelectedItem is TreeViewItem { Parent: TreeViewItem parent } tBlock)
         {
             EditableTextIgnoreUpdateOnce = true;
-            SelectedString = FileData!.Strings[EtvKeys[parent]][EtvIndexes[tBlock]];
+            SelectedString = FileData!.Strings[EtvKeys[parent]].Read<LuaDictionary>()[EtvIndexes[tBlock]].Read<StringContainer>();
             MarkAsModified.IsChecked = SelectedString.MarkAsModified;
             if (OriginalText.Text != SelectedString.OriginalText)
                 OriginalText.Text = SelectedString.OriginalText;
@@ -301,7 +321,7 @@ public partial class MainWindow : Window
             foreach (var prop in CustomProperties)
             {
                 if (SelectedString.CustomProperties.TryGetValue(prop.Name, out var value))
-                    prop.StringToValue(value);
+                    prop.StringToValue(value.Read<string>());
                 else
                     prop.Value = prop.DefaultValue;
             }
@@ -315,9 +335,9 @@ public partial class MainWindow : Window
                 // todo: avalonia fix this plz
             }
             SimilarStringsNone.IsVisible = SelectedString.EqStrings.Count <= 0;
-            foreach (var sstr in SelectedString.EqStrings)
+            foreach (var sstr in SelectedString.EqStrings.Select(x => x.Read<int>()))
             {
-                var s = FileData.StringIds[sstr];
+                var s = FileData.StringIds[sstr].Read<StringContainer>();
                 SimilarStringsPanel.Items.Add(
                     $"({sstr}) {((s.Text != null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}"
                 );
@@ -527,25 +547,21 @@ public partial class MainWindow : Window
             var lastBoxSelected = int.Clamp(
                 BoxComboBox.SelectedIndex,
                 0,
-                StyleData.BoxMetadata.Count - 1
+                int.Max(StyleData.BoxMetadata.Count - 1, 0)
             );
             var lastFontSelected = int.Clamp(
                 FontComboBox.SelectedIndex,
                 0,
-                StyleData.FontMetadata.Count - 1
+                int.Max(StyleData.FontMetadata.Count - 1, 0)
             );
             BoxComboBox.Items.Clear();
             FontComboBox.Items.Clear();
 
             foreach (var box in StyleData.BoxMetadata)
-            {
                 BoxComboBox.Items.Add(new ComboBoxItem() { Content = box.Name });
-            }
 
             foreach (var font in StyleData.FontMetadata)
-            {
                 FontComboBox.Items.Add(new ComboBoxItem() { Content = font.Name });
-            }
 
             BoxComboBox.SelectedIndex = lastBoxSelected;
             FontComboBox.SelectedIndex = lastFontSelected;
@@ -581,7 +597,7 @@ public partial class MainWindow : Window
         }
 
         UpdateCustomScriptFields();
-        //StyleData?.InitializedScript = true;
+        StyleData?.InitializedScript = true;
     }
 
     void BoxImages_OnLayoutUpdated(object? sender, EventArgs e)
@@ -1003,8 +1019,9 @@ public partial class MainWindow : Window
         foreach (var value in EtvTargetChildren)
         {
             var key = EtvKeys[value.Key];
-            if (!FileData!.Strings.TryGetValue(key, out var list))
+            if (!FileData!.Strings.TryGetValue(key, out var listLua))
                 continue;
+            var list = listLua.Read<LuaDictionary>();
             var foundMatch = false;
             if (headerText.All(header => key.Contains(header, targetCasing)))
             {
@@ -1012,10 +1029,10 @@ public partial class MainWindow : Window
                     foundMatch = true;
                 foreach (var entry in value.Value)
                 {
-                    var item = list[EtvIndexes[entry.Value]];
+                    var item = list[EtvIndexes[entry.Value]].Read<StringContainer>();
                     if (
                         searchGroup.Any(group =>
-                            !item.AuthorGroups.Any(ag => ag.Contains(group, targetCasing))
+                            !item.AuthorGroups.Any(ag => ag.Read<string>().Contains(group, targetCasing))
                         )
                     )
                         goto NotFound;
@@ -1074,8 +1091,8 @@ public partial class MainWindow : Window
             SelectedString.MarkAsModified = ModifySimilarStrings.IsChecked ?? false;
             if (ModifySimilarStrings.IsChecked ?? false)
             {
-                foreach (var id in SelectedString.EqStrings)
-                    FileData.StringIds[id].MarkAsModified = SelectedString.MarkAsModified;
+                foreach (var id in SelectedString.EqStrings.Select(x => x.Read<int>()))
+                    FileData.StringIds[id].Read<StringContainer>().MarkAsModified = SelectedString.MarkAsModified;
             }
             if (EntryTreeView.SelectedItem != null)
                 UpdateEtvItem((TreeViewItem)((Control)EntryTreeView.SelectedItem).Parent!);
@@ -1169,7 +1186,7 @@ public partial class MainWindow : Window
             {
                 var tvi = new TreeViewItem() { Header = t };
                 EntryTreeView.Items.Add(tvi);
-                FileData.Strings.Add(t, []);
+                FileData.Strings.Add(t, new LuaList());
                 EtvTargetChildren.Add(tvi, []);
                 EtvKeys.Add(tvi, t);
             }
@@ -1227,10 +1244,10 @@ public partial class MainWindow : Window
                 Id = FileData!.LastStringId++,
                 OriginalText = t,
                 EqStrings = (
-                    FileData.StringIds.Values.FirstOrDefault(v => v.OriginalText == t) ?? new()
+                    FileData.StringIds.Values.FirstOrDefault(v => v.Read<StringContainer>().OriginalText == t).Read<StringContainer?>() ?? new()
                 ).EqStrings,
             };
-            FileData.Strings[key].Add(sc.Id, sc);
+            FileData.Strings[key].Read<LuaDictionary>().Add(sc.Id, sc);
             EtvTargetChildren[parent].Add(sc.Id, tvi);
             EtvIndexes.Add(tvi, sc.Id);
 
@@ -1271,8 +1288,8 @@ public partial class MainWindow : Window
             if (EtvKeys.TryGetValue(item, out var key))
             {
                 EntryTreeView.Items.Remove(item);
-                foreach (var entry in FileData!.Strings[key])
-                    FileData.StringIds.Remove(entry.Key);
+                foreach (var eKey in FileData!.Strings[key].Read<LuaDictionary>().Keys)
+                    FileData.StringIds.Remove(eKey);
                 FileData.Strings.Remove(key);
                 EtvKeys.Remove(item);
                 foreach (var node in EtvTargetChildren[item])
@@ -1287,7 +1304,7 @@ public partial class MainWindow : Window
                     && EtvIndexes.TryGetValue(item, out var index)
                 )
                 {
-                    FileData!.Strings[key].Remove(index);
+                    FileData!.Strings[key].Read<LuaDictionary>().Remove(index);
                     FileData.StringIds.Remove(index);
                     var items = new List<TreeViewItem>(parent.ItemsSource!.Cast<TreeViewItem>());
                     items.Remove(item);
@@ -1336,7 +1353,7 @@ public partial class MainWindow : Window
                     SelectedString.LastEdited.AuthorId < 0
                     || SelectedString.LastEdited.AuthorId >= FileData!.AuthorList.Count
                         ? "<null>"
-                        : FileData.AuthorList[SelectedString.LastEdited.AuthorId],
+                        : FileData.AuthorList[SelectedString.LastEdited.AuthorId].Read<string>(),
             },
             TimeDate = { SelectedDate = ts },
             TimeTime = { SelectedTime = ts.TimeOfDay },
@@ -1349,7 +1366,7 @@ public partial class MainWindow : Window
     {
         if (!await EnsureFileOpen())
             return;
-        var modi = FileData!.StringIds.Count(i =>
+        var modi = FileData!.StringIds.Select(x => new KeyValuePair<int, StringContainer>(x.Key.Read<int>(), x.Value.Read<StringContainer>())).Count(i =>
             i.Value.MarkAsModified || (i.Value.Text != null && i.Value.OriginalText != i.Value.Text));
         var total = FileData.StringIds.Count;
         var fi = new FileInfo()
@@ -1380,7 +1397,7 @@ public partial class MainWindow : Window
             || SimilarStringsPanel.SelectedIndex >= SelectedString.EqStrings.Count
         )
             return;
-        var eqStr = FileData.StringIds[SelectedString.EqStrings[SimilarStringsPanel.SelectedIndex]];
+        var eqStr = FileData.StringIds[SelectedString.EqStrings[SimilarStringsPanel.SelectedIndex].Read<int>()].Read<StringContainer>();
         var key = EtvTargetChildren.FirstOrDefault(s => s.Value.ContainsKey(eqStr.Id)).Key;
         if (key != null)
         {
