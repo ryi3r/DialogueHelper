@@ -34,6 +34,7 @@ public partial class StyleParser : IDisposable
             Folder = path,
         };
         @this.LuaState.OpenStandardLibraries();
+        @this.LuaState.ModuleLoader = new LuaModuleLoader();
         var jsonSeri = new JsonSerializerOptions()
         {
             IncludeFields = true,
