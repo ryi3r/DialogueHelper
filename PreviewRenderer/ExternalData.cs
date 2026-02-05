@@ -14,7 +14,7 @@ using Image = SixLabors.ImageSharp.Image;
 
 namespace DialogueHelper.PreviewRenderer;
 
-public class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap fontTexture)
+public class ExternalData(MainWindow mainWindow, Canvas canvas)
 {
     public Dictionary<string, dynamic?> Env = [];
     public Dictionary<string, dynamic?> GlobalEnv = [];
@@ -85,23 +85,24 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap fontTextu
         }
     }
 
-    public Avalonia.Controls.Image DrawGlyph()
+    public Avalonia.Controls.Image? DrawGlyph()
     {
         var fontGlyph = Font.GlyphDictionary[Char.Char];
-        var targetTexture = fontTexture;
+        if (!Style.ImageAssets.TryGetValue(Font.ImagePath, out var targetTexture))
+            return null;
         var alpha = Math.Round(Glyph.Alpha, 2);
         if (Glyph.Color != Color.White || alpha < 1.0)
             targetTexture = ModifyImageAndCache(targetTexture, Glyph.Color, alpha);
         var glyphImg = new Avalonia.Controls.Image()
         {
-            Source = new CroppedBitmap(targetTexture, new((int)fontGlyph.Position.Item1, (int)fontGlyph.Position.Item2, (int)fontGlyph.Size.Item1, (int)fontGlyph.Size.Item2)),
-            Width = Glyph.Size.Item1,
-            Height = Glyph.Size.Item2,
-            RenderTransform = new ScaleTransform(Glyph.Scale.Item1, Glyph.Scale.Item2),
+            Source = new CroppedBitmap(targetTexture, new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y)),
+            Width = Glyph.Size.X,
+            Height = Glyph.Size.Y,
+            RenderTransform = new ScaleTransform(Glyph.Scale.X, Glyph.Scale.Y),
         };
         RenderOptions.SetBitmapInterpolationMode(glyphImg, BitmapInterpolationMode.None);
-        var x = Glyph.Position.Item1 * Glyph.Scale.Item1;
-        var y = Glyph.Position.Item2 * Glyph.Scale.Item2;
+        var x = Glyph.Position.X * Glyph.Scale.X;
+        var y = Glyph.Position.Y * Glyph.Scale.Y;
         glyphImg.SetValue(Canvas.LeftProperty, x);
         glyphImg.SetValue(Canvas.TopProperty, y);
         glyphImg.RenderTransformOrigin = Avalonia.RelativePoint.TopLeft;
@@ -115,7 +116,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap fontTextu
         return glyphImg;
     }
 
-    public Avalonia.Controls.Image DrawTexture(Bitmap img, (double, double) position)
+    public Avalonia.Controls.Image DrawTexture(Bitmap img, (double X, double Y) position)
     {
         var node = new Avalonia.Controls.Image()
         {
@@ -125,84 +126,84 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas, Bitmap fontTextu
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
-        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
-        node.SetValue(Canvas.LeftProperty, position.Item1);
-        node.SetValue(Canvas.TopProperty, position.Item2);
+        position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        node.SetValue(Canvas.LeftProperty, position.X);
+        node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
 
-        if (position.Item1 + node.Width > canvas.Width)
-            canvas.Width = position.Item1 + node.Width;
-        if (position.Item2 + node.Height > canvas.Height)
-            canvas.Height = position.Item2 + node.Height;
+        if (position.X + node.Width > canvas.Width)
+            canvas.Width = position.X + node.Width;
+        if (position.Y + node.Height > canvas.Height)
+            canvas.Height = position.Y + node.Height;
 
         return node;
     }
 
-    public Avalonia.Controls.Image DrawTextureScaled(Bitmap img, (double, double) position, (double, double) scale)
+    public Avalonia.Controls.Image DrawTextureScaled(Bitmap img, (double X, double Y) position, (double X, double Y) scale)
     {
         var node = new Avalonia.Controls.Image()
         {
             Source = img,
-            Width = img.Size.Width * GetCurrentScale() * scale.Item1,
-            Height = img.Size.Height * GetCurrentScale() * scale.Item2,
+            Width = img.Size.Width * GetCurrentScale() * scale.X,
+            Height = img.Size.Height * GetCurrentScale() * scale.Y,
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
-        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
-        node.SetValue(Canvas.LeftProperty, position.Item1);
-        node.SetValue(Canvas.TopProperty, position.Item2);
+        position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        node.SetValue(Canvas.LeftProperty, position.X);
+        node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
 
-        if (position.Item1 + node.Width > canvas.Width)
-            canvas.Width = position.Item1 + node.Width;
-        if (position.Item2 + node.Height > canvas.Height)
-            canvas.Height = position.Item2 + node.Height;
+        if (position.X + node.Width > canvas.Width)
+            canvas.Width = position.X + node.Width;
+        if (position.Y + node.Height > canvas.Height)
+            canvas.Height = position.Y + node.Height;
 
         return node;
     }
 
-    public Avalonia.Controls.Image DrawTextureSized(Bitmap img, (double, double) position, (double, double) size)
+    public Avalonia.Controls.Image DrawTextureSized(Bitmap img, (double X, double Y) position, (double X, double Y) size)
     {
         var node = new Avalonia.Controls.Image()
         {
             Source = img,
-            Width = size.Item1 * GetCurrentScale(),
-            Height = size.Item2 * GetCurrentScale(),
+            Width = size.X * GetCurrentScale(),
+            Height = size.Y * GetCurrentScale(),
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
-        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
-        node.SetValue(Canvas.LeftProperty, position.Item1);
-        node.SetValue(Canvas.TopProperty, position.Item2);
+        position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        node.SetValue(Canvas.LeftProperty, position.X);
+        node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
 
-        if (position.Item1 + node.Width > canvas.Width)
-            canvas.Width = position.Item1 + node.Width;
-        if (position.Item2 + node.Height > canvas.Height)
-            canvas.Height = position.Item2 + node.Height;
+        if (position.X + node.Width > canvas.Width)
+            canvas.Width = position.X + node.Width;
+        if (position.Y + node.Height > canvas.Height)
+            canvas.Height = position.Y + node.Height;
 
         return node;
     }
 
-    public Avalonia.Controls.Image DrawTextureCropped(Bitmap img, (double, double) position, (double, double) size, (int, int) srcPosition, (int, int) srcSize)
+    public Avalonia.Controls.Image DrawTextureCropped(Bitmap img, (double X, double Y) position, (double X, double Y) size, (int X, int Y) srcPosition, (int X, int Y) srcSize)
     {
         var node = new Avalonia.Controls.Image()
         {
-            Source = new CroppedBitmap(img, new(srcPosition.Item1, srcPosition.Item2, srcSize.Item1, srcSize.Item2)),
-            Width = size.Item1 * GetCurrentScale(),
-            Height = size.Item2 * GetCurrentScale(),
+            Source = new CroppedBitmap(img, new(srcPosition.X, srcPosition.Y, srcSize.X, srcSize.Y)),
+            Width = size.X * GetCurrentScale(),
+            Height = size.Y * GetCurrentScale(),
         };
 
         RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
-        position = (position.Item1 * GetCurrentScale(), position.Item2 * GetCurrentScale());
-        node.SetValue(Canvas.LeftProperty, position.Item1);
-        node.SetValue(Canvas.TopProperty, position.Item2);
+        position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        node.SetValue(Canvas.LeftProperty, position.X);
+        node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
 
-        if (position.Item1 + node.Width > canvas.Width)
-            canvas.Width = position.Item1 + node.Width;
-        if (position.Item2 + node.Height > canvas.Height)
-            canvas.Height = position.Item2 + node.Height;
+        if (position.X + node.Width > canvas.Width)
+            canvas.Width = position.X + node.Width;
+        if (position.Y + node.Height > canvas.Height)
+            canvas.Height = position.Y + node.Height;
 
         return node;
     }

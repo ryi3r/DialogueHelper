@@ -54,7 +54,7 @@ public class PreviewRenderer(MainWindow mainWindow)
         }
         if (!style.InitializedScript)
             return;
-        var eData = new ExternalData(MainWindow, canvas, style.ImageAssets[font.ImagePath])
+        var eData = new ExternalData(MainWindow, canvas)
         {
             GlobalEnv = style.GlobalEnv,
             Box = box,
@@ -89,10 +89,7 @@ public class PreviewRenderer(MainWindow mainWindow)
                 eData.Char.Index = i++;
                 eData.Char.IsNewline = style.Metadata.NewLines.Contains(chr);
                 eData.Char.IsIgnore = style.Metadata.Ignore.Contains(chr);
-                eData.Glyph = new()
-                {
-                    Scale = (fontScale * previewScale, fontScale * previewScale),
-                };
+                eData.Glyph.Scale = (fontScale * previewScale, fontScale * previewScale);
 
                 await ((Task?)style.Script?.GetMethod("DrawGlyph")?.Invoke(null, [wh, eData]) ?? Task.CompletedTask);
             }

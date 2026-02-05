@@ -44,8 +44,8 @@ public class FontMetadata
 public class GlyphMetadata
 {
     public required char Char;
-    public required (double, double) Position;
-    public required (double, double) Size;
+    public required (double X, double Y) Position;
+    public required (double X, double Y) Size;
     public required double Shift;
     public required double Offset;
     public List<KerningMetadata> Kerning = [];

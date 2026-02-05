@@ -10,4 +10,7 @@ public partial class LoadingWindow : Window
     {
         InitializeComponent();
     }
+
+    public TextBlock TextView => this.Text;
+    public ProgressBar ProgressBarView => this.ProgressBar;
 }

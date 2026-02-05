@@ -6,8 +6,8 @@ public class ExternalChar
     public required int Index;
     public required string String;
 
-    public (double, double) StartPosition = (0.0, 0.0);
-    public (double, double) PositionOffset = (0.0, 0.0);
+    public (double X, double Y) StartPosition = (0.0, 0.0);
+    public (double X, double Y) PositionOffset = (0.0, 0.0);
 
     public required bool IsIgnore;
     public required bool IsNewline;

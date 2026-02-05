@@ -12,41 +12,34 @@ using static System.Windows.Forms.FileDialog;
 using UndertaleModLib;
 using UndertaleModLib.Decompiler;
 
-var bjson = File.ReadAllText(FilePath + "\\..\\lang\\lang_es.json");
-var jdata = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(bjson, new JsonSerializerOptions());
-if (jdata.ContainsKey("date"))
-    jdata.Remove("date");
+var bjson = File.ReadAllText("../input.json");
+var jData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(bjson);
+if (jData.ContainsKey("date"))
+    jData.Remove("date");
 
 foreach (var code in Data.Code)
 {
-    if (code.ParentEntry is null)
-    {
-        bool lastExists = false;
-        string entry = "";
+    if (code.ParentEntry is not null)
+        continue;
+    var lastExists = false;
+    var entry = "";
 
-        foreach (var instruction in code.Instructions)
+    foreach (var instruction in code.Instructions)
+    {
+        if (!(UndertaleInstruction.GetInstructionType(instruction.Kind) == UndertaleInstruction.InstructionType.PushInstruction && instruction.Type1 == UndertaleInstruction.DataType.String))
+            continue;
+        if (!lastExists)
         {
-            if (UndertaleInstruction.GetInstructionType(instruction.Kind) == UndertaleInstruction.InstructionType.PushInstruction && instruction.Type1 == UndertaleInstruction.DataType.String)
-            {
-                var c = ((UndertaleString)(instruction.ValueString).Resource).Content;
-                if (!lastExists)
-                {
-                    //ScriptMessage(c);
-                    if (jdata.ContainsKey(c))
-                    {
-                        //ScriptMessage(c);
-                        lastExists = true;
-                        entry = c;
-                    }
-                }
-                else
-                {
-                    lastExists = false;
-                    ((UndertaleString)(instruction.ValueString).Resource).Content = jdata[entry].GetString();
-                }
-            }
+            var c = ((UndertaleString)(instruction.ValueString).Resource).Content;
+            if (!jData.ContainsKey(c))
+                continue;
+            lastExists = true;
+            entry = c;
+        }
+        else
+        {
+            lastExists = false;
+            ((UndertaleString)(instruction.ValueString).Resource).Content = jData[entry].GetString();
         }
     }
 }
-
-ScriptMessage("Finished!");

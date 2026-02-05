@@ -12,7 +12,6 @@
         <Product>Dialogue Helper</Product>
         <AssemblyVersion>2.0.2</AssemblyVersion>
         <FileVersion>2.0.2</FileVersion>
-        <PublishSingleFile>false</PublishSingleFile>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
 

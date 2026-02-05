@@ -11,6 +11,7 @@ using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using CSScripting;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.Options;
@@ -267,13 +268,13 @@ public partial class MainWindow : Window
     {
         if (!await EnsureFileOpen())
             return;
-        if (EntryTreeView.SelectedItem is null)
+        /*if (EntryTreeView.SelectedItem is null)
         {
             await new InfoWindow(
-                "You need to select an item before trying to copy it to the clipboard."
+                "You need to select an item before trying to change item selection."
             ).ShowDialog(this);
             return;
-        }
+        }*/
         if (EntryTreeView.SelectedItem is TreeViewItem { Parent: TreeViewItem parent } tBlock)
         {
             EditableTextIgnoreUpdateOnce = true;
@@ -301,7 +302,7 @@ public partial class MainWindow : Window
             }
             catch (Exception)
             {
-                // todo: avalonia fix this plz
+                // todo: figure out how to clear the selected item because it's causing a crash when we call .Clear() on this
             }
             SimilarStringsNone.IsVisible = SelectedString.EqStrings.Count <= 0;
             foreach (var sstr in SelectedString.EqStrings)
@@ -448,6 +449,23 @@ public partial class MainWindow : Window
 
     async void OnOpened(object? sender, EventArgs e)
     {
+        var w = new LoadingWindow()
+        {
+            ProgressBar = {
+                IsIndeterminate = true,
+                ShowProgressText = false,
+            },
+            Text = {
+                Text = "Initializing...",
+            },
+        };
+        w.Show(this);
+        if (Directory.Exists("RuntimeComp"))
+        {
+            // clear previously compiled files as it's unnecessary in this run because it'll be recompiled.
+            foreach (var f in Directory.EnumerateFiles("RuntimeComp").Where(x => x.Contains(".dll") && x.Contains("IL-")))
+                File.Delete(f);
+        }
         MiddleStackPanel.RowDefinitions[0].Height = new GridLength(
             (235.0 * ClientSize.Height) / 720.0
         );
@@ -457,8 +475,10 @@ public partial class MainWindow : Window
         LoadSettings();
         if (SelectedStyle is null)
         {
+            w.Hide();
             var settings = new Settings(this) { Init = true };
             await settings.ShowDialog(this);
+            w.Show(this);
         }
         else
         {
@@ -495,6 +515,8 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
+                w.Hide();
+
                 var sErr = new StyleError { ErrorBox = { Text = ex.ToString() } };
                 sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace(
                     "StyleName",
@@ -503,12 +525,16 @@ public partial class MainWindow : Window
                 await sErr.ShowDialog(this);
                 var settings = new Settings(this) { Init = true, IgnoreStyles = [SelectedStyle] };
                 await settings.ShowDialog(this);
+
+                w.Show(this);
             }
         }
 
         InitializeCustomScript();
         EditableText_OnTextChanged(null, null);
         OriginalText_OnTextChanged(null, null);
+
+        w.Hide();
     }
 
     public async void InitializeCustomScript()
@@ -1401,7 +1427,7 @@ public partial class MainWindow : Window
         if (EntryTreeView.SelectedItem is null)
         {
             await new InfoWindow(
-                "You need to select an item before trying to copy it to the clipboard."
+                "You need to select an item before trying to create a string."
             ).ShowDialog(this);
             return;
         }
@@ -1460,7 +1486,7 @@ public partial class MainWindow : Window
         if (EntryTreeView.SelectedItem is null)
         {
             await new InfoWindow(
-                "You need to select an item before trying to copy it to the clipboard."
+                "You need to select an item before trying to delete an item."
             ).ShowDialog(this);
             return;
         }
@@ -1515,7 +1541,7 @@ public partial class MainWindow : Window
         if (SelectedString is null || EntryTreeView.SelectedItem is null)
         {
             await new InfoWindow(
-                "You need to select an item before trying to copy it to the clipboard."
+                "You need to select an item before trying to mark it as modified."
             ).ShowDialog(this);
             return;
         }

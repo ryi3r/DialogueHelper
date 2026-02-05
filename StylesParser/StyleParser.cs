@@ -79,9 +79,9 @@ public class StyleParser
                 .CompileCode(ScriptData, new()
                 {
                     RootClass = "Script",
-                    AssemblyFile = $"RuntimeComp/IL-{Path.GetFileName(Folder)}.dll",
+                    AssemblyFile = $"RuntimeComp/IL-{Path.GetFileName(Folder)}-{DateTimeOffset.Now.ToUnixTimeSeconds()}.dll",
                 });
-            Script = ScriptAsm.GetType("Script");
+            Script = ScriptAsm.GetType($"Script+{Metadata.Class}");
         }
     }
 }

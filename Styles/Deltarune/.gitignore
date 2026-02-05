@@ -1,1 +1,4 @@
-UndertaleModCli/
+UndertaleModCli/*
+!UndertaleModCli/*.txt
+# we are not including utmt ourselves, so we don't need to keep the license
+UndertaleModCli/LICENSE.txt

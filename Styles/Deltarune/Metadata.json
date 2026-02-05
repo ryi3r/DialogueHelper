@@ -1,7 +1,8 @@
 {
 	"Name": "Deltarune",
 	"Author": "ryi3r",
-	"ScriptPath": "Script.csx",
+	"ScriptPath": "Script.cs",
+	"Class": "Deltarune",
 	"NewLines": ["\n", "&", "#"],
 	"Ignore": []
 }

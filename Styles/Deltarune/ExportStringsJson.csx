@@ -6,54 +6,38 @@ using System.Text.Encodings.Web;
 using System.Threading;
 using System.Threading.Tasks;
 using UndertaleModLib.Util;
-using System.Windows.Forms;
 using UndertaleModLib.Models;
-//using static System.Windows.Forms.FileDialog;
 using UndertaleModLib;
 using UndertaleModLib.Decompiler;
 
-var bjson = File.ReadAllText(FilePath + "\\..\\lang\\lang_ja.json");
-Dictionary<string, string> jdata = JsonSerializer.Deserialize<Dictionary<string, string>>(bjson, new JsonSerializerOptions());
-Dictionary<string, string> fdata = new();
+var jData = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Path.Combine(FilePath, "../lang/lang_ja.json")));
+var fData = new Dictionary<string, string>();
 
 foreach (var code in Data.Code)
 {
-    if (code.ParentEntry is null)
-    {
-        bool lastExists = false;
-        string entry = "";
+    if (code.ParentEntry is not null)
+        continue;
+    var lastExists = false;
+    var entry = "";
 
-        foreach (var instruction in code.Instructions)
+    foreach (var instruction in code.Instructions)
+    {
+        if (!(UndertaleInstruction.GetInstructionType(instruction.Kind) == UndertaleInstruction.InstructionType.PushInstruction && instruction.Type1 == UndertaleInstruction.DataType.String))
+            continue;
+        var c = ((UndertaleString)(instruction.ValueString).Resource).Content.Replace("\r", "\\r").Replace("\n", "\\n");
+        if (!lastExists)
         {
-            if (UndertaleInstruction.GetInstructionType(instruction.Kind) == UndertaleInstruction.InstructionType.PushInstruction && instruction.Type1 == UndertaleInstruction.DataType.String)
-            {
-                var c = ((UndertaleString)(instruction.ValueString).Resource).Content.Replace("\r", "\\r").Replace("\n", "\\n");
-                if (!lastExists)
-                {
-                    //ScriptMessage(c);
-                    if (jdata.ContainsKey(c))
-                    {
-                        //ScriptMessage(c);
-                        lastExists = true;
-                        entry = c;
-                    }
-                }
-                else
-                {
-                    lastExists = false;
-                    fdata[entry] = c;
-                }
-            }
+            if (!jData.ContainsKey(c))
+                continue;
+            lastExists = true;
+            entry = c;
+        }
+        else
+        {
+            lastExists = false;
+            fData[entry] = c;
         }
     }
 }
 
-var s = JsonSerializer.Serialize(fdata, new JsonSerializerOptions()
-{
-	WriteIndented = true,
-});
-/*if (!File.Exists(FilePath + "\\..\\lang\\lang_en.json"))
-	File.WriteAllText(FilePath + "\\..\\lang\\lang_en.json", s);*/
-File.WriteAllText("\\..\\output.json", s);
-
-//ScriptMessage("Finished!");
+File.WriteAllText("../output.json", JsonSerializer.Serialize(fData, new JsonSerializerOptions() { WriteIndented = true }));
