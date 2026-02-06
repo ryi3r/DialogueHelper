@@ -142,7 +142,7 @@ public class Deltarune
         data.Env["FirstDrawnChar"] = true;
         data.Env["CheckedIndex"] = -1;
         var lro = EnablePortrait.ReadOnly;
-        EnablePortrait.ReadOnly = !data.Box.CustomProperties.TryGetValue("SupportsPortrait", out var val) || ((JsonElement)val).ToString() != "true";
+        EnablePortrait.ReadOnly = !data.Box.CustomProperties.TryGetValue("SupportsPortrait", out var val) || ((JsonElement)val).ToString().ToLowerInvariant() != "true";
         if (lro != EnablePortrait.ReadOnly)
             EnablePortrait.UpdateUiValue();
         if ((EnablePortrait.Value ?? false) && !EnablePortrait.ReadOnly)
@@ -280,13 +280,13 @@ public class Deltarune
             var i = 0;
             var fs = "";
             while (data.Char.Index + i < data.Char.String.Length && (data.Char.String[data.Char.Index + i] == ' ' ||
-                                                                        data.Char.String[data.Char.Index + i] == '&'))
+                                                                        data.Style.Metadata.NewLines.Contains(data.Char.String[data.Char.Index + i])))
             {
                 fs += data.Char.String[data.Char.Index + i];
                 i++;
             }
             while (data.Char.Index + i < data.Char.String.Length && (data.Char.String[data.Char.Index + i] != ' ' &&
-                                                                        data.Char.String[data.Char.Index + i] != '&'))
+                                                                        !data.Style.Metadata.NewLines.Contains(data.Char.String[data.Char.Index + i])))
             {
                 var c = data.Char.String[data.Char.Index + i];
                 switch (c)

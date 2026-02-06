@@ -57,10 +57,10 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
             {
                 foreach (ref var px in accessor.GetRowSpan(i))
                 {
-                    px.R = (byte)(((px.R / 255.0f) * (col.R / 255.0f)) * 255.0f);
-                    px.G = (byte)(((px.G / 255.0f) * (col.G / 255.0f)) * 255.0f);
-                    px.B = (byte)(((px.B / 255.0f) * (col.B / 255.0f)) * 255.0f);
-                    px.A = (byte)(((px.A / 255.0f) * Math.Clamp(alpha, 0.0, 1.0)) * 255.0f);
+                    px.R = (byte)(((px.R / 255f) * (col.R / 255f)) * 255f);
+                    px.G = (byte)(((px.G / 255f) * (col.G / 255f)) * 255f);
+                    px.B = (byte)(((px.B / 255f) * (col.B / 255f)) * 255f);
+                    px.A = (byte)(((px.A / 255f) * double.Clamp(alpha, 0d, 1d)) * 255f);
                 }
             }
         });
