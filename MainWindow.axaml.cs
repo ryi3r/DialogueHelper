@@ -641,10 +641,7 @@ public partial class MainWindow : Window
                     {
                         var se = new StyleError()
                         {
-                            MessageBlock =
-                            {
-                                Text = "The custom tool has encountered an error",
-                            },
+                            MessageBlock = { Text = "The custom tool has encountered an error" },
                             ErrorBox = { Text = ex.ToString() },
                         };
                         await se.ShowDialog(this);
@@ -1424,13 +1421,7 @@ public partial class MainWindow : Window
         {
             var t = ce.TextBox.Text ?? "<null>";
             var tvi = new TreeViewItem() { Header = t };
-            {
-                var items = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? [])
-                {
-                    tvi,
-                };
-                parent.ItemsSource = items;
-            }
+            parent.ItemsSource = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? []) { tvi };
             var sc = new StringContainer()
             {
                 Id = FileData!.LastStringId++,
@@ -1443,6 +1434,8 @@ public partial class MainWindow : Window
             EtvIndexes.Add(tvi, sc.Id);
             EtvReverseIndexes.Add(sc.Id, tvi);
             sc.EqStrings.Add(sc.Id);
+            sc.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
+            sc.LastEdited.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             EntryTreeView.ExpandSubTree(parent);
             EntryTreeView.SelectedItem = tvi;
