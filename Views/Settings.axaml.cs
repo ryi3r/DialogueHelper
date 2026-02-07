@@ -105,8 +105,7 @@ public partial class Settings : Window
                 });
                 if (!MainWindow!.StyleSettings.ContainsKey(folder))
                     MainWindow.StyleSettings.Add(folder, []);
-                var res = await ((Task<IEnumerable<CustomProperty>>?)(style.Script?.GetMethod("RegisterCustomSettings")
-                    ?.Invoke(null, [])) ?? Task.FromResult(Enumerable.Empty<CustomProperty>()));
+                var res = await (style.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<CustomProperty>()));
                 var props = MainWindow.StyleSettings[folder];
                 foreach (var prop in res)
                 {

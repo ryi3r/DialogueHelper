@@ -521,11 +521,7 @@ public partial class MainWindow : Window
                     StyleSettings.Add(SelectedStyle, []);
                 if (StyleData.Script is not null)
                 {
-                    var res = await (
-                        (Task<IEnumerable<CustomProperty>>?)
-                            StyleData.Script.GetMethod("RegisterCustomSettings")?.Invoke(null, [])
-                        ?? Task.FromResult(Enumerable.Empty<CustomProperty>())
-                    );
+                    var res = await StyleData.Script.RegisterCustomSettings();
                     var props = StyleSettings[SelectedStyle];
                     foreach (var prop in res)
                     {
@@ -576,13 +572,7 @@ public partial class MainWindow : Window
 
         try
         {
-            await (
-                (Task?)
-                    StyleData!
-                        .Script?.GetMethod("Init")
-                        ?.Invoke(null, [new CustomToolWindowHandler(this, StyleData)])
-                ?? Task.CompletedTask
-            );
+            await (StyleData!.Script?.Init(new(this, StyleData)) ?? Task.CompletedTask);
             CustomTools.Clear();
             CustomProperties.Clear();
 
@@ -600,34 +590,16 @@ public partial class MainWindow : Window
             FontComboBox.Items.Clear();
 
             foreach (var box in StyleData.BoxMetadata)
-            {
                 BoxComboBox.Items.Add(new ComboBoxItem() { Content = box.Name });
-            }
 
             foreach (var font in StyleData.FontMetadata)
-            {
                 FontComboBox.Items.Add(new ComboBoxItem() { Content = font.Name });
-            }
 
             BoxComboBox.SelectedIndex = lastBoxSelected;
             FontComboBox.SelectedIndex = lastFontSelected;
 
-            CustomTools =
-            [
-                .. await (
-                    (Task<IEnumerable<CustomTool>>?)(
-                        StyleData.Script?.GetMethod("RegisterCustomTools")?.Invoke(null, [])
-                    ) ?? Task.FromResult(Enumerable.Empty<CustomTool>())
-                ),
-            ];
-            CustomProperties =
-            [
-                .. await (
-                    (Task<IEnumerable<CustomProperty>>?)(
-                        StyleData.Script?.GetMethod("RegisterCustomProperties")?.Invoke(null, [])
-                    ) ?? Task.FromResult(Enumerable.Empty<CustomProperty>())
-                ),
-            ];
+            CustomTools = [.. await (StyleData.Script?.RegisterCustomTools() ?? Task.FromResult(Enumerable.Empty<CustomTool>()))];
+            CustomProperties = [.. await (StyleData.Script?.RegisterCustomProperties() ?? Task.FromResult(Enumerable.Empty<CustomProperty>()))];
         }
         catch (Exception ex)
         {
@@ -637,10 +609,7 @@ public partial class MainWindow : Window
 
             var se = new StyleError()
             {
-                MessageBlock =
-                {
-                    Text = "While trying to initialize the style, the program encountered an error",
-                },
+                MessageBlock = { Text = "While trying to initialize the style, the program encountered an error" },
                 ErrorBox = { Text = ex.ToString() },
             };
             await se.ShowDialog(this);
@@ -1079,10 +1048,10 @@ public partial class MainWindow : Window
         UpdateBoxBounds();
     }
 
-    void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
+    async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
     {
         StyleData = new StyleParser(StyleData!.Folder);
-        StyleData.CompileCode();
+        await StyleData.CompileCode();
         InitializeCustomScript();
         UpdatingEntry = true;
         EditableText_OnTextChanged(null, null);

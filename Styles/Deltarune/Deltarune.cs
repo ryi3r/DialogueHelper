@@ -14,7 +14,7 @@ using DialogueHelper.Views;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-public class Deltarune
+public class Deltarune : StyleScript
 {
     public static string[] Fonts = [
     "fnt_main",
@@ -70,13 +70,19 @@ public class Deltarune
         set => _data.Env["CheckedIndex"] = value;
     }
 
-    public static async Task Init(CustomToolWindowHandler _)
+    public static (double X, double Y) EnvPortraitOffset
     {
-        // This is called when the script is loaded and ready to go.
-        //await wH.ShowDialog(new InfoWindow("Hello world!"));
+        get => _data.Env["PortraitOffset"];
+        set => _data.Env["PortraitOffset"] = value;
     }
 
-    public static async Task<IEnumerable<CustomProperty>> RegisterCustomProperties()
+    public override async Task Init(CustomToolWindowHandler wh)
+    {
+        // This is called when the script is loaded and ready to go.
+        //await wh.ShowDialog(new InfoWindow("Hello world!"));
+    }
+
+    public override async Task<IEnumerable<CustomProperty>> RegisterCustomProperties()
     {
         // Store these somewhere if you're going to use them
         return [
@@ -84,7 +90,7 @@ public class Deltarune
         ];
     }
 
-    public static async Task<IEnumerable<CustomTool>> RegisterCustomTools()
+    public override async Task<IEnumerable<CustomTool>> RegisterCustomTools()
     {
         return [
             new("Import from data.win", ImportFromDataWin),
@@ -94,22 +100,22 @@ public class Deltarune
         ];
     }
 
-    public static async Task ImportFromDataWin(CustomToolWindowHandler wH)
+    public async Task ImportFromDataWin(CustomToolWindowHandler wh)
     {
-        if (wH.GetLoadedFileData() is not null)
+        if (wh.GetLoadedFileData() is not null)
         {
             var w = new InfoWindow("Please ensure that you do not have a file open.");
-            await wH.ShowDialog(w);
+            await wh.ShowDialog(w);
             return;
         }
-        var filePath = $"{wH.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
+        var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
         if (!File.Exists(filePath))
         {
             var w = new InfoWindow("Please download and add UndertaleModCli to this style's folder.");
-            await wH.ShowDialog(w);
+            await wh.ShowDialog(w);
             return;
         }
-        var f = await wH.GetStorageProvider().OpenFilePickerAsync(new()
+        var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select a file",
             FileTypeFilter = [new("GameMaker's Data Files")
@@ -122,7 +128,7 @@ public class Deltarune
         });
         if (f.Count <= 0)
             return;
-        File.Delete($"{wH.GetStylePath()}/output.json");
+        File.Delete($"{wh.GetStylePath()}/output.json");
         using var proc = new Process()
         {
             StartInfo =
@@ -130,7 +136,7 @@ public class Deltarune
                 UseShellExecute = false,
                 FileName = filePath,
                 Arguments = $"load \"{f[0].Path.AbsolutePath}\" -s ../ExportStringsJson.csx",
-                WorkingDirectory = $"{wH.GetStylePath()}/UndertaleModCli",
+                WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             },
@@ -139,7 +145,7 @@ public class Deltarune
         var lw = new LoadingWindow();
         lw.ProgressBarView.IsIndeterminate = true;
         lw.ProgressBarView.ShowProgressText = false;
-        wH.Show(lw);
+        wh.Show(lw);
         try
         {
             var stdout = new StringBuilder();
@@ -155,42 +161,42 @@ public class Deltarune
             var stderr = await proc.StandardError.ReadToEndAsync();
 
             Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
-            if (proc.ExitCode != 0 || !File.Exists($"{wH.GetStylePath()}/output.json"))
+            if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
             {
                 lw.Close();
                 var w = new InfoWindow($"UndertaleModCli exited with code {proc.ExitCode}\n\nstdout:\n{stdout}\nstderr:\n{stderr}");
-                await wH.ShowDialog(w);
+                await wh.ShowDialog(w);
                 return;
             }
-            var stream = new MemoryStream(await File.ReadAllBytesAsync($"{wH.GetStylePath()}/output.json"));
+            var stream = new MemoryStream(await File.ReadAllBytesAsync($"{wh.GetStylePath()}/output.json"));
             var output = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream))!;
             await stream.DisposeAsync();
-            await LoadJson(output, wH);
+            await LoadJson(output, wh);
         }
         finally
         {
-            File.Delete($"{wH.GetStylePath()}/output.json");
+            File.Delete($"{wh.GetStylePath()}/output.json");
             lw.Close();
         }
-        await wH.ShowDialog(new InfoWindow($"Imported data successfully."));
+        await wh.ShowDialog(new InfoWindow($"Imported data successfully."));
     }
 
-    public static async Task ExportToDataWin(CustomToolWindowHandler wH)
+    public async Task ExportToDataWin(CustomToolWindowHandler wh)
     {
-        if (wH.GetLoadedFileData() is null)
+        if (wh.GetLoadedFileData() is null)
         {
             var w = new InfoWindow("Please ensure that you have a file open.");
-            await wH.ShowDialog(w);
+            await wh.ShowDialog(w);
             return;
         }
-        var filePath = $"{wH.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
+        var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
         if (!File.Exists(filePath))
         {
             var w = new InfoWindow("Please download and add UndertaleModCli to this style's folder.");
-            await wH.ShowDialog(w);
+            await wh.ShowDialog(w);
             return;
         }
-        var f = await wH.GetStorageProvider().OpenFilePickerAsync(new()
+        var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select a file",
             FileTypeFilter = [new("GameMaker's Data Files")
@@ -206,13 +212,13 @@ public class Deltarune
         var lw = new LoadingWindow();
         lw.ProgressBarView.IsIndeterminate = true;
         lw.ProgressBarView.ShowProgressText = false;
-        wH.Show(lw);
+        wh.Show(lw);
         try
         {
             var stream = new MemoryStream(await File.ReadAllBytesAsync(Path.Combine(f[0].Path.AbsolutePath, "../lang/lang_ja.json")));
             var baseJson = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream))!;
             await stream.DisposeAsync();
-            await File.WriteAllTextAsync($"{wH.GetStylePath()}/input.json", await ExportJson(baseJson, wH));
+            await File.WriteAllTextAsync($"{wh.GetStylePath()}/input.json", await ExportJson(baseJson, wh));
             var targetPath = $"\"{f[0].Path.AbsolutePath.Replace("\"", "\\\"")}\"";
             using var proc = new Process()
             {
@@ -221,7 +227,7 @@ public class Deltarune
                     UseShellExecute = false,
                     FileName = filePath,
                     Arguments = $"load {targetPath} -s ../ImportStringsJson.csx -o {targetPath}",
-                    WorkingDirectory = $"{wH.GetStylePath()}/UndertaleModCli",
+                    WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
                 },
@@ -244,27 +250,27 @@ public class Deltarune
             {
                 lw.Close();
                 var w = new InfoWindow($"UndertaleModCli exited with code {proc.ExitCode}\n\nstdout:\n{stdout}\nstderr:\n{stderr}");
-                await wH.ShowDialog(w);
+                await wh.ShowDialog(w);
                 return;
             }
         }
         finally
         {
-            File.Delete($"{wH.GetStylePath()}/input.json");
+            File.Delete($"{wh.GetStylePath()}/input.json");
             lw.Close();
         }
-        await wH.ShowDialog(new InfoWindow($"Exported data successfully."));
+        await wh.ShowDialog(new InfoWindow($"Exported data successfully."));
     }
 
-    public static async Task ImportFromJson(CustomToolWindowHandler wH)
+    public async Task ImportFromJson(CustomToolWindowHandler wh)
     {
-        if (wH.GetLoadedFileData() is not null)
+        if (wh.GetLoadedFileData() is not null)
         {
             var w = new InfoWindow("Please ensure that you do not have a file open.");
-            await wH.ShowDialog(w);
+            await wh.ShowDialog(w);
             return;
         }
-        var f = await wH.GetStorageProvider().OpenFilePickerAsync(new()
+        var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select a file",
             FileTypeFilter = [new("JSON Files")
@@ -280,31 +286,31 @@ public class Deltarune
         var lw = new LoadingWindow();
         lw.ProgressBarView.IsIndeterminate = true;
         lw.ProgressBarView.ShowProgressText = false;
-        wH.Show(lw);
+        wh.Show(lw);
         try
         {
             var stream = await f[0].OpenReadAsync();
             var output = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream))!;
             await stream.DisposeAsync();
-            await LoadJson(output, wH);
+            await LoadJson(output, wh);
         }
         finally
         {
             //File.Delete($"{wH.GetStylePath()}/output.json");
             lw.Close();
         }
-        await wH.ShowDialog(new InfoWindow($"Imported data successfully."));
+        await wh.ShowDialog(new InfoWindow($"Imported data successfully."));
     }
 
-    public static async Task ExportToJson(CustomToolWindowHandler wH)
+    public async Task ExportToJson(CustomToolWindowHandler wh)
     {
-        if (wH.GetLoadedFileData() is null)
+        if (wh.GetLoadedFileData() is null)
         {
             var w = new InfoWindow("Please ensure that you have a file open.");
-            await wH.ShowDialog(w);
+            await wh.ShowDialog(w);
             return;
         }
-        var fOpen = await wH.GetStorageProvider().OpenFilePickerAsync(new()
+        var fOpen = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select a file (Japanese/English for a exporting base)",
             FileTypeFilter = [new("JSON Files")
@@ -317,7 +323,7 @@ public class Deltarune
         });
         if (fOpen.Count <= 0)
             return;
-        var fSave = await wH.GetStorageProvider().SaveFilePickerAsync(new()
+        var fSave = await wh.GetStorageProvider().SaveFilePickerAsync(new()
         {
             Title = "Select a file",
             FileTypeChoices = [new("JSON Files") { Patterns = ["*.json"] }],
@@ -328,25 +334,24 @@ public class Deltarune
         var lw = new LoadingWindow();
         lw.ProgressBarView.IsIndeterminate = true;
         lw.ProgressBarView.ShowProgressText = false;
-        wH.Show(lw);
+        wh.Show(lw);
         try
         {
             var readStream = await fOpen[0].OpenReadAsync();
             var baseJson = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(readStream))!;
             await readStream.DisposeAsync();
             var stream = new StreamWriter(await fSave.OpenWriteAsync());
-            stream.Write(await ExportJson(baseJson, wH));
+            stream.Write(await ExportJson(baseJson, wh));
             await stream.DisposeAsync();
         }
         finally
         {
             lw.Close();
         }
-        await wH.ShowDialog(new InfoWindow($"Imported data successfully."));
+        await wh.ShowDialog(new InfoWindow($"Imported data successfully."));
     }
 
-
-    public static Dictionary<string, List<string>> CalculateHeaders(IEnumerable<string> keys)
+    public Dictionary<string, List<string>> CalculateHeaders(IEnumerable<string> keys)
     {
         var headers = new Dictionary<string, List<string>>();
         foreach (var key in keys)
@@ -365,7 +370,7 @@ public class Deltarune
         return headers;
     }
 
-    public static async Task LoadJson(Dictionary<string, string> json, CustomToolWindowHandler wH)
+    public async Task LoadJson(Dictionary<string, string> json, CustomToolWindowHandler wh)
     {
         var sb = new StringBuilder();
         foreach (var (header, entries) in CalculateHeaders(json.Keys))
@@ -375,16 +380,16 @@ public class Deltarune
                 sb.Append($"1;OriginalContent:{FormatEntry.GetSimpleUri(json[key])}\n");
         }
         sb.Append("8;");
-        wH.LoadString(sb.ToString());
+        wh.LoadString(sb.ToString());
     }
 
-    public static async Task<string> ExportJson(Dictionary<string, string> baseJson, CustomToolWindowHandler wH)
+    public async Task<string> ExportJson(Dictionary<string, string> baseJson, CustomToolWindowHandler wh)
     {
         var data = new Dictionary<string, string>()
         {
             ["date"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(),
         };
-        var file = wH.GetLoadedFileData()!;
+        var file = wh.GetLoadedFileData()!;
         foreach (var (key, entries) in CalculateHeaders(baseJson.Keys))
         {
             //Console.WriteLine($"key={key}");
@@ -398,7 +403,7 @@ public class Deltarune
         return JsonSerializer.Serialize(data, new JsonSerializerOptions() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
     }
 
-    public static async Task PrepareDraw(CustomToolWindowHandler _, ExternalData data)
+    public override async Task PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
         _data = data;
         EnvLastNewline = false;
@@ -419,11 +424,13 @@ public class Deltarune
             {
                 po[0].TryGetDouble(out data.Char.StartPosition.X);
                 po[1].TryGetDouble(out data.Char.StartPosition.Y);
+
+                EnvPortraitOffset = (data.Char.StartPosition.X, data.Char.StartPosition.Y);
             }
         }
     }
 
-    public static async Task DrawGlyph(CustomToolWindowHandler __, ExternalData data)
+    public override async Task DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
     {
         _data = data;
         if (data.Char.IsIgnore || (!data.Font.GlyphDictionary.ContainsKey(data.Char.Char) && !data.Char.IsNewline))
@@ -603,8 +610,7 @@ public class Deltarune
                     continue;
                 charPos += ((EnvX != -1.0 ? EnvX : glyph.Shift) + glyph.Offset) * 2d;
             }
-            if (charPos + 40 > (data.Style.ImageAssets[data.Box.Images[0].Path].Size.Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - ((EnablePortrait.Value ?? false) && !EnablePortrait.ReadOnly ? double.Parse(
-                    (((JsonElement)data.Box.CustomProperties["PortraitOffset"]).GetString() ?? "0,0").Split(',')[0]) : 0.0) && !EnvFirstDrawnChar)
+            if (charPos + 40 > (data.Style.ImageAssets[data.Box.Images[0].Path].Size.Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - ((EnablePortrait.Value ?? false) && !EnablePortrait.ReadOnly ? EnvPortraitOffset.X : 0.0) && !EnvFirstDrawnChar)
             {
                 actAsNewline = true;
                 if (EnvStartedAsterisk)

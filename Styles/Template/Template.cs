@@ -1,50 +1,48 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Avalonia.Platform.Storage;
 using DialogueHelper.External;
 using DialogueHelper.PreviewRenderer;
 using DialogueHelper.Views;
 using SixLabors.ImageSharp;
 
-public class Template
+public class Template : StyleScript
 {
-    public static async Task Init(CustomToolWindowHandler _)
+    public override async Task Init(CustomToolWindowHandler wh)
     {
         // This is called when the script is loaded and ready to go.
-        //await wH.ShowDialog(new InfoWindow("Hello world!"));
+        //await wh.ShowDialog(new InfoWindow("Hello world!"));
     }
 
-    public static async Task<IEnumerable<CustomProperty>> RegisterCustomSettings()
+    public override async Task<IEnumerable<CustomProperty>> RegisterCustomSettings()
     {
         // This may be called before Init, so be careful!
         // Store these somewhere if you're going to use them
         return [
             new("D" , "bool", typeof(bool)),
-        new("E", "int", typeof(int)),
-        new("F", "string", typeof(string)),
-    ];
+            new("E", "int", typeof(int)),
+            new("F", "string", typeof(string)),
+        ];
     }
 
-    public static async Task<IEnumerable<CustomProperty>> RegisterCustomProperties()
+    public override async Task<IEnumerable<CustomProperty>> RegisterCustomProperties()
     {
         // Store these somewhere if you're going to use them
         return [
             new("A" , "bool", typeof(bool)),
-        new("B", "int", typeof(int)),
-        new("C", "string", typeof(string)),
-    ];
+            new("B", "int", typeof(int)),
+            new("C", "string", typeof(string)),
+        ];
     }
 
-    public static async Task<IEnumerable<CustomTool>> RegisterCustomTools()
+    public override async Task<IEnumerable<CustomTool>> RegisterCustomTools()
     {
         return [new("Custom Tool", CustomToolTest), new("File Picker Example", CustomToolFileTest)];
     }
 
-    public static async Task CustomToolFileTest(CustomToolWindowHandler wH)
+    public async Task CustomToolFileTest(CustomToolWindowHandler wh)
     {
-        var f = await wH.GetStorageProvider().OpenFilePickerAsync(new()
+        var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Example",
             AllowMultiple = true,
@@ -60,21 +58,21 @@ public class Template
         {
             Title = "Example"
         };
-        await wH.ShowDialog(w);
+        await wh.ShowDialog(w);
     }
 
-    public static async Task CustomToolTest(CustomToolWindowHandler wH)
+    public async Task CustomToolTest(CustomToolWindowHandler wh)
     {
         var w = new InfoWindow("This is a tool test message.");
-        await wH.ShowDialog(w);
+        await wh.ShowDialog(w);
     }
 
-    public static async Task PrepareDraw(CustomToolWindowHandler _, ExternalData __)
+    public override async Task PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
         // This is always called before starting to draw glyphs, draw anything you want here!
     }
 
-    public static async Task DrawGlyph(CustomToolWindowHandler _, ExternalData data)
+    public override async Task DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
     {
         if (data.Char.IsIgnore || (!data.Font.GlyphDictionary.ContainsKey(data.Char.Char) && !data.Char.IsNewline))
             return;
@@ -92,7 +90,7 @@ public class Template
             data.Glyph.Position.Y = data.Char.StartPosition.Y + data.Char.PositionOffset.Y;
             data.Glyph.Size = glyph.Size;
             data.DrawGlyph();
-            data.Char.PositionOffset.X += (int)Math.Ceiling((glyph.Shift + glyph.Offset) * data.Glyph.Scale.X);
+            data.Char.PositionOffset.X += (int)double.Ceiling((glyph.Shift + glyph.Offset) * data.Glyph.Scale.X);
         }
     }
 }

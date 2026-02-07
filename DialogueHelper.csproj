@@ -10,8 +10,8 @@
         <Copyright>ryi3r 2025</Copyright>
         <PackageId>Dialogue Helper</PackageId>
         <Product>Dialogue Helper</Product>
-        <AssemblyVersion>2.0.4</AssemblyVersion>
-        <FileVersion>2.0.4</FileVersion>
+        <AssemblyVersion>2.0.5</AssemblyVersion>
+        <FileVersion>2.0.5</FileVersion>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
 

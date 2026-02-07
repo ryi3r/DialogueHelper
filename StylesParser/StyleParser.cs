@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CSScriptLib;
 using DialogueHelper.External;
@@ -18,8 +19,7 @@ public class StyleParser
     public readonly string Folder;
     public readonly string? ScriptData;
     public readonly Dictionary<string, Bitmap> ImageAssets = [];
-    public Type? Script;
-    public Assembly? ScriptAsm;
+    public StyleScript? Script;
     public bool InitializedScript;
     public readonly Dictionary<string, dynamic?> GlobalEnv = [];
 
@@ -38,8 +38,6 @@ public class StyleParser
         FontMetadata = new(list.Capacity);
         foreach (var font in list)
             FontMetadata.Add(new FontMetadata(font));
-        if (Metadata.ScriptPath is not null)
-            ScriptData = File.ReadAllText($"{path}/{Metadata.ScriptPath}");
         foreach (var box in BoxMetadata)
         {
             foreach (var img in box.Images)
@@ -69,19 +67,15 @@ public class StyleParser
         }
     }
 
-    public void CompileCode()
+    public async Task CompileCode()
     {
         if (!Directory.Exists("RuntimeComp"))
             Directory.CreateDirectory("RuntimeComp");
-        if (ScriptAsm is null)
+        if (Script is null && Metadata.ScriptPath is not null)
         {
-            ScriptAsm = CSScript.Evaluator
-                .CompileCode(ScriptData, new()
-                {
-                    RootClass = "Script",
-                    AssemblyFile = $"RuntimeComp/IL-{Path.GetFileName(Folder)}-{DateTimeOffset.Now.ToUnixTimeSeconds()}.dll",
-                });
-            Script = ScriptAsm.GetType($"Script+{Metadata.Class}");
+            // required to show error lines
+            CSScript.EvaluatorConfig.DebugBuild = true;
+            Script = (StyleScript)CSScript.Evaluator.LoadFile($"{Folder}/{Metadata.ScriptPath}");
         }
     }
 }

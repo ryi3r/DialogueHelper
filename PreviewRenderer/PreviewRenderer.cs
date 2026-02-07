@@ -71,16 +71,13 @@ public class PreviewRenderer(MainWindow mainWindow)
             },
             Env = [],
             Font = font,
-            Glyph = new()
-            {
-                Scale = (fontScale * previewScale, fontScale * previewScale),
-            },
+            Glyph = new() { Scale = (fontScale * previewScale, fontScale * previewScale) },
             Style = style,
         };
         try
         {
             var wh = new CustomToolWindowHandler(MainWindow, style);
-            await ((Task?)style.Script?.GetMethod("PrepareDraw")?.Invoke(null, [wh, eData]) ?? Task.CompletedTask);
+            await (style.Script?.PrepareDraw(wh, eData) ?? Task.CompletedTask);
             eData.Char.String = str;
             var i = 0;
             foreach (var chr in str)
@@ -91,21 +88,15 @@ public class PreviewRenderer(MainWindow mainWindow)
                 eData.Char.IsIgnore = style.Metadata.Ignore.Contains(chr);
                 eData.Glyph.Scale = (fontScale * previewScale, fontScale * previewScale);
 
-                await ((Task?)style.Script?.GetMethod("DrawGlyph")?.Invoke(null, [wh, eData]) ?? Task.CompletedTask);
+                await (style.Script?.DrawGlyph(wh, eData) ?? Task.CompletedTask);
             }
         }
         catch (Exception ex)
         {
             var se = new StyleError()
             {
-                MessageBlock =
-                {
-                    Text = "The custom tool has encountered an error",
-                },
-                ErrorBox =
-                {
-                    Text = ex.ToString(),
-                }
+                MessageBlock = { Text = "The custom tool has encountered an error" },
+                ErrorBox = { Text = ex.ToString() }
             };
             await se.ShowDialog(MainWindow);
         }
