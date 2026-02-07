@@ -59,13 +59,11 @@ public partial class MainWindow : Window
             if (IsFileModified)
             {
                 ev.Cancel = true;
-                var unsaved = new UnsavedChanges();
-                if (!await unsaved.ShowDialog<bool>(this))
-                {
-                    IsFileModified = false;
-                    Close();
-                }
+                if (!await new UnsavedChanges().ShowDialog<bool>(this))
+                    Environment.Exit(0);
             }
+            else
+                Environment.Exit(0);
         };
         _timer.Tick += (_, _) =>
         {
