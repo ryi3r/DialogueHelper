@@ -1294,7 +1294,17 @@ public partial class MainWindow : Window
         if (EntryTreeView.SelectedItem is TreeViewItem tvi)
         {
             lock (EtvTargetUpdates)
-                EtvTargetUpdates.Add(new(EtvParents[tvi]));
+            {
+                var alreadyHas = false;
+                var target = EtvParents[tvi];
+                foreach (var n in EtvTargetUpdates)
+                {
+                    if (n.TryGetTarget(out var t) && t == target)
+                        alreadyHas = true;
+                }
+                if (!alreadyHas)
+                    EtvTargetUpdates.Add(new(target));
+            }
         }
         if (ModifySimilarStrings.IsChecked ?? false)
         {
@@ -1308,7 +1318,17 @@ public partial class MainWindow : Window
                 s.LastEdited.Timestamp = SelectedString.LastEdited.Timestamp;
 
                 lock (EtvTargetUpdates)
-                    EtvTargetUpdates.Add(new(EtvParents[EtvReverseIndexes[id]]));
+                {
+                    var alreadyHas = false;
+                    var target = EtvParents[EtvReverseIndexes[id]];
+                    foreach (var n in EtvTargetUpdates)
+                    {
+                        if (n.TryGetTarget(out var t) && t == target)
+                            alreadyHas = true;
+                    }
+                    if (!alreadyHas)
+                        EtvTargetUpdates.Add(new(target));
+                }
             }
             foreach (var (i, sstr) in SelectedString.EqStrings.Index())
             {
