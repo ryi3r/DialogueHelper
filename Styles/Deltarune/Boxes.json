@@ -5,7 +5,7 @@
     }],
     "CustomProperties": {
         "SupportsPortrait": "true",
-        "PortraitOffset": "145,20"
+        "PortraitOffset": [145, 20]
     },
     "TextOffset": [20, 20]
 }, {

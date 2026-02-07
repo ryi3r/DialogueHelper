@@ -51,7 +51,7 @@ public partial class Settings : Window
         if ((AuthorName.Text ?? "").Length <= 0)
             return;
 
-        if (MainWindow != null)
+        if (MainWindow is not null)
         {
             MainWindow.GitOptions.IsEnabled = (bool)EnableGit.IsChecked;
             MainWindow.GitOptions.RepoUrl = RepoUrl.Text!;
@@ -111,7 +111,7 @@ public partial class Settings : Window
                 foreach (var prop in res)
                 {
                     var p = props.FirstOrDefault(p => p.Name == prop.Name);
-                    if (p != null)
+                    if (p is not null)
                     {
                         var val = p.ValueToString();
                         if (val.Length > 0)
@@ -138,7 +138,7 @@ public partial class Settings : Window
             }
         }
 
-        if (MainWindow != null)
+        if (MainWindow is not null)
         {
             StyleComboBox.SelectionChanged += (_, _) =>
             {
@@ -151,7 +151,7 @@ public partial class Settings : Window
                 CustomSettingsNone.IsVisible = set.Count <= 0;
                 MainWindow!.UpdateCustomProperties(CustomSettingsPanel, set);
             };
-            if (MainWindow.SelectedStyle != null)
+            if (MainWindow.SelectedStyle is not null)
             {
                 var styleIndex = StyleData.FindIndex(style => style.Folder == MainWindow.SelectedStyle);
                 if (styleIndex != -1)

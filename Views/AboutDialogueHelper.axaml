@@ -2,16 +2,13 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="150" CanResize="False" Width="350" Height="150"
+        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="100" CanResize="False" Width="350" Height="100"
         x:Class="DialogueHelper.Views.AboutDialogueHelper"
         Title="About Dialogue Helper">
     <Panel Margin="5">
         <TextBlock TextWrapping="Wrap">
-            <Span FontWeight="Bold">Dialogue Helper v2.0-b3</Span>
+            <Span FontWeight="Bold">Dialogue Helper v2.0-b4</Span>
             <LineBreak/>Developed by <Span FontWeight="Bold" Foreground="CornflowerBlue">ryi3r</Span>.
-            <LineBreak/><LineBreak/>
-            Proudly using <Span FontWeight="Bold">Avalonia</Span>, <Span FontWeight="Bold">CS-Script</Span> and <Span FontWeight="Bold">ImageSharp</Span>.
-            <LineBreak/>Developed using <Span FontWeight="Bold">NeoVim</Span>.
         </TextBlock>
         <StackPanel Orientation="Horizontal" Spacing="7" HorizontalAlignment="Right" VerticalAlignment="Bottom">
             <Button Click="OpenProgRepo_OnClick">Open Program Repo</Button>

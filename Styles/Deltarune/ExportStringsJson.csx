@@ -1,14 +1,16 @@
-using System.Text;
 using System.Text.Json;
-using System;
-using System.IO;
-using System.Text.Encodings.Web;
-using System.Threading;
-using System.Threading.Tasks;
-using UndertaleModLib.Util;
+using System.Linq;
 using UndertaleModLib.Models;
 using UndertaleModLib;
-using UndertaleModLib.Decompiler;
+using System.Collections.Generic;
+using System.IO;
+
+if (!Data.Code.Any(x => x.Name.Content == "gml_GlobalScript_msgnextloc"))
+{
+    // ch1
+    File.Copy(Path.Combine(FilePath, "../lang/lang_en.json"), "../output.json", true);
+    return;
+}
 
 var jData = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Path.Combine(FilePath, "../lang/lang_ja.json")));
 var fData = new Dictionary<string, string>();
@@ -24,7 +26,7 @@ foreach (var code in Data.Code)
     {
         if (!(UndertaleInstruction.GetInstructionType(instruction.Kind) == UndertaleInstruction.InstructionType.PushInstruction && instruction.Type1 == UndertaleInstruction.DataType.String))
             continue;
-        var c = ((UndertaleString)(instruction.ValueString).Resource).Content.Replace("\r", "\\r").Replace("\n", "\\n");
+        var c = instruction.ValueString.Resource.Content.Replace("\r", "\\r").Replace("\n", "\\n");
         if (!lastExists)
         {
             if (!jData.ContainsKey(c))

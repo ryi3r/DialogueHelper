@@ -55,7 +55,7 @@ public class StringContainer
     public FormatEntry OutputFormatEntry()
     {
         var fe = new FormatEntry() { Kind = 1 };
-        if (Text != null && Text != OriginalText && Text.Length > 0)
+        if (Text is not null && Text != OriginalText && Text.Length > 0)
             fe.Data["Text"] = Text;
         fe.Data["OriginalText"] = OriginalText;
         if (LastEdited.AuthorId != -1 || LastEdited.Timestamp != -1)

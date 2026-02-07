@@ -38,7 +38,7 @@ public class StyleParser
         FontMetadata = new(list.Capacity);
         foreach (var font in list)
             FontMetadata.Add(new FontMetadata(font));
-        if (Metadata.ScriptPath != null)
+        if (Metadata.ScriptPath is not null)
             ScriptData = File.ReadAllText($"{path}/{Metadata.ScriptPath}");
         foreach (var box in BoxMetadata)
         {

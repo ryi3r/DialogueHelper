@@ -1,8 +1,10 @@
 {
 	"Name": "Template",
 	"Author": "ryi3r",
-	"ScriptPath": "Script.cs",
+	"ScriptPath": "Template.cs",
 	"Class": "Template",
-	"NewLines": ["\n"],
+	"NewLines": [
+		"\n"
+	],
 	"Ignore": []
 }

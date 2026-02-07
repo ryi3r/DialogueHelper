@@ -1,21 +1,35 @@
-using System.Text;
 using System.Text.Json;
-using System;
-using System.IO;
-using System.Text.Encodings.Web;
-using System.Threading;
-using System.Threading.Tasks;
-using UndertaleModLib.Util;
-using System.Windows.Forms;
+using System.Linq;
 using UndertaleModLib.Models;
-using static System.Windows.Forms.FileDialog;
 using UndertaleModLib;
-using UndertaleModLib.Decompiler;
+using System.IO;
+using System.Collections.Generic;
 
-var bjson = File.ReadAllText("../input.json");
-var jData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(bjson);
+if (!Data.Code.Any(x => x.Name.Content == "gml_GlobalScript_msgnextloc"))
+{
+    // ch1
+    File.Copy("../input.json", Path.Combine(FilePath, "../lang/lang_en.json"), true);
+    return;
+}
+
+var bJson = File.ReadAllText("../input.json");
+var jData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(bJson)!;
 if (jData.ContainsKey("date"))
     jData.Remove("date");
+
+var refs = new Dictionary<UndertaleString, int>();
+foreach (var code in Data.Code)
+{
+    if (code.ParentEntry is not null)
+        continue;
+    foreach (var inst in code.Instructions)
+    {
+        if (!(UndertaleInstruction.GetInstructionType(inst.Kind) == UndertaleInstruction.InstructionType.PushInstruction && inst.Type1 == UndertaleInstruction.DataType.String))
+            continue;
+        refs.TryAdd(inst.ValueString.Resource, 0);
+        refs[inst.ValueString.Resource]++;
+    }
+}
 
 foreach (var code in Data.Code)
 {
@@ -24,13 +38,13 @@ foreach (var code in Data.Code)
     var lastExists = false;
     var entry = "";
 
-    foreach (var instruction in code.Instructions)
+    foreach (var inst in code.Instructions)
     {
-        if (!(UndertaleInstruction.GetInstructionType(instruction.Kind) == UndertaleInstruction.InstructionType.PushInstruction && instruction.Type1 == UndertaleInstruction.DataType.String))
+        if (!(UndertaleInstruction.GetInstructionType(inst.Kind) == UndertaleInstruction.InstructionType.PushInstruction && inst.Type1 == UndertaleInstruction.DataType.String))
             continue;
         if (!lastExists)
         {
-            var c = ((UndertaleString)(instruction.ValueString).Resource).Content;
+            var c = inst.ValueString.Resource.Content;
             if (!jData.ContainsKey(c))
                 continue;
             lastExists = true;
@@ -39,7 +53,12 @@ foreach (var code in Data.Code)
         else
         {
             lastExists = false;
-            ((UndertaleString)(instruction.ValueString).Resource).Content = jData[entry].GetString();
+            var res = inst.ValueString.Resource;
+            refs.TryAdd(res, 0);
+            if (refs[res] <= 1)
+                inst.ValueString.Resource.Content = jData[entry].GetString(); // safe to update
+            else
+                inst.ValueString = new(Data.Strings.MakeString(jData[entry].GetString(), createNew: true));
         }
     }
 }

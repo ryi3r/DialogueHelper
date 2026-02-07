@@ -16,9 +16,8 @@ public class FileData
     public static FileData LoadString(List<FormatEntry> fileEntries, LoadingWindow? lWin = null)
     {
         var fData = new FileData();
-        if (lWin != null)
-            lWin.ProgressBar.Maximum = fileEntries.Count;
-        
+        lWin?.ProgressBar.Maximum = fileEntries.Count;
+
         var loaded = 0;
         var currentEntry = "";
         var entries = new Dictionary<int, StringContainer>();
@@ -46,29 +45,28 @@ public class FileData
                     isEntry = true;
                     break;
                 case 1: // Add a string to the current entry
-                {
-                    var id = fData.LastStringId++;
-                    entry.Data["ID"] = id.ToString();
-                    var sCont = new StringContainer(entry);
-                    entries.Add(id, sCont);
-                    fData.StringIds.Add(id, sCont);
-                    if (sCont.LastEdited.LegacyAuthorName != null)
                     {
-                        if (!fData.AuthorList.Contains(sCont.LastEdited.LegacyAuthorName))
-                            fData.AuthorList.Add(sCont.LastEdited.LegacyAuthorName);
-                        sCont.LastEdited.AuthorId = fData.AuthorList.IndexOf(sCont.LastEdited.LegacyAuthorName);
-                        sCont.LastEdited.LegacyAuthorName = null;
+                        var id = fData.LastStringId++;
+                        entry.Data["ID"] = id.ToString();
+                        var sCont = new StringContainer(entry);
+                        entries.Add(id, sCont);
+                        fData.StringIds.Add(id, sCont);
+                        if (sCont.LastEdited.LegacyAuthorName is not null)
+                        {
+                            if (!fData.AuthorList.Contains(sCont.LastEdited.LegacyAuthorName))
+                                fData.AuthorList.Add(sCont.LastEdited.LegacyAuthorName);
+                            sCont.LastEdited.AuthorId = fData.AuthorList.IndexOf(sCont.LastEdited.LegacyAuthorName);
+                            sCont.LastEdited.LegacyAuthorName = null;
+                        }
                     }
-                }
                     break;
                 case 2: // Add author
                     fData.AuthorList.Add(entry.Data[""]);
                     break;
             }
-            if (lWin != null)
-                lWin.ProgressBar.Value = loaded++;
+            lWin?.ProgressBar.Value = loaded++;
         }
-        
+
         return fData;
     }
 
@@ -83,7 +81,7 @@ public class FileData
                 ["Version"] = "1",
             },
         };
-        if (ThemeName != null)
+        if (ThemeName is not null)
             fe.Data["Style"] = ThemeName;
         fel.Add(fe);
         foreach (var entry in Strings)

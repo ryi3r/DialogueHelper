@@ -10,8 +10,8 @@
         <Copyright>ryi3r 2025</Copyright>
         <PackageId>Dialogue Helper</PackageId>
         <Product>Dialogue Helper</Product>
-        <AssemblyVersion>2.0.2</AssemblyVersion>
-        <FileVersion>2.0.2</FileVersion>
+        <AssemblyVersion>2.0.4</AssemblyVersion>
+        <FileVersion>2.0.4</FileVersion>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
     </PropertyGroup>
 
@@ -37,6 +37,7 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
 
-        <Compile Remove="Styles\**" />
+        <Compile Remove="Styles/**" />
+        <Compile Include="Styles/**/*.cs" Condition="'$(Configuration)' == 'Debug'" />
     </ItemGroup>
 </Project>
