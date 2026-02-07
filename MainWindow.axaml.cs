@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -47,10 +48,7 @@ public partial class MainWindow : Window
     public readonly Dictionary<TreeViewItem, TreeViewItem> EtvParents = [];
     public bool EditableTextIgnoreUpdateOnce;
     public List<WeakReference<TreeViewItem>> EtvTargetUpdates = [];
-    readonly DispatcherTimer _timer = new()
-    {
-        Interval = TimeSpan.FromSeconds(0.1),
-    };
+    readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(0.02) };
 
     public MainWindow()
     {
@@ -83,6 +81,7 @@ public partial class MainWindow : Window
             if (n is not null && n.TryGetTarget(out var tn))
                 UpdateEtvItem(tn);
         };
+        _timer.Start();
     }
 
     async void OpenFile_OnClick(object? sender, RoutedEventArgs e)
@@ -261,7 +260,7 @@ public partial class MainWindow : Window
                 modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral"
             );
         }
-        EntryTextBox_OnTextChanged(null, null);
+        await UpdateSearchFiltering();
     }
 
     public async void UpdateEtvItem(TreeViewItem item)
@@ -294,7 +293,7 @@ public partial class MainWindow : Window
         item.Foreground = SolidColorBrush.Parse(
             modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral"
         );
-        EntryTextBox_OnTextChanged(null, null);
+        await UpdateSearchFiltering(new() { [item] = EtvTargetChildren[item] });
     }
 
     public static void ColorTreeItem(
@@ -1138,7 +1137,8 @@ public partial class MainWindow : Window
         OriginalText_OnTextChanged(null, null);
     }
 
-    async void EntryTextBox_OnTextChanged(object? sender, TextChangedEventArgs? e)
+    async void EntryTextBox_OnTextChanged(object? sender, TextChangedEventArgs? e) => await UpdateSearchFiltering();
+    async Task UpdateSearchFiltering(Dictionary<TreeViewItem, Dictionary<int, TreeViewItem>>? delta = null)
     {
         if (!await EnsureFileOpen())
             return;
@@ -1148,8 +1148,7 @@ public partial class MainWindow : Window
             var updateRaw = false;
             var enclosedQuote = false;
             var t = EntryTextBox.Text ?? "";
-            var i = 0;
-            foreach (var chr in t)
+            foreach (var (i, chr) in t.Index())
             {
                 if (updateRaw)
                 {
@@ -1183,7 +1182,6 @@ public partial class MainWindow : Window
 
                 if (i == t.Length - 1)
                     matches.Add(sb.ToString());
-                i++;
             }
         }
         var searchCasing = new List<string>(
@@ -1235,7 +1233,7 @@ public partial class MainWindow : Window
                 .Where(m => m.Length > 0)
         );
 
-        foreach (var value in EtvTargetChildren)
+        foreach (var value in delta ?? EtvTargetChildren)
         {
             var key = EtvKeys[value.Key];
             if (!FileData!.Strings.TryGetValue(key, out var list))
