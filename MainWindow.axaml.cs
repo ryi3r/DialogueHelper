@@ -1341,9 +1341,7 @@ public partial class MainWindow : Window
     {
         if (EntryTreeView.SelectedItem is null)
         {
-            await new InfoWindow(
-                "You need to select an item before trying to copy it to the clipboard."
-            ).ShowDialog(this);
+            await new InfoWindow("You need to select an item before trying to copy it to the clipboard.").ShowDialog(this);
             return;
         }
         await Clipboard!.SetTextAsync(
@@ -1399,9 +1397,7 @@ public partial class MainWindow : Window
             return;
         if (EntryTreeView.SelectedItem is null)
         {
-            await new InfoWindow(
-                "You need to select an item before trying to create a string."
-            ).ShowDialog(this);
+            await new InfoWindow("You need to select an item before trying to create a string.").ShowDialog(this);
             return;
         }
         var ce = new CreateEntry()
@@ -1455,18 +1451,12 @@ public partial class MainWindow : Window
             return;
         if (EntryTreeView.SelectedItem is null)
         {
-            await new InfoWindow(
-                "You need to select an item before trying to delete an item."
-            ).ShowDialog(this);
+            await new InfoWindow("You need to select an item before trying to delete an item.").ShowDialog(this);
             return;
         }
         var q = new QuestionWindow
         {
-            InnerText =
-            {
-                Text =
-                    "Are you sure that you want to delete this item?\nThis action is irreversible.",
-            },
+            InnerText = { Text = "Are you sure that you want to delete this item?\nThis action is irreversible." },
         };
         if (await q.ShowDialog<bool?>(this) ?? false)
         {
@@ -1512,9 +1502,7 @@ public partial class MainWindow : Window
     {
         if (SelectedString is null || EntryTreeView.SelectedItem is null)
         {
-            await new InfoWindow(
-                "You need to select an item before trying to mark it as modified."
-            ).ShowDialog(this);
+            await new InfoWindow("You need to select an item before trying to mark it as modified.").ShowDialog(this);
             return;
         }
         var item = (TreeViewItem)EntryTreeView.SelectedItem;
@@ -1537,9 +1525,7 @@ public partial class MainWindow : Window
         {
             AuthorText =
             {
-                Text =
-                    SelectedString.LastEdited.AuthorId < 0
-                    || SelectedString.LastEdited.AuthorId >= FileData!.AuthorList.Count
+                Text = SelectedString.LastEdited.AuthorId < 0 || SelectedString.LastEdited.AuthorId >= FileData!.AuthorList.Count
                         ? "<null>"
                         : FileData.AuthorList[SelectedString.LastEdited.AuthorId],
             },
@@ -1560,11 +1546,7 @@ public partial class MainWindow : Window
         var total = FileData.StringIds.Count;
         var fi = new FileInfo()
         {
-            EditInfo =
-            {
-                Text =
-                    $"Edited {modi} strings out of {total} ({modi / (double)total:P} completion)",
-            },
+            EditInfo = { Text = $"Edited {modi} strings out of {total} ({modi / (double)total:P} completion)" },
             Authors = { Text = $"Authors: {string.Join(", ", FileData.AuthorList)}" },
         };
         await fi.ShowDialog(this);
@@ -1572,8 +1554,7 @@ public partial class MainWindow : Window
 
     void SimilarStringsPanel_OnSizeChanged(object? sender, SizeChangedEventArgs e)
     {
-        SimilarStringsPanel.MaxHeight =
-            double.Max(SimilarStringsBase.Bounds.Height - (SimilarStringsTitle.Bounds.Height - 7), 0);
+        SimilarStringsPanel.MaxHeight = double.Max(SimilarStringsBase.Bounds.Height - (SimilarStringsTitle.Bounds.Height - 7), 0);
     }
 
     void SimilarStringsPanel_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -1598,9 +1579,7 @@ public partial class MainWindow : Window
     {
         if (FileData is null)
         {
-            await new InfoWindow(
-                "You need to have a file open to use this functionality."
-            ).ShowDialog(this);
+            await new InfoWindow("You need to have a file open to use this functionality.").ShowDialog(this);
             return false;
         }
         return true;
