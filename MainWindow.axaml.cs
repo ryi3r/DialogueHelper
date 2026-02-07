@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -13,7 +12,7 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
-using CSScripting;
+using Avalonia.Threading;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.Options;
@@ -44,7 +43,14 @@ public partial class MainWindow : Window
     public readonly Dictionary<TreeViewItem, int> EtvIndexes = [];
     public readonly Dictionary<int, TreeViewItem> EtvReverseIndexes = [];
     public readonly Dictionary<TreeViewItem, Dictionary<int, TreeViewItem>> EtvTargetChildren = [];
+    // <child, parent>
+    public readonly Dictionary<TreeViewItem, TreeViewItem> EtvParents = [];
     public bool EditableTextIgnoreUpdateOnce;
+    public List<WeakReference<TreeViewItem>> EtvTargetUpdates = [];
+    readonly DispatcherTimer _timer = new()
+    {
+        Interval = TimeSpan.FromSeconds(0.1),
+    };
 
     public MainWindow()
     {
@@ -62,6 +68,20 @@ public partial class MainWindow : Window
                     Close();
                 }
             }
+        };
+        _timer.Tick += (_, _) =>
+        {
+            WeakReference<TreeViewItem>? n = null;
+            lock (EtvTargetUpdates)
+            {
+                if (EtvTargetUpdates.Count > 0)
+                {
+                    n = EtvTargetUpdates[0];
+                    EtvTargetUpdates.RemoveAt(0);
+                }
+            }
+            if (n is not null && n.TryGetTarget(out var tn))
+                UpdateEtvItem(tn);
         };
     }
 
@@ -215,10 +235,8 @@ public partial class MainWindow : Window
             var modified = 0;
             foreach (var str in strs)
             {
-                var tBlock = new TreeViewItem()
-                {
-                    Header = str.Value.Text ?? str.Value.OriginalText,
-                };
+                var tBlock = new TreeViewItem() { Header = str.Value.Text ?? str.Value.OriginalText };
+                EtvParents.Add(tBlock, cont);
                 ColorTreeItem(
                     tBlock,
                     str.Value.Text,
@@ -308,7 +326,7 @@ public partial class MainWindow : Window
             ).ShowDialog(this);
             return;
         }*/
-        if (EntryTreeView.SelectedItem is TreeViewItem { Parent: TreeViewItem parent } tBlock)
+        if (EntryTreeView.SelectedItem is TreeViewItem tBlock && EtvParents.TryGetValue(tBlock, out var parent))
         {
             var lastSel = SelectedString;
             SelectedString = FileData!.Strings[EtvKeys[parent]][EtvIndexes[tBlock]];
@@ -1006,9 +1024,6 @@ public partial class MainWindow : Window
                     SelectedString.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
                     SelectedString.LastEdited.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 }
-                // already inside of function
-                /*if (EntryTreeView.SelectedItem is not null)
-                    UpdateEtvItem((TreeViewItem)((Control)EntryTreeView.SelectedItem).Parent!);*/
                 UpdateModifySimilarStrings();
             }
             else
@@ -1276,9 +1291,11 @@ public partial class MainWindow : Window
     {
         if (SelectedString is null || FileData is null)
             return;
-        var targetNodes = new HashSet<TreeViewItem>();
-        if (EntryTreeView.SelectedItem is not null)
-            targetNodes.Add((TreeViewItem)((Control)EntryTreeView.SelectedItem).Parent!);
+        if (EntryTreeView.SelectedItem is TreeViewItem tvi)
+        {
+            lock (EtvTargetUpdates)
+                EtvTargetUpdates.Add(new(EtvParents[tvi]));
+        }
         if (ModifySimilarStrings.IsChecked ?? false)
         {
             foreach (var id in SelectedString.EqStrings)
@@ -1290,7 +1307,8 @@ public partial class MainWindow : Window
                 s.LastEdited.AuthorId = SelectedString.LastEdited.AuthorId;
                 s.LastEdited.Timestamp = SelectedString.LastEdited.Timestamp;
 
-                targetNodes.Add((TreeViewItem)EtvReverseIndexes[id].Parent!);
+                lock (EtvTargetUpdates)
+                    EtvTargetUpdates.Add(new(EtvParents[EtvReverseIndexes[id]]));
             }
             foreach (var (i, sstr) in SelectedString.EqStrings.Index())
             {
@@ -1298,8 +1316,6 @@ public partial class MainWindow : Window
                 SimilarStringsPanel.Items[i] = $"({sstr}) {((s.Text is not null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}";
             }
         }
-        foreach (var n in targetNodes)
-            UpdateEtvItem(n);
     }
 
     async void AboutDialogueHelper_OnClick(object? sender, RoutedEventArgs e) => await new AboutDialogueHelper().ShowDialog(this);
@@ -1409,7 +1425,7 @@ public partial class MainWindow : Window
         TreeViewItem parent;
         {
             var s = (TreeViewItem)EntryTreeView.SelectedItem;
-            parent = EtvKeys.ContainsKey(s) ? s : (TreeViewItem)s.Parent!;
+            parent = EtvKeys.ContainsKey(s) ? s : EtvParents[s];
         }
         if (!EtvKeys.TryGetValue(parent, out var key))
             return;
@@ -1417,7 +1433,8 @@ public partial class MainWindow : Window
         {
             var t = ce.TextBox.Text ?? "<null>";
             var tvi = new TreeViewItem() { Header = t };
-            parent.ItemsSource = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? []) { tvi };
+            parent.ItemsSource = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? []) { tvi }.ToArray();
+            EtvParents.Add(tvi, parent);
             var sc = new StringContainer()
             {
                 Id = FileData!.LastStringId++,
@@ -1472,24 +1489,28 @@ public partial class MainWindow : Window
                 {
                     EtvIndexes.Remove(node.Value);
                     EtvReverseIndexes.Remove(node.Key);
+                    EtvParents.Remove(node.Value);
                 }
                 EtvTargetChildren.Remove(item);
             }
             else
             {
-                var parent = (TreeViewItem)item.Parent!;
+                var parent = EtvParents[item];
                 if (EtvKeys.TryGetValue(parent, out key) && EtvIndexes.TryGetValue(item, out var index))
                 {
                     FileData!.Strings[key].Remove(index);
                     FileData.StringIds.Remove(index);
-                    var items = new List<TreeViewItem>(parent.ItemsSource!.Cast<TreeViewItem>());
-                    items.Remove(item);
-                    parent.ItemsSource = items;
+                    {
+                        var items = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? []);
+                        items.Remove(item);
+                        parent.ItemsSource = items.ToArray();
+                    }
                     SelectedString = null;
                     var idx = EtvIndexes[item];
                     EtvTargetChildren[parent].Remove(idx);
                     EtvIndexes.Remove(item);
                     EtvReverseIndexes.Remove(idx);
+                    EtvParents.Remove(item);
                     UpdateEtvItem(parent);
                 }
             }
@@ -1511,7 +1532,7 @@ public partial class MainWindow : Window
         SelectedString.MarkAsModified = MarkAsModified.IsChecked ?? false;
         IsFileModified = true;
         Title = "Dialogue Helper*";
-        UpdateEtvItem((TreeViewItem)item.Parent!);
+        UpdateEtvItem(EtvParents[item]);
     }
 
     async void ShowEntryInfo_OnClick(object? sender, RoutedEventArgs e)
