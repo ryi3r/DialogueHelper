@@ -13,6 +13,7 @@
         <AssemblyVersion>2.0.5</AssemblyVersion>
         <FileVersion>2.0.5</FileVersion>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
+        <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     </PropertyGroup>
 
     <ItemGroup>
