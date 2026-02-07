@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -25,7 +26,7 @@ public class PreviewRenderer(MainWindow mainWindow)
             selectedFont = 0;
         if (selectedBox >= style.BoxMetadata.Count)
             selectedBox = style.BoxMetadata.Count - 1;
-        if (selectedBox >= style.FontMetadata.Count)
+        if (selectedFont >= style.FontMetadata.Count)
             selectedFont = style.FontMetadata.Count - 1;
         var box = style.BoxMetadata[selectedBox];
         var font = style.FontMetadata[selectedFont];
@@ -77,18 +78,20 @@ public class PreviewRenderer(MainWindow mainWindow)
         try
         {
             var wh = new CustomToolWindowHandler(MainWindow, style);
-            await (style.Script?.PrepareDraw(wh, eData) ?? Task.CompletedTask);
             eData.Char.String = str;
-            var i = 0;
-            foreach (var chr in str)
+            if (!await (style.Script?.PrepareDraw(wh, eData) ?? Task.FromResult(false)))
             {
-                eData.Char.Char = chr;
-                eData.Char.Index = i++;
-                eData.Char.IsNewline = style.Metadata.NewLines.Contains(chr);
-                eData.Char.IsIgnore = style.Metadata.Ignore.Contains(chr);
-                eData.Glyph.Scale = (fontScale * previewScale, fontScale * previewScale);
+                foreach (var (i, chr) in str.Index())
+                {
+                    eData.Char.Char = chr;
+                    eData.Char.Index = i;
+                    eData.Char.IsNewline = style.Metadata.NewLines.Contains(chr);
+                    eData.Char.IsIgnore = style.Metadata.Ignore.Contains(chr);
+                    eData.Glyph.Scale = (fontScale * previewScale, fontScale * previewScale);
 
-                await (style.Script?.DrawGlyph(wh, eData) ?? Task.CompletedTask);
+                    if (await (style.Script?.DrawGlyph(wh, eData) ?? Task.FromResult(false)))
+                        break;
+                }
             }
         }
         catch (Exception ex)

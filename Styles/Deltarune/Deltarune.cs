@@ -76,6 +76,12 @@ public class Deltarune : StyleScript
         set => _data.Env["PortraitOffset"] = value;
     }
 
+    public static int EnvStrLen
+    {
+        get => _data.Env["StrLen"];
+        set => _data.Env["StrLen"] = value;
+    }
+
     public override async Task Init(CustomToolWindowHandler wh)
     {
         // This is called when the script is loaded and ready to go.
@@ -118,13 +124,7 @@ public class Deltarune : StyleScript
         var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select a file",
-            FileTypeFilter = [new("GameMaker's Data Files")
-            {
-                Patterns = ["data.win"],
-            }, new("All files")
-            {
-                Patterns = ["*"],
-            }]
+            FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["data.win"] }, new("All files") { Patterns = ["*"] }],
         });
         if (f.Count <= 0)
             return;
@@ -185,27 +185,19 @@ public class Deltarune : StyleScript
     {
         if (wh.GetLoadedFileData() is null)
         {
-            var w = new InfoWindow("Please ensure that you have a file open.");
-            await wh.ShowDialog(w);
+            await wh.ShowDialog(new InfoWindow("Please ensure that you have a file open."));
             return;
         }
         var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
         if (!File.Exists(filePath))
         {
-            var w = new InfoWindow("Please download and add UndertaleModCli to this style's folder.");
-            await wh.ShowDialog(w);
+            await wh.ShowDialog(new InfoWindow("Please download and add UndertaleModCli to this style's folder."));
             return;
         }
         var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select a file",
-            FileTypeFilter = [new("GameMaker's Data Files")
-            {
-                Patterns = ["data.win"],
-            }, new("All files")
-            {
-                Patterns = ["*"],
-            }]
+            FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["data.win"] }, new("All files") { Patterns = ["*"] }],
         });
         if (f.Count <= 0)
             return;
@@ -249,8 +241,7 @@ public class Deltarune : StyleScript
             if (proc.ExitCode != 0 || stderr.Trim().Length > 0)
             {
                 lw.Close();
-                var w = new InfoWindow($"UndertaleModCli exited with code {proc.ExitCode}\n\nstdout:\n{stdout}\nstderr:\n{stderr}");
-                await wh.ShowDialog(w);
+                await wh.ShowDialog(new InfoWindow($"UndertaleModCli exited with code {proc.ExitCode}\n\nstdout:\n{stdout}\nstderr:\n{stderr}"));
                 return;
             }
         }
@@ -266,20 +257,13 @@ public class Deltarune : StyleScript
     {
         if (wh.GetLoadedFileData() is not null)
         {
-            var w = new InfoWindow("Please ensure that you do not have a file open.");
-            await wh.ShowDialog(w);
+            await wh.ShowDialog(new InfoWindow("Please ensure that you do not have a file open."));
             return;
         }
         var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select a file",
-            FileTypeFilter = [new("JSON Files")
-            {
-                Patterns = ["*.json"],
-            }, new("All Files")
-            {
-                Patterns = ["*"],
-            }]
+            FileTypeFilter = [new("JSON Files") { Patterns = ["*.json"] }, new("All Files") { Patterns = ["*"] }],
         });
         if (f.Count <= 0)
             return;
@@ -296,7 +280,6 @@ public class Deltarune : StyleScript
         }
         finally
         {
-            //File.Delete($"{wH.GetStylePath()}/output.json");
             lw.Close();
         }
         await wh.ShowDialog(new InfoWindow($"Imported data successfully."));
@@ -306,20 +289,13 @@ public class Deltarune : StyleScript
     {
         if (wh.GetLoadedFileData() is null)
         {
-            var w = new InfoWindow("Please ensure that you have a file open.");
-            await wh.ShowDialog(w);
+            await wh.ShowDialog(new InfoWindow("Please ensure that you have a file open."));
             return;
         }
         var fOpen = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select a file (Japanese/English for a exporting base)",
-            FileTypeFilter = [new("JSON Files")
-            {
-                Patterns = ["*.json"],
-            }, new("All Files")
-            {
-                Patterns = ["*"],
-            }]
+            FileTypeFilter = [new("JSON Files") { Patterns = ["*.json"] }, new("All Files") { Patterns = ["*"] }],
         });
         if (fOpen.Count <= 0)
             return;
@@ -327,7 +303,6 @@ public class Deltarune : StyleScript
         {
             Title = "Select a file",
             FileTypeChoices = [new("JSON Files") { Patterns = ["*.json"] }],
-
         });
         if (fSave is null)
             return;
@@ -403,7 +378,7 @@ public class Deltarune : StyleScript
         return JsonSerializer.Serialize(data, new JsonSerializerOptions() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
     }
 
-    public override async Task PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
+    public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
         _data = data;
         EnvLastNewline = false;
@@ -417,69 +392,79 @@ public class Deltarune : StyleScript
         EnablePortrait.ReadOnly = !data.Box.CustomProperties.TryGetValue("SupportsPortrait", out var val) || ((JsonElement)val).ToString().ToLowerInvariant() != "true";
         if (lro != EnablePortrait.ReadOnly)
             EnablePortrait.UpdateUiValue();
-        if ((EnablePortrait.Value ?? false) && !EnablePortrait.ReadOnly)
+        var (x, y) = (0d, 0d);
+        if (data.Box.CustomProperties.TryGetValue("PortraitOffset", out var bpo) && bpo is JsonElement po)
         {
-            var po = (JsonElement)data.Box.CustomProperties["PortraitOffset"];
-            if (po.GetArrayLength() == 2)
-            {
-                po[0].TryGetDouble(out data.Char.StartPosition.X);
-                po[1].TryGetDouble(out data.Char.StartPosition.Y);
-
-                EnvPortraitOffset = (data.Char.StartPosition.X, data.Char.StartPosition.Y);
-            }
+            po[0].TryGetDouble(out x);
+            po[1].TryGetDouble(out y);
         }
+        EnvPortraitOffset = (x, y);
+        if ((EnablePortrait.Value ?? false) && !EnablePortrait.ReadOnly)
+            data.Char.StartPosition = EnvPortraitOffset;
+        EnvStrLen = data.Char.String.TrimEnd().Length;
+        return await base.PrepareDraw(wh, data);
     }
 
-    public override async Task DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
+    public override async Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
     {
         _data = data;
         if (data.Char.IsIgnore || (!data.Font.GlyphDictionary.ContainsKey(data.Char.Char) && !data.Char.IsNewline))
-            return;
+            return false;
         if (EnvSkip > 0)
         {
             EnvSkip--;
-            return;
+            return false;
         }
 
-        if (data.Char.String.Length - data.Char.Index >= 3)
+        if (EnvStrLen - data.Char.Index >= 3)
         {
             if (data.Char.String.Substring(data.Char.Index, 3) == "/%%")
             {
                 EnvSkip = 2;
-                return;
+                return false;
             }
         }
-        if (data.Char.String.Length - data.Char.Index >= 2)
+        if (EnvStrLen - data.Char.Index >= 2)
         {
             if (data.Char.String.Substring(data.Char.Index, 2) == "/%" ||
                 data.Char.Char == '^' && int.TryParse(data.Char.String.Substring(data.Char.Index + 1, 1), out _) ||
                 data.Char.String.Substring(data.Char.Index, 2) == "%%")
             {
                 EnvSkip = 1;
-                return;
+                return false;
             }
         }
-        if ((data.Char.String.Length - data.Char.Index == 1 || data.Char.Index == 0) && data.Char.Char == '/')
-            return;
-        if (data.Char.String.Length - data.Char.Index == 1 && data.Char.Char == '%')
-            return;
+        if ((EnvStrLen - data.Char.Index == 1 || data.Char.Index == 0) && data.Char.Char == '/')
+            return false;
+        if (EnvStrLen - data.Char.Index == 1 && data.Char.Char == '%')
+            return false;
         if (data.Char.Char == '\\')
         {
             EnvSkip = 2;
-            if (data.Char.String.Length - (data.Char.Index + 1) >= 2)
+            if (EnvStrLen - (data.Char.Index + 1) >= 2)
             {
                 var slice = data.Char.String[(data.Char.Index + 1)..(data.Char.Index + 3)];
                 switch (slice[0])
                 {
                     case 'E':
-                        EnablePortrait.Value = true;
                         if (!"0123456789ABCDE".Contains(slice[1]))
                             EnvSkip = 0;
+                        else if (!EnablePortrait.ReadOnly && !EnablePortrait.Value)
+                        {
+                            EnablePortrait.Value = true;
+                            EnablePortrait.UpdateUiValue();
+                            return true;
+                        }
                         break;
                     case 'F':
-                        EnablePortrait.Value = true;
                         if (!"0SRNTLsUAaBruKQ".Contains(slice[1]))
                             EnvSkip = 0;
+                        else if (!EnablePortrait.ReadOnly && !EnablePortrait.Value)
+                        {
+                            EnablePortrait.Value = true;
+                            EnablePortrait.UpdateUiValue();
+                            return true;
+                        }
                         break;
                     case 'T':
                         var f = slice[1] switch
@@ -522,7 +507,7 @@ public class Deltarune : StyleScript
                 }
             }
             if (EnvSkip != 0)
-                return;
+                return false;
         }
 
         switch (Fonts[data.Style.FontMetadata.Index().First(x => x.Item == data.Font).Index])
@@ -557,13 +542,13 @@ public class Deltarune : StyleScript
                 EnvCheckedIndex = 0;
             var i = 0;
             var fs = "";
-            while (data.Char.Index + i < data.Char.String.Length && (data.Char.String[data.Char.Index + i] == ' ' ||
+            while (data.Char.Index + i < EnvStrLen && (data.Char.String[data.Char.Index + i] == ' ' ||
                                                                         data.Style.Metadata.NewLines.Contains(data.Char.String[data.Char.Index + i])))
             {
                 fs += data.Char.String[data.Char.Index + i];
                 i++;
             }
-            while (data.Char.Index + i < data.Char.String.Length && data.Char.String[data.Char.Index + i] != ' ' &&
+            while (data.Char.Index + i < EnvStrLen && data.Char.String[data.Char.Index + i] != ' ' &&
                                                                         !data.Style.Metadata.NewLines.Contains(data.Char.String[data.Char.Index + i]))
             {
                 var c = data.Char.String[data.Char.Index + i];
@@ -576,21 +561,21 @@ public class Deltarune : StyleScript
                         i += 2;
                         continue;
                     case '/':
-                        if (data.Char.Index + i >= data.Char.String.Length - 1 || data.Char.Index + i == 0)
+                        if (data.Char.Index + i >= EnvStrLen - 1 || data.Char.Index + i == 0)
                         {
                             i += 1;
                             continue;
                         }
-                        if ((data.Char.Index + i == data.Char.String.Length - 2 && data.Char.String[data.Char.Index + i + 1] == '%') ||
-                            (data.Char.Index + i == data.Char.String.Length - 3 && data.Char.String[data.Char.Index + i + 1] == '%' && data.Char.String[data.Char.Index + i + 2] == '%'))
+                        if ((data.Char.Index + i == EnvStrLen - 2 && data.Char.String[data.Char.Index + i + 1] == '%') ||
+                            (data.Char.Index + i == EnvStrLen - 3 && data.Char.String[data.Char.Index + i + 1] == '%' && data.Char.String[data.Char.Index + i + 2] == '%'))
                         {
                             i += 2;
                             continue;
                         }
                         break;
                     case '%':
-                        if ((data.Char.Index + i == data.Char.String.Length - 2 && data.Char.String[data.Char.Index + i + 1] == '%') ||
-                            data.Char.Index + i == data.Char.String.Length - 1)
+                        if ((data.Char.Index + i == EnvStrLen - 2 && data.Char.String[data.Char.Index + i + 1] == '%') ||
+                            data.Char.Index + i == EnvStrLen - 1)
                         {
                             i += 2;
                             continue;
@@ -608,7 +593,7 @@ public class Deltarune : StyleScript
                 var glyph = data.Font.Glyphs.FirstOrDefault(g => g.Char == chr);
                 if (glyph is null)
                     continue;
-                charPos += ((EnvX != -1.0 ? EnvX : glyph.Shift) + glyph.Offset) * 2d;
+                charPos += ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2;
             }
             if (charPos + 40 > (data.Style.ImageAssets[data.Box.Images[0].Path].Size.Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - ((EnablePortrait.Value ?? false) && !EnablePortrait.ReadOnly ? EnvPortraitOffset.X : 0.0) && !EnvFirstDrawnChar)
             {
@@ -621,24 +606,24 @@ public class Deltarune : StyleScript
         if (actAsNewline)
         {
             EnvLastNewline = true;
-            if (addSpaceXNewline <= 0 && EnvStartedAsterisk && data.Char.String.Length - data.Char.Index >= 2 &&
+            if (addSpaceXNewline <= 0 && EnvStartedAsterisk && EnvStrLen - data.Char.Index >= 2 &&
                 data.Char.String[data.Char.Index + 1] != '*')
                 addSpaceXNewline = 1;
-            data.Char.PositionOffset.X = 0.0;
+            data.Char.PositionOffset.X = 0;
             if (addSpaceXNewline > 0)
             {
                 var glyph = data.Font.GlyphDictionary[' '];
                 data.Char.PositionOffset.X =
-                    ((EnvX != -1.0 ? EnvX : glyph.Shift) + glyph.Offset) * 2d * (double)addSpaceXNewline;
+                    ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2 * addSpaceXNewline;
             }
 
             if (EnvY == -1.0)
             {
                 var size = data.Font.GlyphDictionary['A'].Size.Y;
-                data.Char.PositionOffset.Y += (size + (size % 2.0) + (data.Font.Size % 2.0)) * 2d;
+                data.Char.PositionOffset.Y += (size + (size % 2d) + (data.Font.Size % 2d)) * 2;
             }
             else
-                data.Char.PositionOffset.Y += EnvY * 2d;
+                data.Char.PositionOffset.Y += EnvY * 2;
         }
         if (!data.Char.IsNewline)
         {
@@ -646,8 +631,8 @@ public class Deltarune : StyleScript
             data.Glyph.Position.X =
                 data.Char.StartPosition.X + data.Char.PositionOffset.X + (glyph.Offset * 2d);
             data.Glyph.Position.Y = data.Char.StartPosition.Y + data.Char.PositionOffset.Y;
-            data.Glyph.Size.X = glyph.Size.X * 2d;
-            data.Glyph.Size.Y = glyph.Size.Y * 2d;
+            data.Glyph.Size.X = glyph.Size.X * 2;
+            data.Glyph.Size.Y = glyph.Size.Y * 2;
             data.DrawGlyph();
             if ((EnvLastNewline || EnvFirstDrawnChar) && data.Char.Char == '*')
                 EnvStartedAsterisk = true;
@@ -655,5 +640,6 @@ public class Deltarune : StyleScript
             EnvLastNewline = false;
             EnvFirstDrawnChar = false;
         }
+        return await base.PrepareDraw(wh, data);
     }
 }

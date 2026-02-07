@@ -177,7 +177,7 @@
     }],
     "CustomProperties": {
         "SupportsPortrait": "true",
-        "PortraitOffset": "176,20"
+        "PortraitOffset": [176, 20]
     },
     "TextOffset": [60, 20]
 }]

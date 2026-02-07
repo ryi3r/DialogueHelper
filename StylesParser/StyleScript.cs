@@ -13,7 +13,9 @@ public class StyleScript
 
     public virtual async Task<IEnumerable<CustomTool>> RegisterCustomTools() => [];
 
-    public virtual async Task PrepareDraw(CustomToolWindowHandler wh, ExternalData data) { }
+    // if true then it finishes drawing early.
+    public virtual async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data) => false;
 
-    public virtual async Task DrawGlyph(CustomToolWindowHandler wh, ExternalData data) { }
+    // if true then it finishes drawing early.
+    public virtual async Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data) => false;
 }

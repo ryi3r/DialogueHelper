@@ -46,13 +46,7 @@ public class Template : StyleScript
         {
             Title = "Example",
             AllowMultiple = true,
-            FileTypeFilter = [new("Json file")
-        {
-            Patterns = ["*.json"],
-        }, new("All files")
-        {
-            Patterns = ["*"],
-        }]
+            FileTypeFilter = [new("Json file") { Patterns = ["*.json"] }, new("All files") { Patterns = ["*"] }]
         });
         var w = new InfoWindow($"File(s) chosen: {string.Join(", ", f.Select(f => f.Name))}")
         {
@@ -67,15 +61,16 @@ public class Template : StyleScript
         await wh.ShowDialog(w);
     }
 
-    public override async Task PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
+    public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
         // This is always called before starting to draw glyphs, draw anything you want here!
+        return await base.PrepareDraw(wh, data);
     }
 
-    public override async Task DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
+    public override async Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
     {
         if (data.Char.IsIgnore || (!data.Font.GlyphDictionary.ContainsKey(data.Char.Char) && !data.Char.IsNewline))
-            return;
+            return false;
         if (data.Char.IsNewline)
         {
             data.Char.PositionOffset.X = 0;
@@ -92,5 +87,6 @@ public class Template : StyleScript
             data.DrawGlyph();
             data.Char.PositionOffset.X += (int)double.Ceiling((glyph.Shift + glyph.Offset) * data.Glyph.Scale.X);
         }
+        return await base.PrepareDraw(wh, data);
     }
 }

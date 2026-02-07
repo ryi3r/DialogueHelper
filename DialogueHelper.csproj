@@ -10,8 +10,8 @@
         <Copyright>ryi3r 2025</Copyright>
         <PackageId>Dialogue Helper</PackageId>
         <Product>Dialogue Helper</Product>
-        <AssemblyVersion>2.0.5</AssemblyVersion>
-        <FileVersion>2.0.5</FileVersion>
+        <AssemblyVersion>2.0.6</AssemblyVersion>
+        <FileVersion>2.0.6</FileVersion>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     </PropertyGroup>
@@ -34,8 +34,17 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="Styles\**">
+        <Content Include="Styles/**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Remove="Styles/Deltarune/UndertaleModCli/**" />
+        <Content Include="Styles/Deltarune/UndertaleModCli/**/*.txt">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Remove="Styles/Deltarune/UndertaleModCli/**/LICENSE.txt" />
+        <Content Remove="Styles/Deltarune/UndertaleModCli/**/README.txt" />
+        <Content Include="LICENSE">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
 
         <Compile Remove="Styles/**" />

@@ -99,10 +99,7 @@ public partial class Settings : Window
                 var style = new StyleParser(folder);
                 await Task.Run(() => style.CompileCode());
                 StyleData.Add(style);
-                StyleComboBox.Items.Add(new TextBlock()
-                {
-                    Text = $"{style.Metadata.Name} by {style.Metadata.Author}",
-                });
+                StyleComboBox.Items.Add(new TextBlock() { Text = $"{style.Metadata.Name} by {style.Metadata.Author}" });
                 if (!MainWindow!.StyleSettings.ContainsKey(folder))
                     MainWindow.StyleSettings.Add(folder, []);
                 var res = await (style.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<CustomProperty>()));

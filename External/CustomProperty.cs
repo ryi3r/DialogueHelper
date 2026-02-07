@@ -45,7 +45,7 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
 
         Value = ValueType switch
         {
-            not null when ValueType == typeof(bool) => value == "true",
+            not null when ValueType == typeof(bool) => bool.Parse(value),
             not null when ValueType == typeof(byte) => byte.Parse(value),
             not null when ValueType == typeof(short) => short.Parse(value),
             not null when ValueType == typeof(int) => int.Parse(value),
@@ -61,15 +61,5 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
         };
     }
 
-    public string ValueToString()
-    {
-        if (Value is null)
-            return "";
-
-        return ValueType switch
-        {
-            not null when ValueType == typeof(bool) => (bool)Value ? "true" : "false",
-            _ => Value.ToString()!,
-        };
-    }
+    public string ValueToString() => Value is null ? "" : Value.ToString() ?? "";
 }
