@@ -27,11 +27,11 @@ public class StyleParser
         {
             IncludeFields = true,
             AllowTrailingCommas = true,
+            ReadCommentHandling = JsonCommentHandling.Skip,
         };
-        Metadata = JsonSerializer.Deserialize<StyleMetadata>(File.ReadAllText($"{path}/Metadata.json"), jsonSeri)!;
-        BoxMetadata = JsonSerializer.Deserialize<List<BoxMetadata>>(File.ReadAllText($"{path}/Boxes.json"), jsonSeri)!;
-        var list = JsonSerializer.Deserialize<List<FontMetadataJson>>(File.ReadAllText($"{path}/Fonts.json"),
-            jsonSeri)!;
+        Metadata = JsonSerializer.Deserialize<StyleMetadata>(File.ReadAllText($"{path}/Metadata.jsonc"), jsonSeri)!;
+        BoxMetadata = JsonSerializer.Deserialize<List<BoxMetadata>>(File.ReadAllText($"{path}/Boxes.jsonc"), jsonSeri)!;
+        var list = JsonSerializer.Deserialize<List<FontMetadataJson>>(File.ReadAllText($"{path}/Fonts.jsonc"), jsonSeri)!;
         FontMetadata = new(list.Capacity);
         foreach (var font in list)
             FontMetadata.Add(new FontMetadata(font));

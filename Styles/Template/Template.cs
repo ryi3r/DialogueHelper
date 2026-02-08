@@ -14,24 +14,24 @@ public class Template : StyleScript
         //await wh.ShowDialog(new InfoWindow("Hello world!"));
     }
 
-    public override async Task<IEnumerable<CustomProperty>> RegisterCustomSettings()
+    public override async Task<IEnumerable<ICustomProperty>> RegisterCustomSettings()
     {
         // This may be called before Init, so be careful!
         // Store these somewhere if you're going to use them
         return [
-            new("D" , "bool", typeof(bool)),
-            new("E", "int", typeof(int)),
-            new("F", "string", typeof(string)),
+            new CustomProperty<bool>("D" , "bool"),
+            new CustomProperty<int>("E", "int"),
+            new CustomProperty<string>("F", "string"),
         ];
     }
 
-    public override async Task<IEnumerable<CustomProperty>> RegisterCustomProperties()
+    public override async Task<IEnumerable<ICustomProperty>> RegisterCustomProperties()
     {
         // Store these somewhere if you're going to use them
         return [
-            new("A" , "bool", typeof(bool)),
-            new("B", "int", typeof(int)),
-            new("C", "string", typeof(string)),
+            new CustomProperty<bool>("A", "bool"),
+            new CustomProperty<int>("B", "int"),
+            new CustomProperty<string>("C", "string"),
         ];
     }
 

@@ -16,22 +16,24 @@ using SixLabors.ImageSharp.PixelFormats;
 
 public class Deltarune : StyleScript
 {
-    public static string[] Fonts = [
-    "fnt_main",
-    "fnt_mainbig",
-    "fnt_small",
-    "fnt_comicsans",
-    "fnt_dotumche",
-    "fnt_tinynoelle",
-    "fnt_ja_main",
-    "fnt_ja_mainbig",
-    "fnt_ja_small",
-    "fnt_ja_comicsans",
-    "fnt_ja_dotumche",
-    "fnt_ja_kakugo",
-    "fnt_ja_tinynoelle",
-];
-    public static CustomProperty EnablePortrait = new("Enable Portrait", "enablePortrait", typeof(bool), false);
+    public enum Fonts
+    {
+        Main,
+        MainBig,
+        Small,
+        ComicSans,
+        Dotumche,
+        TinyNoelle,
+        JaMain,
+        JaMainBig,
+        JaSmall,
+        JaComicSans,
+        JaDotumche,
+        JaKakugo,
+        JaTinyNoelle,
+    };
+    public static CustomProperty<bool> EnablePortrait = new("Enable Portrait", "enablePortrait", false);
+    public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", "darkZone", false);
 
     static ExternalData _data = null!;
     public static bool EnvLastNewline
@@ -88,11 +90,12 @@ public class Deltarune : StyleScript
         //await wh.ShowDialog(new InfoWindow("Hello world!"));
     }
 
-    public override async Task<IEnumerable<CustomProperty>> RegisterCustomProperties()
+    public override async Task<IEnumerable<ICustomProperty>> RegisterCustomProperties()
     {
         // Store these somewhere if you're going to use them
         return [
             EnablePortrait,
+            DarkZone,
         ];
     }
 
@@ -399,10 +402,17 @@ public class Deltarune : StyleScript
             po[1].TryGetDouble(out y);
         }
         EnvPortraitOffset = (x, y);
-        if ((EnablePortrait.Value ?? false) && !EnablePortrait.ReadOnly)
+        if (EnablePortrait.Value && !EnablePortrait.ReadOnly)
             data.Char.StartPosition = EnvPortraitOffset;
         EnvStrLen = data.Char.String.TrimEnd().Length;
         return await base.PrepareDraw(wh, data);
+    }
+
+    public bool IsNewlineSafe(int idx, string str, ExternalData data)
+    {
+        if (str[idx] == '#' && str[int.Max(0, idx - 1)] == '`')
+            return false;
+        return data.Style.Metadata.NewLines.Contains(str[idx]);
     }
 
     public override async Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
@@ -438,6 +448,8 @@ public class Deltarune : StyleScript
             return false;
         if (EnvStrLen - data.Char.Index == 1 && data.Char.Char == '%')
             return false;
+        if (data.Style.Metadata.Ignore.Contains(data.Char.Char))
+            return false;
         if (data.Char.Char == '\\')
         {
             EnvSkip = 2;
@@ -447,7 +459,7 @@ public class Deltarune : StyleScript
                 switch (slice[0])
                 {
                     case 'E':
-                        if (!"0123456789ABCDE".Contains(slice[1]))
+                        if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
                             EnvSkip = 0;
                         else if (!EnablePortrait.ReadOnly && !EnablePortrait.Value)
                         {
@@ -457,7 +469,7 @@ public class Deltarune : StyleScript
                         }
                         break;
                     case 'F':
-                        if (!"0SRNTLsUAaBruKQ".Contains(slice[1]))
+                        if (!"0SRNTLsAaBbruUKQCyi".Contains(slice[1]))
                             EnvSkip = 0;
                         else if (!EnablePortrait.ReadOnly && !EnablePortrait.Value)
                         {
@@ -469,13 +481,13 @@ public class Deltarune : StyleScript
                     case 'T':
                         var f = slice[1] switch
                         {
-                            '0' or '1' or 'A' or 'a' or 'N' or 'n' or 'B' or 'S' or 'X' or 'r' or 'T' or 'U' => "fnt_main",
-                            'R' or 'L' or 'J' or 'K' or 'q' or 'Q' or 'q' => "fnt_mainbig",
-                            's' => "fnt_comicsans",
-                            _ => "",
+                            '0' or '1' or 'A' or 'a' or 'N' or 'n' or 'B' or 'S' or 'X' or 'r' or 'T' or 'U' or 'C' => Fonts.Main,
+                            'R' or 'L' or 'J' or 'K' or 'q' or 'Q' or 'p' or 'k' or 'j' or 'g' or 'v' => Fonts.Main, //"fnt_mainbig",
+                            's' => Fonts.ComicSans,
+                            _ => (Fonts?)null,
                         };
-                        if (f.Length > 0)
-                            data.Font = data.Style.FontMetadata[Array.IndexOf(Fonts, f)];
+                        if (f is not null)
+                            data.Font = data.Style.FontMetadata[(int)f];
                         else
                             EnvSkip = 0;
                         break;
@@ -490,6 +502,8 @@ public class Deltarune : StyleScript
                             'X' => Color.Black,
                             'P' => Color.Purple,
                             'M' => Color.DarkRed,
+                            'O' => Color.Orange,
+                            'A' => new Color(new Rgba32(0x00, 0xae, 0xff, 0xff)),
                             'S' => new Color(new Rgba32(0xff, 0x80, 0xff, 0xff)),
                             'V' => new Color(new Rgba32(0x80, 0xff, 0x80, 0xff)),
                             '0' => Color.HotPink,
@@ -500,9 +514,31 @@ public class Deltarune : StyleScript
                         else
                             EnvSkip = 0;
                         break;
-                    case 'S' or 's' or 'C' or 'M' or 'I' or 'm':
-                        if (!int.TryParse(slice[1].ToString(), out _))
-                            EnvSkip = 0;
+                    // f is small dialogue, the number after it is the index of the array
+                    case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O':
+                        {
+                            var invalid = false;
+                            if (!int.TryParse(slice[1].ToString(), out var v))
+                                invalid = true;
+                            else
+                            {
+                                switch (slice[0])
+                                {
+                                    // s == skippable on value "v"
+                                    case 's' when v < 0 || v > 1: invalid = true; break;
+                                    // C == choicer with "v" amount of choices
+                                    case 'C' when v < 1 || v > 4: invalid = true; break;
+                                    // M == flag 20 on value "v"
+                                    // S == play sound on array index "v"
+                                    // I == draw sprite on array index "v"
+                                    // m == draw miniface (sprite) on array index "v"
+                                    // O == create an object on array index "v"
+                                    case 'M' or 'S' or 'I' or 'm' or 'O' when v < 0 || v > 9: invalid = true; break;
+                                }
+                            }
+                            if (invalid)
+                                EnvSkip = 0;
+                        }
                         break;
                 }
             }
@@ -510,31 +546,48 @@ public class Deltarune : StyleScript
                 return false;
         }
 
-        switch (Fonts[data.Style.FontMetadata.Index().First(x => x.Item == data.Font).Index])
+        switch ((Fonts)data.Style.FontMetadata.Index().First(x => x.Item == data.Font).Index)
         {
-            case "fnt_main":
+            case Fonts.Main:
                 EnvX = 8;
                 EnvY = 18;
                 break;
-            case "fnt_mainbig":
+            case Fonts.MainBig:
                 EnvX = 16;
                 EnvY = 36;
                 break;
-            case "fnt_comicsans":
+            case Fonts.ComicSans:
                 EnvX = 8;
                 EnvY = 18;
                 break;
-            case "fnt_tinynoelle":
+            case Fonts.TinyNoelle:
                 EnvX = 6;
                 EnvY = 18;
                 break;
-            case "fnt_dotumche":
+            case Fonts.Dotumche:
                 EnvX = 9;
                 EnvY = 20;
                 break;
+            default:
+                EnvX = data.Font.GlyphDictionary[data.Char.Char].Shift;
+                break;
         }
-
-        var actAsNewline = data.Char.IsNewline;
+        if ((Enum.GetName((Fonts)data.GetCurrentFont()) ?? "").Contains("jp", StringComparison.InvariantCultureIgnoreCase) && data.Char.Char <= 0xff || (data.Char.Char >= 65377 && data.Char.Char <= 65439))
+        {
+            EnvX /= 2;
+            EnvX += DarkZone.Value ? 16 : 8;
+        }
+        else if ((Fonts)data.GetCurrentFont() == Fonts.ComicSans)
+        {
+            switch (data.Char.Char)
+            {
+                case 'w': EnvX += 2; break;
+                case 'm': EnvX += 3; break;
+                case 'i' or 'l': EnvX -= 2; break;
+                case 's' or 'j': EnvX--; break;
+            }
+        }
+        var actAsNewline = IsNewlineSafe(data.Char.Index, data.Char.String, data);
         var addSpaceXNewline = 0;
         if (data.Char.Index > EnvCheckedIndex)
         {
@@ -542,18 +595,19 @@ public class Deltarune : StyleScript
                 EnvCheckedIndex = 0;
             var i = 0;
             var fs = "";
-            while (data.Char.Index + i < EnvStrLen && (data.Char.String[data.Char.Index + i] == ' ' ||
-                                                                        data.Style.Metadata.NewLines.Contains(data.Char.String[data.Char.Index + i])))
+            while (data.Char.Index + i < EnvStrLen && (data.Char.String[data.Char.Index + i] == ' ' || IsNewlineSafe(data.Char.Index + i, data.Char.String, data)))
             {
                 fs += data.Char.String[data.Char.Index + i];
                 i++;
             }
-            while (data.Char.Index + i < EnvStrLen && data.Char.String[data.Char.Index + i] != ' ' &&
-                                                                        !data.Style.Metadata.NewLines.Contains(data.Char.String[data.Char.Index + i]))
+            while (data.Char.Index + i < EnvStrLen && data.Char.String[data.Char.Index + i] != ' ' && !IsNewlineSafe(data.Char.Index + i, data.Char.String, data))
             {
                 var c = data.Char.String[data.Char.Index + i];
                 switch (c)
                 {
+                    case '`':
+                        i++;
+                        continue;
                     case '\\':
                         i += 3;
                         continue;
@@ -563,7 +617,7 @@ public class Deltarune : StyleScript
                     case '/':
                         if (data.Char.Index + i >= EnvStrLen - 1 || data.Char.Index + i == 0)
                         {
-                            i += 1;
+                            i++;
                             continue;
                         }
                         if ((data.Char.Index + i == EnvStrLen - 2 && data.Char.String[data.Char.Index + i + 1] == '%') ||
@@ -574,8 +628,7 @@ public class Deltarune : StyleScript
                         }
                         break;
                     case '%':
-                        if ((data.Char.Index + i == EnvStrLen - 2 && data.Char.String[data.Char.Index + i + 1] == '%') ||
-                            data.Char.Index + i == EnvStrLen - 1)
+                        if ((data.Char.Index + i == EnvStrLen - 2 && data.Char.String[data.Char.Index + i + 1] == '%') || data.Char.Index + i == EnvStrLen - 1)
                         {
                             i += 2;
                             continue;
@@ -595,7 +648,7 @@ public class Deltarune : StyleScript
                     continue;
                 charPos += ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2;
             }
-            if (charPos + 40 > (data.Style.ImageAssets[data.Box.Images[0].Path].Size.Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - ((EnablePortrait.Value ?? false) && !EnablePortrait.ReadOnly ? EnvPortraitOffset.X : 0.0) && !EnvFirstDrawnChar)
+            if (charPos + 40 > (data.Style.ImageAssets[data.Box.Images[0].Path].Size.Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - (EnablePortrait.Value && !EnablePortrait.ReadOnly ? EnvPortraitOffset.X : 0) && !EnvFirstDrawnChar)
             {
                 actAsNewline = true;
                 if (EnvStartedAsterisk)
@@ -606,37 +659,34 @@ public class Deltarune : StyleScript
         if (actAsNewline)
         {
             EnvLastNewline = true;
-            if (addSpaceXNewline <= 0 && EnvStartedAsterisk && EnvStrLen - data.Char.Index >= 2 &&
-                data.Char.String[data.Char.Index + 1] != '*')
+            if (addSpaceXNewline <= 0 && EnvStartedAsterisk && EnvStrLen - data.Char.Index >= 2 && data.Char.String[data.Char.Index + 1] != '*')
                 addSpaceXNewline = 1;
             data.Char.PositionOffset.X = 0;
             if (addSpaceXNewline > 0)
             {
                 var glyph = data.Font.GlyphDictionary[' '];
-                data.Char.PositionOffset.X =
-                    ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2 * addSpaceXNewline;
+                data.Char.PositionOffset.X = ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2 * addSpaceXNewline;
             }
 
-            if (EnvY == -1.0)
+            if (EnvY == -1)
             {
                 var size = data.Font.GlyphDictionary['A'].Size.Y;
-                data.Char.PositionOffset.Y += (size + (size % 2d) + (data.Font.Size % 2d)) * 2;
+                data.Char.PositionOffset.Y += (size + (size % 2) + (data.Font.Size % 2)) * 2;
             }
             else
                 data.Char.PositionOffset.Y += EnvY * 2;
         }
-        if (!data.Char.IsNewline)
+        if (!IsNewlineSafe(data.Char.Index, data.Char.String, data) && !data.Char.IsIgnore)
         {
             var glyph = data.Font.GlyphDictionary[data.Char.Char];
-            data.Glyph.Position.X =
-                data.Char.StartPosition.X + data.Char.PositionOffset.X + (glyph.Offset * 2d);
+            data.Glyph.Position.X = data.Char.StartPosition.X + data.Char.PositionOffset.X + (glyph.Offset * 2);
             data.Glyph.Position.Y = data.Char.StartPosition.Y + data.Char.PositionOffset.Y;
             data.Glyph.Size.X = glyph.Size.X * 2;
             data.Glyph.Size.Y = glyph.Size.Y * 2;
             data.DrawGlyph();
             if ((EnvLastNewline || EnvFirstDrawnChar) && data.Char.Char == '*')
                 EnvStartedAsterisk = true;
-            data.Char.PositionOffset.X += (int)Math.Ceiling(((EnvX != -1.0 ? EnvX : glyph.Shift) + glyph.Offset) * 2d);
+            data.Char.PositionOffset.X += (int)Math.Ceiling(((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2);
             EnvLastNewline = false;
             EnvFirstDrawnChar = false;
         }

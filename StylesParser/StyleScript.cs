@@ -7,9 +7,9 @@ public class StyleScript
 {
     public virtual async Task Init(CustomToolWindowHandler wh) { }
 
-    public virtual async Task<IEnumerable<CustomProperty>> RegisterCustomSettings() => [];
+    public virtual async Task<IEnumerable<ICustomProperty>> RegisterCustomSettings() => [];
 
-    public virtual async Task<IEnumerable<CustomProperty>> RegisterCustomProperties() => [];
+    public virtual async Task<IEnumerable<ICustomProperty>> RegisterCustomProperties() => [];
 
     public virtual async Task<IEnumerable<CustomTool>> RegisterCustomTools() => [];
 

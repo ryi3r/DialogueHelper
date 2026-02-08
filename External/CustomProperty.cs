@@ -1,18 +1,40 @@
 using System;
-using System.Globalization;
 using Avalonia.Controls;
 
 namespace DialogueHelper.External;
 
-public class CustomProperty(string visualName, string name, Type type, dynamic? defaultValue = null, bool readOnly = false)
+public interface ICustomProperty
 {
-    public readonly string Name = name;
-    public readonly string VisualName = visualName;
-    public readonly Type ValueType = type;
-    public dynamic? Value = defaultValue;
-    public readonly dynamic? DefaultValue = defaultValue;
-    public bool ReadOnly = readOnly;
-    public Control? Node;
+    public string Name { get; }
+    public string VisualName { get; }
+    public bool ReadOnly { get; set; }
+    public object? Value { get; set; }
+    public object? DefaultValue { get; }
+    public Type Type { get; }
+
+    public Control? Node { get; set; }
+
+    public void UpdateUiValue();
+    public void StringToValue(string value);
+    public string ValueToString();
+}
+
+public class CustomProperty<T>(string visualName, string name, T? defaultValue = default, bool readOnly = false) : ICustomProperty
+    where T : IParsable<T>
+{
+    public string Name { get; } = name;
+    public string VisualName { get; } = visualName;
+    public bool ReadOnly { get; set; } = readOnly;
+    object? ICustomProperty.Value
+    {
+        get => Value;
+        set => Value = (T?)value;
+    }
+    object? ICustomProperty.DefaultValue => DefaultValue;
+    public Type Type { get; } = typeof(T);
+    public Control? Node { get; set; }
+    public T? Value = defaultValue;
+    public readonly T? DefaultValue = defaultValue;
 
     public void UpdateUiValue()
     {
@@ -22,15 +44,15 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
         {
             case CheckBox cb:
                 cb.IsEnabled = !ReadOnly;
-                cb.IsChecked = (bool)(Value ?? false);
+                cb.IsChecked = ((bool?)(object?)Value) ?? false;
                 break;
             case NumericUpDown nud:
                 nud.IsReadOnly = ReadOnly;
-                nud.Value = (decimal)(Value ?? 0);
+                nud.Value = ((decimal?)(object?)Value) ?? 0;
                 break;
             case TextBox tb:
                 tb.IsReadOnly = ReadOnly;
-                tb.Text = (string)(Value ?? "");
+                tb.Text = ((string?)(object?)Value) ?? "";
                 break;
         }
     }
@@ -39,26 +61,12 @@ public class CustomProperty(string visualName, string name, Type type, dynamic? 
     {
         if (value.Length <= 0)
         {
-            Value = null;
+            Value = default;
             return;
         }
 
-        Value = ValueType switch
-        {
-            not null when ValueType == typeof(bool) => bool.Parse(value),
-            not null when ValueType == typeof(byte) => byte.Parse(value),
-            not null when ValueType == typeof(short) => short.Parse(value),
-            not null when ValueType == typeof(int) => int.Parse(value),
-            not null when ValueType == typeof(long) => long.Parse(value),
-            not null when ValueType == typeof(sbyte) => sbyte.Parse(value),
-            not null when ValueType == typeof(ushort) => ushort.Parse(value),
-            not null when ValueType == typeof(uint) => uint.Parse(value),
-            not null when ValueType == typeof(ulong) => ulong.Parse(value),
-            not null when ValueType == typeof(float) => float.Parse(value),
-            not null when ValueType == typeof(double) => double.Parse(value),
-            not null when ValueType == typeof(string) => value,
-            _ => throw new NotSupportedException($"{ValueType}")
-        };
+        Value = T.Parse(value, null);
+        //throw new NotSupportedException($"unsupported str2val type: {typeof(T)}");
     }
 
     public string ValueToString() => Value is null ? "" : Value.ToString() ?? "";

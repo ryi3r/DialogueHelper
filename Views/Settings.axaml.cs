@@ -102,7 +102,7 @@ public partial class Settings : Window
                 StyleComboBox.Items.Add(new TextBlock() { Text = $"{style.Metadata.Name} by {style.Metadata.Author}" });
                 if (!MainWindow!.StyleSettings.ContainsKey(folder))
                     MainWindow.StyleSettings.Add(folder, []);
-                var res = await (style.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<CustomProperty>()));
+                var res = await (style.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()));
                 var props = MainWindow.StyleSettings[folder];
                 foreach (var prop in res)
                 {
@@ -122,13 +122,7 @@ public partial class Settings : Window
             }
             catch (Exception ex)
             {
-                var sErr = new StyleError
-                {
-                    ErrorBox =
-                    {
-                        Text = ex.ToString()
-                    },
-                };
+                var sErr = new StyleError() { ErrorBox = { Text = ex.ToString() } };
                 sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", folder);
                 await sErr.ShowDialog(this);
             }

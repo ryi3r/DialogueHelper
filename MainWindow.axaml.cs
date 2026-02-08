@@ -31,13 +31,13 @@ public partial class MainWindow : Window
     public readonly GitOptions GitOptions = new();
     public string? SelectedStyle;
     public StyleParser? StyleData;
-    public List<CustomProperty> CustomProperties = [];
+    public List<ICustomProperty> CustomProperties = [];
     public List<CustomTool> CustomTools = [];
     public readonly Dictionary<string, Bitmap> LoadedImages = [];
     public bool ScriptNeedsInitialization;
     public string AuthorName = "";
     public string AuthorGroup = "";
-    public readonly Dictionary<string, List<CustomProperty>> StyleSettings = [];
+    public readonly Dictionary<string, List<ICustomProperty>> StyleSettings = [];
     public StringContainer? SelectedString;
     public bool UpdatingEntry;
     public readonly Dictionary<TreeViewItem, string> EtvKeys = [];
@@ -443,15 +443,11 @@ public partial class MainWindow : Window
                                 StyleSettings.Add(folder, []);
                             var spl = f[i].Split("@@");
                             // the visual name & type value will get overwritten once the style loads
-                            StyleSettings[folder]
-                                .Add(
-                                    new(
-                                        "<null>",
-                                        WebUtility.UrlDecode(spl[0]),
-                                        typeof(string),
-                                        WebUtility.UrlDecode(spl[1])
-                                    )
-                                );
+                            StyleSettings[folder].Add(new CustomProperty<string>(
+                                "<null>",
+                                WebUtility.UrlDecode(spl[0]),
+                                WebUtility.UrlDecode(spl[1])
+                            ));
                         }
                         break;
                 }
@@ -614,7 +610,7 @@ public partial class MainWindow : Window
             FontComboBox.SelectedIndex = lastFontSelected;
 
             CustomTools = [.. await (StyleData.Script?.RegisterCustomTools() ?? Task.FromResult(Enumerable.Empty<CustomTool>()))];
-            CustomProperties = [.. await (StyleData.Script?.RegisterCustomProperties() ?? Task.FromResult(Enumerable.Empty<CustomProperty>()))];
+            CustomProperties = [.. await (StyleData.Script?.RegisterCustomProperties() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()))];
         }
         catch (Exception ex)
         {
@@ -679,15 +675,15 @@ public partial class MainWindow : Window
         }
     }
 
-    public void UpdateCustomProperties(Panel panel, IEnumerable<CustomProperty> props, bool isString = false)
+    public void UpdateCustomProperties(Panel panel, IEnumerable<ICustomProperty> props, bool isString = false)
     {
         foreach (var tool in props)
         {
             var item = new StackPanel() { Orientation = Orientation.Horizontal, Margin = new(5) };
             item.Children.Add(new TextBlock() { Margin = new(7), Text = tool.VisualName });
-            switch (tool.ValueType)
+            switch (tool.Type)
             {
-                case not null when tool.ValueType == typeof(bool):
+                case not null when tool.Type == typeof(bool):
                     {
                         item.Children.Clear();
                         var node = new CheckBox()
@@ -711,7 +707,7 @@ public partial class MainWindow : Window
                     }
                     break;
 
-                case not null when tool.ValueType == typeof(byte):
+                case not null when tool.Type == typeof(byte):
                     {
                         var node = new NumericUpDown()
                         {
@@ -737,7 +733,7 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
-                case not null when tool.ValueType == typeof(short):
+                case not null when tool.Type == typeof(short):
                     {
                         var node = new NumericUpDown()
                         {
@@ -763,7 +759,7 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
-                case not null when tool.ValueType == typeof(int):
+                case not null when tool.Type == typeof(int):
                     {
                         var node = new NumericUpDown()
                         {
@@ -789,7 +785,7 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
-                case not null when tool.ValueType == typeof(long):
+                case not null when tool.Type == typeof(long):
                     {
                         var node = new NumericUpDown()
                         {
@@ -816,7 +812,7 @@ public partial class MainWindow : Window
                     }
                     break;
 
-                case not null when tool.ValueType == typeof(sbyte):
+                case not null when tool.Type == typeof(sbyte):
                     {
                         var node = new NumericUpDown()
                         {
@@ -842,7 +838,7 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
-                case not null when tool.ValueType == typeof(ushort):
+                case not null when tool.Type == typeof(ushort):
                     {
                         var node = new NumericUpDown()
                         {
@@ -868,7 +864,7 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
-                case not null when tool.ValueType == typeof(uint):
+                case not null when tool.Type == typeof(uint):
                     {
                         var node = new NumericUpDown()
                         {
@@ -894,7 +890,7 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
-                case not null when tool.ValueType == typeof(ulong):
+                case not null when tool.Type == typeof(ulong):
                     {
                         var node = new NumericUpDown()
                         {
@@ -921,7 +917,7 @@ public partial class MainWindow : Window
                     }
                     break;
 
-                case not null when tool.ValueType == typeof(float):
+                case not null when tool.Type == typeof(float):
                     {
                         var node = new NumericUpDown()
                         {
@@ -945,7 +941,7 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
-                case not null when tool.ValueType == typeof(double):
+                case not null when tool.Type == typeof(double):
                     {
                         var node = new NumericUpDown()
                         {
@@ -970,7 +966,7 @@ public partial class MainWindow : Window
                     }
                     break;
 
-                case not null when tool.ValueType == typeof(string):
+                case not null when tool.Type == typeof(string):
                     {
                         var node = new TextBox()
                         {
