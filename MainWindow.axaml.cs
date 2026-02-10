@@ -1303,11 +1303,12 @@ public partial class MainWindow : Window
             foreach (var id in SelectedString.EqStrings)
             {
                 var s = FileData.StringIds[id];
-                if (s.Text == SelectedString.Text)
+                if (s.Id == SelectedString.Id)
                     continue;
                 s.Text = SelectedString.Text;
                 s.LastEdited.AuthorId = SelectedString.LastEdited.AuthorId;
                 s.LastEdited.Timestamp = SelectedString.LastEdited.Timestamp;
+                s.MarkAsModified = SelectedString.MarkAsModified;
 
                 lock (EtvTargetUpdates)
                 {
@@ -1545,6 +1546,7 @@ public partial class MainWindow : Window
         IsFileModified = true;
         Title = "Dialogue Helper*";
         UpdateEtvItem(EtvParents[item]);
+        UpdateModifySimilarStrings();
     }
 
     async void ShowEntryInfo_OnClick(object? sender, RoutedEventArgs e)
