@@ -38,7 +38,11 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
 
     public void FreeTexture(Bitmap bitmap)
     {
-        mainWindow.LoadedImages.Remove(mainWindow.LoadedImages.FirstOrDefault(i => i.Value == bitmap).Key);
+        var key = mainWindow.LoadedImages.FirstOrDefault(i => i.Value == bitmap).Key;
+        if (key is null)
+            return;
+        mainWindow.LoadedImages.Remove(key);
+        mainWindow.LoadedImagesOrder.Remove(key);
         bitmap.Dispose();
     }
 
@@ -55,10 +59,10 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
             {
                 foreach (ref var px in accessor.GetRowSpan(i))
                 {
-                    px.R = (byte)(((px.R / 255f) * (col.R / 255f)) * 255f);
-                    px.G = (byte)(((px.G / 255f) * (col.G / 255f)) * 255f);
-                    px.B = (byte)(((px.B / 255f) * (col.B / 255f)) * 255f);
-                    px.A = (byte)(((px.A / 255f) * double.Clamp(alpha, 0d, 1d)) * 255f);
+                    px.R = (byte)(px.R / 255f * (col.R / 255f) * 255f);
+                    px.G = (byte)(px.G / 255f * (col.G / 255f) * 255f);
+                    px.B = (byte)(px.B / 255f * (col.B / 255f) * 255f);
+                    px.A = (byte)(px.A / 255f * double.Clamp(alpha, 0d, 1d) * 255f);
                 }
             }
         });
@@ -70,15 +74,24 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         }
     }
 
-    public Bitmap ModifyImageAndCache(Bitmap bitmap, Color color, double alpha = 1.0)
+    public Bitmap ModifyImageAndCache(Bitmap bitmap, Color color, double alpha = 1.0, string font = "")
     {
         var path = mainWindow.LoadedImages.FirstOrDefault(i => i.Value == bitmap).Key;
-        if (mainWindow.LoadedImages.TryGetValue($"{Glyph.Color.Rgba}+{alpha}@{path}", out var value))
+        var idx = $"{Glyph.Color.Rgba}+{alpha}+{font}@{path}";
+        if (mainWindow.LoadedImages.TryGetValue(idx, out var value))
             return value;
         else
         {
             var outBitmap = ModifyImage(bitmap, color, alpha);
-            mainWindow.LoadedImages.Add($"{Glyph.Color.Rgba}+{alpha}@{path}", outBitmap);
+            mainWindow.LoadedImages.Add(idx, outBitmap);
+            mainWindow.LoadedImagesOrder.Add(idx);
+            while (mainWindow.LoadedImages.Count > 0x80)
+            {
+                var key = mainWindow.LoadedImagesOrder[0];
+                mainWindow.LoadedImagesOrder.RemoveAt(0);
+                mainWindow.LoadedImages[key].Dispose();
+                mainWindow.LoadedImages.Remove(key);
+            }
             return outBitmap;
         }
     }
@@ -90,7 +103,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
             return null;
         var alpha = Math.Round(Glyph.Alpha, 2);
         if (Glyph.Color.Rgba != 0xffffffff || alpha < 1.0)
-            targetTexture = ModifyImageAndCache(targetTexture, Glyph.Color, alpha);
+            targetTexture = ModifyImageAndCache(targetTexture, Glyph.Color, alpha, Font.ImagePath);
         var glyphImg = new Avalonia.Controls.Image()
         {
             Source = new CroppedBitmap(targetTexture, new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y)),

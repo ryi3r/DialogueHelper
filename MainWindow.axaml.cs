@@ -34,6 +34,7 @@ public partial class MainWindow : Window
     public List<ICustomProperty> CustomProperties = [];
     public List<CustomTool> CustomTools = [];
     public readonly Dictionary<string, Bitmap> LoadedImages = [];
+    public readonly List<string> LoadedImagesOrder = [];
     public bool ScriptNeedsInitialization;
     public string AuthorName = "";
     public string AuthorGroup = "";
@@ -49,7 +50,7 @@ public partial class MainWindow : Window
     public bool EditableTextIgnoreUpdateOnce;
     public List<WeakReference<TreeViewItem>> EtvTargetUpdates = [];
     readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(0.02) };
-    readonly DispatcherTimer _backupTimer = new() { Interval = TimeSpan.FromMinutes(5) };
+    readonly DispatcherTimer _backupTimer = new() { Interval = TimeSpan.FromMinutes(3) };
 
     public MainWindow()
     {

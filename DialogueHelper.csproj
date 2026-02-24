@@ -10,8 +10,8 @@
         <Copyright>ryi3r 2025-2026</Copyright>
         <PackageId>Dialogue Helper</PackageId>
         <Product>Dialogue Helper</Product>
-        <AssemblyVersion>2.0.11</AssemblyVersion>
-        <FileVersion>2.0.11</FileVersion>
+        <AssemblyVersion>2.0.12</AssemblyVersion>
+        <FileVersion>2.0.12</FileVersion>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     </PropertyGroup>
