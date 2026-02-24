@@ -49,6 +49,7 @@ public partial class MainWindow : Window
     public bool EditableTextIgnoreUpdateOnce;
     public List<WeakReference<TreeViewItem>> EtvTargetUpdates = [];
     readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(0.02) };
+    readonly DispatcherTimer _backupTimer = new() { Interval = TimeSpan.FromMinutes(5) };
 
     public MainWindow()
     {
@@ -80,6 +81,15 @@ public partial class MainWindow : Window
                 UpdateEtvItem(tn);
         };
         _timer.Start();
+        _backupTimer.Tick += (_, _) =>
+        {
+            if (FileData is null)
+                return;
+            using var f = File.Create("backup.dh");
+            f.Write(Encoding.UTF8.GetBytes(FileData.OutputString()));
+            f.Close();
+        };
+        _backupTimer.Start();
     }
 
     async void OpenFile_OnClick(object? sender, RoutedEventArgs e)
@@ -986,6 +996,30 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
+
+                case not null when tool.Type == typeof(Color):
+                    {
+                        var col = (Color)tool.Value!;
+                        var node = new ColorPicker()
+                        {
+                            IsEnabled = !tool.ReadOnly,
+                            Color = new(col.R, col.G, col.B, col.A),
+                            IsAlphaEnabled = col.IsAlphaEnabled,
+                            IsAlphaVisible = col.IsAlphaVisible,
+                        };
+                        node.ColorChanged += (_, _) =>
+                        {
+                            tool.StringToValue(new Color { Argb = node.Color.ToUInt32() }.Rgba.ToString() ?? "");
+                            if (isString)
+                            {
+                                EditableText_OnTextChanged(null, null);
+                                OriginalText_OnTextChanged(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
+                    break;
             }
             panel.Children.Add(item);
         }
@@ -1030,6 +1064,7 @@ public partial class MainWindow : Window
             (float?)BoxScale.Value ?? 0f,
             (float?)FontScale.Value ?? 0f,
             (float?)PreviewScale.Value ?? 0f,
+            new() { Argb = InitialTextColor.Color.ToUInt32() },
             EditableText.Text,
             DisplayEditableCanvas
         );
@@ -1047,6 +1082,7 @@ public partial class MainWindow : Window
             (float?)BoxScale.Value ?? 0.0f,
             (float?)FontScale.Value ?? 0.0f,
             (float?)PreviewScale.Value ?? 0.0f,
+            new() { Argb = InitialTextColor.Color.ToUInt32() },
             OriginalText.Text ?? "",
             DisplayOriginalCanvas
         );
@@ -1609,6 +1645,18 @@ public partial class MainWindow : Window
         }
     }
 
+    void GoToParentEntry_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedString is null || FileData is null)
+            return;
+        var key = EtvTargetChildren.FirstOrDefault(s => s.Value.ContainsKey(SelectedString.Id)).Key;
+        if (key is null)
+            return;
+        EntryTreeView.SelectedItem = key;
+        EntryTreeView.ScrollIntoView(key);
+        key.Focus();
+    }
+
     ///<returns>returns true if file is open</returns>
     public async Task<bool> EnsureFileOpen()
     {
@@ -1618,5 +1666,11 @@ public partial class MainWindow : Window
             return false;
         }
         return true;
+    }
+
+    private void InitialTextColor_OnColorChanged(object? sender, ColorChangedEventArgs e)
+    {
+        EditableText_OnTextChanged(null, null);
+        OriginalText_OnTextChanged(null, null);
     }
 }

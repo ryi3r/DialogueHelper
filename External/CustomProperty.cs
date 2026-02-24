@@ -1,5 +1,7 @@
 using System;
 using Avalonia.Controls;
+using Avalonia.Media;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace DialogueHelper.External;
 
@@ -54,6 +56,17 @@ public class CustomProperty<T>(string visualName, string name, T? defaultValue =
                 tb.IsReadOnly = ReadOnly;
                 tb.Text = ((string?)(object?)Value) ?? "";
                 break;
+            case ColorPicker col:
+                col.IsEnabled = !ReadOnly;
+                if (Value is Color c)
+                {
+                    col.Color = new(c.R, c.G, c.B, c.A);
+                    col.IsAlphaEnabled = c.IsAlphaEnabled;
+                    col.IsAlphaVisible = c.IsAlphaVisible;
+                }
+                else
+                    col.Color = new(0, 0, 0, 0xff);
+                break;
         }
     }
 
@@ -69,5 +82,12 @@ public class CustomProperty<T>(string visualName, string name, T? defaultValue =
         //throw new NotSupportedException($"unsupported str2val type: {typeof(T)}");
     }
 
-    public string ValueToString() => Value is null ? "" : Value.ToString() ?? "";
+    public string ValueToString()
+    {
+        if (Value is null)
+            return "";
+        if (Value is Color c)
+            return c.Rgba.ToString();
+        return Value.ToString() ?? "";
+    }
 }

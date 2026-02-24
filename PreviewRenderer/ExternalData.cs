@@ -2,14 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using DialogueHelper.StylesParser;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using Color = SixLabors.ImageSharp.Color;
 using Image = SixLabors.ImageSharp.Image;
 
 namespace DialogueHelper.PreviewRenderer;
@@ -50,7 +48,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         bitmap.Save(stream1);
         stream1.Seek(0, SeekOrigin.Begin);
         var tex = Image.Load<Rgba32>(stream1);
-        var col = (color ?? Glyph.Color).ToPixel<Rgba32>();
+        var col = color ?? Glyph.Color;
         tex.ProcessPixelRows(accessor =>
         {
             for (var i = 0; i < accessor.Height; i++)
@@ -75,12 +73,12 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
     public Bitmap ModifyImageAndCache(Bitmap bitmap, Color color, double alpha = 1.0)
     {
         var path = mainWindow.LoadedImages.FirstOrDefault(i => i.Value == bitmap).Key;
-        if (mainWindow.LoadedImages.TryGetValue($"{Glyph.Color.ToHex()}+{alpha}@{path}", out var value))
+        if (mainWindow.LoadedImages.TryGetValue($"{Glyph.Color.Rgba}+{alpha}@{path}", out var value))
             return value;
         else
         {
             var outBitmap = ModifyImage(bitmap, color, alpha);
-            mainWindow.LoadedImages.Add($"{Glyph.Color.ToHex()}+{alpha}@{path}", outBitmap);
+            mainWindow.LoadedImages.Add($"{Glyph.Color.Rgba}+{alpha}@{path}", outBitmap);
             return outBitmap;
         }
     }
@@ -91,7 +89,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         if (!Style.ImageAssets.TryGetValue(Font.ImagePath, out var targetTexture))
             return null;
         var alpha = Math.Round(Glyph.Alpha, 2);
-        if (Glyph.Color != Color.White || alpha < 1.0)
+        if (Glyph.Color.Rgba != 0xffffffff || alpha < 1.0)
             targetTexture = ModifyImageAndCache(targetTexture, Glyph.Color, alpha);
         var glyphImg = new Avalonia.Controls.Image()
         {

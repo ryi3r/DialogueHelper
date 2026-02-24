@@ -20,6 +20,7 @@
             <MenuItem Header="Built-in Tools">
                 <MenuItem Header="Force style reload" Click="ForceStyleReload_OnClick"/>
                 <MenuItem Header="Go to" Click="GoTo_OnClick"/>
+                <MenuItem Header="Go to parent entry" Click="GoToParentEntry_OnClick"/>
             </MenuItem>
             <MenuItem Name="CustomToolsMenu" Header="Custom Tools">
                 <MenuItem Name="CustomToolsEmpty" IsEnabled="False" Header="Empty"/>
@@ -122,6 +123,10 @@
                     <StackPanel Orientation="Horizontal" Margin="5">
                         <TextBlock Margin="7">Preview Scale</TextBlock>
                         <NumericUpDown Name="PreviewScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <TextBlock Margin="7">Initial Text Color</TextBlock>
+                        <ColorPicker Name="InitialTextColor" ColorChanged="InitialTextColor_OnColorChanged"/>
                     </StackPanel>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="10">

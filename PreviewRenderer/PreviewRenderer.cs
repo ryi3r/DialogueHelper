@@ -7,6 +7,7 @@ using Avalonia.Media.Imaging;
 using DialogueHelper.External;
 using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace DialogueHelper.PreviewRenderer;
 
@@ -14,7 +15,7 @@ public class PreviewRenderer(MainWindow mainWindow)
 {
     public readonly MainWindow MainWindow = mainWindow;
 
-    public async void CreateRender(StyleParser style, int selectedBox, int selectedFont, float boxScale, float fontScale, float previewScale, string str, Canvas canvas)
+    public async void CreateRender(StyleParser style, int selectedBox, int selectedFont, float boxScale, float fontScale, float previewScale, Color defaultColor, string str, Canvas canvas)
     {
         canvas.Children.Clear();
         // ensure always that selected box/font is in-bounds
@@ -72,7 +73,7 @@ public class PreviewRenderer(MainWindow mainWindow)
             },
             Env = [],
             Font = font,
-            Glyph = new() { Scale = (fontScale * previewScale, fontScale * previewScale) },
+            Glyph = new() { Scale = (fontScale * previewScale, fontScale * previewScale), Color = defaultColor },
             Style = style,
         };
         try

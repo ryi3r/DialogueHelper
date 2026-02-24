@@ -11,8 +11,6 @@ using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.PreviewRenderer;
 using DialogueHelper.Views;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 
 public class Deltarune : StyleScript
 {
@@ -494,23 +492,24 @@ public class Deltarune : StyleScript
                     case 'c':
                         var col = slice[1] switch
                         {
-                            'R' => Color.Red,
-                            'B' => Color.Blue,
-                            'Y' => Color.Yellow,
-                            'G' => Color.Lime,
-                            'W' => Color.White,
-                            'X' => Color.Black,
-                            'P' => Color.Purple,
-                            'M' => Color.DarkRed,
-                            'O' => Color.Orange,
-                            'A' => new Color(new Rgba32(0x00, 0xae, 0xff, 0xff)),
-                            'S' => new Color(new Rgba32(0xff, 0x80, 0xff, 0xff)),
-                            'V' => new Color(new Rgba32(0x80, 0xff, 0x80, 0xff)),
-                            '0' => Color.HotPink,
-                            _ => (Color?)null,
+                            'R' => new Color() { Rgba = 0xff0000ff },
+                            'B' => new Color() { Rgba = 0x0000ffff },
+                            'Y' => new Color() { Rgba = 0xffff00ff },
+                            'G' => new Color() { Rgba = 0x00ff00ff },
+                            'W' => new Color() { Rgba = 0xffffffff },
+                            'X' => new Color() { Rgba = 0x000000ff },
+                            'P' => new Color() { Rgba = 0x800080ff },
+                            'M' => new Color() { Rgba = 0x800000ff },
+                            'O' => new Color() { Rgba = 0xffa500ff },
+                            'A' => new Color() { Rgba = 0x00aeffff },
+                            'S' => new Color() { Rgba = 0xff80ffff },
+                            'V' => new Color() { Rgba = 0x80ff80ff },
+                            'I' => new Color() { Rgba = 0x549ff9ff },
+                            '0' => new Color() { Rgba = 0xff69b4 },
+                            _ => null,
                         };
                         if (col is not null)
-                            data.Glyph.Color = col.Value;
+                            data.Glyph.Color = col;
                         else
                             EnvSkip = 0;
                         break;
