@@ -699,7 +699,7 @@ public partial class MainWindow : Window
                         item.Children.Clear();
                         var node = new CheckBox()
                         {
-                            IsChecked = ((bool?)tool.Value) ?? false,
+                            IsChecked = (tool.Value as bool?) ?? false,
                             IsThreeState = false,
                             Content = tool.VisualName,
                             IsEnabled = !tool.ReadOnly,
@@ -722,7 +722,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (tool.Value as byte?) ?? 0,
                             Minimum = 0,
                             Maximum = 0xff,
                             FormatString = "0",
@@ -748,7 +748,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (tool.Value as short?) ?? 0,
                             Minimum = -0x8000,
                             Maximum = 0x7fff,
                             FormatString = "0",
@@ -774,7 +774,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (tool.Value as int?) ?? 0,
                             Minimum = -0x80000000,
                             Maximum = 0x7fffffff,
                             FormatString = "0",
@@ -800,7 +800,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (tool.Value as long?) ?? 0,
                             Minimum = -0x8000000000000000,
                             Maximum = 0x7fffffffffffffff,
                             FormatString = "0",
@@ -827,7 +827,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (tool.Value as sbyte?) ?? 0,
                             Minimum = -0x80,
                             Maximum = 0x7f,
                             FormatString = "0",
@@ -853,7 +853,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (tool.Value as ushort?) ?? 0,
                             Minimum = 0,
                             Maximum = 0xffff,
                             FormatString = "0",
@@ -879,7 +879,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (tool.Value as uint?) ?? 0,
                             Minimum = 0,
                             Maximum = 0xffffffff,
                             FormatString = "0",
@@ -905,7 +905,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (tool.Value as ulong?) ?? 0,
                             Minimum = 0,
                             Maximum = 0xffffffffffffffff,
                             FormatString = "0",
@@ -932,7 +932,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (decimal)((tool.Value as float?) ?? 0),
                             FormatString = "0.00",
                             Increment = (decimal)0.01f,
                             IsReadOnly = tool.ReadOnly,
@@ -956,7 +956,7 @@ public partial class MainWindow : Window
                     {
                         var node = new NumericUpDown()
                         {
-                            Value = ((decimal?)tool.Value) ?? 0,
+                            Value = (decimal)((tool.Value as double?) ?? 0),
                             FormatString = "0.00",
                             Increment = (decimal)0.01,
                             IsReadOnly = tool.ReadOnly,
@@ -981,7 +981,7 @@ public partial class MainWindow : Window
                     {
                         var node = new TextBox()
                         {
-                            Text = (string?)tool.Value,
+                            Text = tool.Value as string,
                             IsReadOnly = tool.ReadOnly,
                         };
                         node.TextChanged += (_, _) =>
