@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720"
         x:Class="DialogueHelper.MainWindow"
-        Title="Dialogue Helper" LayoutUpdated="OnLayoutUpdated" Opened="OnOpened">
+        Title="Dialogue Helper" LayoutUpdated="OnLayoutUpdated" Opened="OnOpened" DragDrop.AllowDrop="True">
     <DockPanel>
         <Menu DockPanel.Dock="Top" Height="25">
             <MenuItem Header="File">

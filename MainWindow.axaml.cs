@@ -8,6 +8,7 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
@@ -67,6 +68,25 @@ public partial class MainWindow : Window
             else
                 Environment.Exit(0);
         };
+
+        // no dnd on linux :( unable to test.
+        /*AddHandler(DragDrop.DragOverEvent, (obj, args) =>
+        {
+            using var f = args.DataTransfer.TryGetFile();
+            if (!args.DataTransfer.Contains(DataFormat.File) || f is null || (!f.Name.EndsWith(".dh", StringComparison.InvariantCultureIgnoreCase)))
+            {
+                args.DragEffects = DragDropEffects.None;
+                return;
+            }
+            args.DragEffects = DragDropEffects.Copy | DragDropEffects.Link;
+        });
+        AddHandler(DragDrop.DropEvent, (obj, args) =>
+        {
+            using var f = args.DataTransfer.TryGetFile();
+            if (f is null)
+                return;
+            LoadFileToProject(f.Path.AbsolutePath);
+        });*/
         _timer.Tick += (_, _) =>
         {
             WeakReference<TreeViewItem>? n = null;

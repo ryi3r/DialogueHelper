@@ -406,12 +406,7 @@ public class Deltarune : StyleScript
         return await base.PrepareDraw(wh, data);
     }
 
-    public bool IsNewlineSafe(int idx, string str, ExternalData data)
-    {
-        if (str[idx] == '#' && str[int.Max(0, idx - 1)] == '`')
-            return false;
-        return data.Style.Metadata.NewLines.Contains(str[idx]);
-    }
+    public bool IsNewlineSafe(int idx, string str, ExternalData data) => data.Style.Metadata.NewLines.Contains(str[idx]) && str[int.Max(0, idx - 1)] != '`';
 
     public override async Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
     {
