@@ -91,7 +91,7 @@ public partial class Settings : Window
             };
         }
 
-        foreach (var folder in Directory.EnumerateDirectories(Path.Combine(Environment.CommandLine ?? "", Environment.ProcessPath is not null ? ".." : "", "Styles")))
+        foreach (var folder in Directory.EnumerateDirectories(Path.Combine(Environment.CommandLine, "..", "Styles")))
         {
             if (IgnoreStyles.Contains(folder))
                 continue;
