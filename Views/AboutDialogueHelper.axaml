@@ -7,7 +7,7 @@
         Title="About Dialogue Helper">
     <Panel Margin="5">
         <TextBlock TextWrapping="Wrap">
-            <Span FontWeight="Bold">Dialogue Helper 2.0.15.1</Span>
+            <Span FontWeight="Bold">Dialogue Helper 2.0.15.2</Span>
             <LineBreak/>Developed by <Span FontWeight="Bold" Foreground="CornflowerBlue">ryi3r</Span>.
         </TextBlock>
         <StackPanel Orientation="Horizontal" Spacing="7" HorizontalAlignment="Right" VerticalAlignment="Bottom">
