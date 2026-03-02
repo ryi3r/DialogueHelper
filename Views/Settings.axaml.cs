@@ -91,8 +91,9 @@ public partial class Settings : Window
             };
         }
 
-        foreach (var folder in Directory.EnumerateDirectories(Path.Join(Environment.CommandLine, "..", "Styles")))
+        foreach (var f in Directory.EnumerateDirectories("Styles"))
         {
+            var folder = Path.GetFullPath(f);
             if (IgnoreStyles.Contains(folder))
                 continue;
             try
