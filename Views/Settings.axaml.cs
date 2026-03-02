@@ -62,10 +62,11 @@ public partial class Settings : Window
 
             var selStyle = StyleData[StyleComboBox.SelectedIndex];
             MainWindow.ScriptNeedsInitialization = false;
-            if (MainWindow.SelectedStyle != selStyle.Folder)
+            var abs = Path.GetFullPath(selStyle.Folder);
+            if (MainWindow.SelectedStyle != abs)
             {
                 MainWindow.StyleData = selStyle;
-                MainWindow.SelectedStyle = selStyle.Folder;
+                MainWindow.SelectedStyle = abs;
                 MainWindow.ScriptNeedsInitialization = true;
             }
             MainWindow.SaveSettings();
@@ -90,7 +91,7 @@ public partial class Settings : Window
             };
         }
 
-        foreach (var folder in Directory.EnumerateDirectories(Path.Combine(Environment.ProcessPath ?? "", Environment.ProcessPath is not null ? ".." : "", "Styles")))
+        foreach (var folder in Directory.EnumerateDirectories(Path.Combine(Environment.CommandLine ?? "", Environment.ProcessPath is not null ? ".." : "", "Styles")))
         {
             if (IgnoreStyles.Contains(folder))
                 continue;
@@ -143,7 +144,7 @@ public partial class Settings : Window
             };
             if (MainWindow.SelectedStyle is not null)
             {
-                var styleIndex = StyleData.FindIndex(style => style.Folder == MainWindow.SelectedStyle);
+                var styleIndex = StyleData.FindIndex(style => Path.GetFullPath(style.Folder) == Path.GetFullPath(MainWindow.SelectedStyle));
                 if (styleIndex != -1)
                     StyleComboBox.SelectedIndex = styleIndex;
             }
