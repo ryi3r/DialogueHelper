@@ -310,10 +310,12 @@ public partial class MainWindow : Window
                 str.Value.OriginalText,
                 str.Value.MarkAsModified
             );
+            if (str.Value.MarkAsModified)
+                modified++;
             if (str.Value.Text is not null)
             {
                 list[str.Key].Header = str.Value.Text;
-                if (str.Value.Text != str.Value.OriginalText || str.Value.MarkAsModified)
+                if (str.Value.Text != str.Value.OriginalText && !str.Value.MarkAsModified)
                     modified++;
             }
             i++;
@@ -551,7 +553,7 @@ public partial class MainWindow : Window
             w.Hide();
             var settings = new Settings(this) { Init = true };
             await settings.ShowDialog(this);
-            w.Show(this);
+            await w.ShowDialog(this);
         }
         else
         {
@@ -603,7 +605,10 @@ public partial class MainWindow : Window
         EditableText_OnTextChanged(null, null);
         OriginalText_OnTextChanged(null, null);
 
-        w.Hide();
+        w.Close();
+        var lastArg = Environment.GetCommandLineArgs()[^1];
+        if (lastArg.EndsWith(".dh"))
+            LoadFileToProject(lastArg);
     }
 
     public async void InitializeCustomScript()
@@ -1308,11 +1313,11 @@ public partial class MainWindow : Window
                         switch (state.ToLowerInvariant())
                         {
                             case "modified":
-                                if (item.Text is null || item.Text == item.OriginalText)
+                                if ((item.Text is null || item.Text == item.OriginalText) && !item.MarkAsModified)
                                     goto NotFound;
                                 break;
                             case "base" or "original":
-                                if (item.Text is not null && item.Text != item.OriginalText)
+                                if ((item.Text is not null && item.Text != item.OriginalText) || item.MarkAsModified)
                                     goto NotFound;
                                 break;
                         }
@@ -1602,8 +1607,8 @@ public partial class MainWindow : Window
         SelectedString.MarkAsModified = MarkAsModified.IsChecked ?? false;
         IsFileModified = true;
         Title = "Dialogue Helper*";
-        UpdateEtvItem(EtvParents[item]);
         UpdateModifySimilarStrings();
+        UpdateEtvItem(EtvParents[item]);
     }
 
     async void ShowEntryInfo_OnClick(object? sender, RoutedEventArgs e)

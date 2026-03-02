@@ -90,7 +90,7 @@ public partial class Settings : Window
             };
         }
 
-        foreach (var folder in Directory.EnumerateDirectories("Styles"))
+        foreach (var folder in Directory.EnumerateDirectories(Path.Combine(Environment.ProcessPath ?? "", Environment.ProcessPath is not null ? ".." : "", "Styles")))
         {
             if (IgnoreStyles.Contains(folder))
                 continue;
