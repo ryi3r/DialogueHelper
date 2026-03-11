@@ -70,7 +70,7 @@ public class StyleParser
         {
             // required to show error lines
             CSScript.EvaluatorConfig.DebugBuild = true;
-            Script = (StyleScript)CSScript.Evaluator.LoadFile($"{Folder}/{Metadata.ScriptPath}");
+            Script = (StyleScript)CSScript.Evaluator.LoadFile(Path.Join(Folder, Metadata.ScriptPath));
         }
     }
 }

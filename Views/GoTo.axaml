@@ -10,7 +10,7 @@
             <TextBlock>Entry Name</TextBlock>
             <TextBox Name="EntryName" Watermark="EntryName"/>
             <TextBlock>Subentry Index</TextBlock>
-            <TextBox Name="SubentryIndex" Watermark="0"/>
+            <TextBox Name="SubentryIndex" Watermark="1"/>
         </StackPanel>
         <Button Click="GoToEntry_OnClick" VerticalAlignment="Bottom" HorizontalAlignment="Right">Go to entry</Button>
     </Panel>

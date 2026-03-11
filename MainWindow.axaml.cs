@@ -150,10 +150,7 @@ public partial class MainWindow : Window
     {
         if (path is null && file is null)
             throw new("path and file cannot be null to load a project from a file");
-        var lWin = new LoadingWindow
-        {
-            CanResize = false
-        };
+        var lWin = new LoadingWindow { CanResize = false };
         lWin.Closing += (_, ev) =>
         {
             if (!ev.IsProgrammatic)
@@ -170,10 +167,7 @@ public partial class MainWindow : Window
     {
         if (lWin is null)
         {
-            lWin = new LoadingWindow
-            {
-                CanResize = false
-            };
+            lWin = new LoadingWindow { CanResize = false };
             lWin.Closing += (_, ev) =>
             {
                 if (!ev.IsProgrammatic)
@@ -219,14 +213,8 @@ public partial class MainWindow : Window
             var se = new StyleError()
             {
                 Title = "Load error",
-                MessageBlock =
-                {
-                    Text = "DialogueHelper has encountered an error while loading a file",
-                },
-                ErrorBox =
-                {
-                    Text = ex.ToString(),
-                }
+                MessageBlock = { Text = "DialogueHelper has encountered an error while loading a file" },
+                ErrorBox = { Text = ex.ToString() },
             };
             await se.ShowDialog(this);
         }
@@ -254,7 +242,7 @@ public partial class MainWindow : Window
                     FileData.StringIds.Remove(str.Key);
                 continue;
             }
-            var cont = new TreeViewItem() { Header = key };
+            var cont = new TreeViewItem { Header = key };
             EntryTreeView.Items.Add(cont);
             EtvKeys.Add(cont, key);
             var data = new Dictionary<int, TreeViewItem>();
@@ -265,18 +253,10 @@ public partial class MainWindow : Window
             {
                 var tBlock = new TreeViewItem() { Header = str.Value.Text ?? str.Value.OriginalText };
                 EtvParents.Add(tBlock, cont);
-                ColorTreeItem(
-                    tBlock,
-                    str.Value.Text,
-                    str.Value.OriginalText,
-                    str.Value.MarkAsModified
-                );
+                ColorTreeItem(tBlock, str.Value.Text, str.Value.OriginalText, str.Value.MarkAsModified);
                 if (str.Value.Text is not null && str.Value.Text != str.Value.OriginalText)
                     tBlock.Header = str.Value.Text;
-                if (
-                    (str.Value.Text is not null && str.Value.Text != str.Value.OriginalText)
-                    || str.Value.MarkAsModified
-                )
+                if ((str.Value.Text is not null && str.Value.Text != str.Value.OriginalText) || str.Value.MarkAsModified)
                     modified++;
                 i++;
                 EtvIndexes.Add(tBlock, str.Value.Id);
@@ -285,9 +265,7 @@ public partial class MainWindow : Window
             }
 
             cont.ItemsSource = data.OrderBy(v => strs[v.Key].Id).Select(v => v.Value).ToArray();
-            cont.Foreground = SolidColorBrush.Parse(
-                modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral"
-            );
+            cont.Foreground = SolidColorBrush.Parse(modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral");
         }
         await UpdateSearchFiltering();
     }
@@ -334,9 +312,7 @@ public partial class MainWindow : Window
         bool markAsModified
     )
     {
-        item.Foreground = SolidColorBrush.Parse(
-            (text is not null && text != ogText) || markAsModified ? "LightGreen" : "White"
-        );
+        item.Foreground = SolidColorBrush.Parse((text is not null && text != ogText) || markAsModified ? "LightGreen" : "White");
     }
 
     void OnLayoutUpdated(object? sender, EventArgs e)
@@ -403,24 +379,10 @@ public partial class MainWindow : Window
         if (ScrollViewerOriginal is null || ScrollViewer is null)
             return;
 
-        ScrollViewerOriginal.Height = double.Max(
-            PanelOriginal.Bounds.Height - OriginalLabel.DesiredSize.Height,
-            0
-        );
+        ScrollViewerOriginal.Height = double.Max(PanelOriginal.Bounds.Height - OriginalLabel.DesiredSize.Height, 0);
 
-        ScrollViewer.Height = double.Max(
-            Panel.Bounds.Height
-                - EditableLabel.DesiredSize.Height
-                - OuterGridSplitter.Bounds.Height
-                - 5,
-            0
-        );
-        Panel.Height = double.Max(
-            MiddleStackPanel.Bounds.Height
-                - PanelOriginal.Bounds.Height
-                - InnerGridSplitter.Bounds.Height,
-            0
-        );
+        ScrollViewer.Height = double.Max(Panel.Bounds.Height - EditableLabel.DesiredSize.Height - OuterGridSplitter.Bounds.Height - 5, 0);
+        Panel.Height = double.Max(MiddleStackPanel.Bounds.Height - PanelOriginal.Bounds.Height - InnerGridSplitter.Bounds.Height, 0);
 
         OuterMiddleStackPanel.MaxHeight = double.Max(MainGrid.Bounds.Height - 10, 0);
     }
@@ -464,14 +426,7 @@ public partial class MainWindow : Window
                             entryType = "";
                         else
                         {
-                            var folder = WebUtility.UrlDecode(
-                                entryType[
-                                    (
-                                        entryType.IndexOf("@@", StringComparison.InvariantCulture)
-                                        + 2
-                                    )..
-                                ]
-                            );
+                            var folder = WebUtility.UrlDecode(entryType[(entryType.IndexOf("@@", StringComparison.InvariantCulture) + 2)..]);
                             if (!StyleSettings.ContainsKey(folder))
                                 StyleSettings.Add(folder, []);
                             var spl = f[i].Split("@@");
@@ -492,8 +447,7 @@ public partial class MainWindow : Window
     public void SaveSettings()
     {
         {
-            var dir =
-                $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/";
+            var dir = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DialogueHelper/");
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
         }
@@ -509,17 +463,10 @@ public partial class MainWindow : Window
         foreach (var ss in StyleSettings)
         {
             l.Add($"StyleSettings@@{WebUtility.UrlEncode(ss.Key)}");
-            l.AddRange(
-                ss.Value.Select(prop =>
-                    $"{WebUtility.UrlEncode(prop.Name)}@@{WebUtility.UrlEncode(prop.ValueToString())}"
-                )
-            );
+            l.AddRange(ss.Value.Select(prop => $"{WebUtility.UrlEncode(prop.Name)}@@{WebUtility.UrlEncode(prop.ValueToString())}"));
             l.Add("@@end@@");
         }
-        File.WriteAllLines(
-            $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt",
-            l
-        );
+        File.WriteAllLines($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt", l);
     }
 
     async void OnOpened(object? sender, EventArgs e)
@@ -530,9 +477,7 @@ public partial class MainWindow : Window
                 IsIndeterminate = true,
                 ShowProgressText = false,
             },
-            Text = {
-                Text = "Initializing...",
-            },
+            Text = { Text = "Initializing..." },
         };
         w.Show(this);
         if (Directory.Exists("RuntimeComp"))
@@ -589,10 +534,7 @@ public partial class MainWindow : Window
                 w.Hide();
 
                 var sErr = new StyleError { ErrorBox = { Text = ex.ToString() } };
-                sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace(
-                    "StyleName",
-                    SelectedStyle
-                );
+                sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", SelectedStyle);
                 await sErr.ShowDialog(this);
                 var settings = new Settings(this) { Init = true, IgnoreStyles = [SelectedStyle] };
                 await settings.ShowDialog(this);
@@ -1168,10 +1110,7 @@ public partial class MainWindow : Window
             var se = new StyleError()
             {
                 Title = "Save error",
-                MessageBlock =
-                {
-                    Text = "DialogueHelper has encountered an error while saving a file",
-                },
+                MessageBlock = { Text = "DialogueHelper has encountered an error while saving a file" },
                 ErrorBox = { Text = ex.ToString() },
             };
             await se.ShowDialog(this);
@@ -1246,9 +1185,7 @@ public partial class MainWindow : Window
                 .Select(m => m[7..])
                 .Where(m => m.Length > 0)
         );
-        var targetCasing = searchCasing.Any(casing =>
-            casing.Equals("sensible", StringComparison.InvariantCultureIgnoreCase)
-        )
+        var targetCasing = searchCasing.Any(casing => casing.Equals("sensible", StringComparison.InvariantCultureIgnoreCase))
             ? StringComparison.InvariantCulture
             : StringComparison.InvariantCultureIgnoreCase;
 
@@ -1546,10 +1483,7 @@ public partial class MainWindow : Window
             await new InfoWindow("You need to select an item before trying to delete an item.").ShowDialog(this);
             return;
         }
-        var q = new QuestionWindow
-        {
-            InnerText = { Text = "Are you sure that you want to delete this item?\nThis action is irreversible." },
-        };
+        var q = new QuestionWindow { InnerText = { Text = "Are you sure that you want to delete this item?\nThis action is irreversible." } };
         if (await q.ShowDialog<bool?>(this) ?? false)
         {
             var item = (TreeViewItem)EntryTreeView.SelectedItem;
@@ -1649,12 +1583,9 @@ public partial class MainWindow : Window
         await fi.ShowDialog(this);
     }
 
-    void SimilarStringsPanel_OnSizeChanged(object? sender, SizeChangedEventArgs e)
-    {
-        SimilarStringsPanel.MaxHeight = double.Max(SimilarStringsBase.Bounds.Height - (SimilarStringsTitle.Bounds.Height - 7), 0);
-    }
+    void SimilarStringsPanel_OnSizeChanged(object? sender, SizeChangedEventArgs e) => SimilarStringsPanel.MaxHeight = double.Max(SimilarStringsBase.Bounds.Height - (SimilarStringsTitle.Bounds.Height - 7), 0);
 
-    void SimilarStringsPanel_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    async void SimilarStringsPanel_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (SelectedString is null || SimilarStringsPanel.SelectedItem is null || FileData is null || SimilarStringsPanel.SelectedIndex < 0 || SimilarStringsPanel.SelectedIndex >= SelectedString.EqStrings.Count)
             return;
@@ -1663,10 +1594,11 @@ public partial class MainWindow : Window
         if (key is not null)
         {
             var child = EtvTargetChildren[key][eqStr.Id];
+            // todo: this doesn't work properly due to an avalonia bug
             EntryTreeView.ExpandSubTree(key);
-            EntryTreeView.SelectedItem = child;
             EntryTreeView.ScrollIntoView(child);
             child.Focus();
+            EntryTreeView.SelectedItem = child;
             EntryTreeView_OnSelectionChanged(null, null);
         }
     }

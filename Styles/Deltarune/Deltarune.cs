@@ -136,7 +136,7 @@ public class Deltarune : StyleScript
             {
                 UseShellExecute = false,
                 FileName = filePath,
-                Arguments = $"load \"{f[0].Path.AbsolutePath}\" -s ../ExportStringsJson.csx",
+                Arguments = $"load \"{Uri.UnescapeDataString(f[0].Path.AbsolutePath).Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
                 WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
@@ -212,7 +212,7 @@ public class Deltarune : StyleScript
             var baseJson = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream))!;
             await stream.DisposeAsync();
             await File.WriteAllTextAsync($"{wh.GetStylePath()}/input.json", await ExportJson(baseJson, wh));
-            var targetPath = $"\"{f[0].Path.AbsolutePath.Replace("\"", "\\\"")}\"";
+            var targetPath = $"\"{Uri.UnescapeDataString(f[0].Path.AbsolutePath).Replace("\"", "\\\"")}\"";
             using var proc = new Process()
             {
                 StartInfo =
@@ -324,7 +324,7 @@ public class Deltarune : StyleScript
         {
             lw.Close();
         }
-        await wh.ShowDialog(new InfoWindow($"Imported data successfully."));
+        await wh.ShowDialog(new InfoWindow($"Exported data successfully."));
     }
 
     public Dictionary<string, List<string>> CalculateHeaders(IEnumerable<string> keys)
@@ -361,19 +361,23 @@ public class Deltarune : StyleScript
 
     public async Task<string> ExportJson(Dictionary<string, string> baseJson, CustomToolWindowHandler wh)
     {
-        var data = new Dictionary<string, string>()
-        {
-            ["date"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString(),
-        };
+        var data = new Dictionary<string, string> { ["date"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString() };
         var file = wh.GetLoadedFileData()!;
         foreach (var (key, entries) in CalculateHeaders(baseJson.Keys))
         {
             //Console.WriteLine($"key={key}");
-            foreach (var (i, entry) in entries.Index())
+            if (file.Strings.TryGetValue(key, out var s))
             {
-                //Console.WriteLine($"i={i} entry={entry}");
-                var sc = file.Strings[key].OrderBy(x => x.Key).ElementAt(i).Value;
-                data[entry] = sc.Text ?? sc.OriginalText;
+                // sometimes, deltarune will add unused strings to lang_ja, we need to handle this properly
+                var arr = file.Strings[key].OrderBy(x => x.Key).ToArray();
+                foreach (var (i, entry) in entries.Index())
+                {
+                    //Console.WriteLine($"i={i} entry={entry}");
+                    if (i >= arr.Length)
+                        continue; // in japanese there seem to be things larger than in english?
+                    var sc = arr[i].Value;
+                    data[entry] = sc.Text ?? sc.OriginalText;
+                }
             }
         }
         return JsonSerializer.Serialize(data, new JsonSerializerOptions() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
