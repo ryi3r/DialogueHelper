@@ -6,15 +6,9 @@ namespace DialogueHelper.Views;
 
 public partial class AboutDialogueHelper : Window
 {
-    public AboutDialogueHelper()
-    {
-        InitializeComponent();
-    }
+    public AboutDialogueHelper() => InitializeComponent();
 
-    void Close_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    void Close_OnClick(object? sender, RoutedEventArgs e) => Close();
 
     void OpenProgRepo_OnClick(object? sender, RoutedEventArgs e)
     {
