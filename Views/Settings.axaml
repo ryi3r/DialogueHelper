@@ -1,10 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450" Width="800" Height="450"
-        x:Class="DialogueHelper.Views.Settings" Opened="OnOpened"
-        Title="Settings">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450" Width="800" Height="450" x:Class="DialogueHelper.Views.Settings" Opened="OnOpened" Title="Settings">
     <Panel>
         <TabControl Margin="5">
             <TabItem Header="Style">
@@ -19,9 +13,9 @@
                             <ComboBoxItem>Style by Author</ComboBoxItem>
                         </ComboBox>
                     </StackPanel>
-                    <TextBlock Text="Custom settings" Margin="5"/>
-                    <StackPanel Name="CustomSettingsPanel" Margin="5 0 0 0"/>
-                    <TextBlock Name="CustomSettingsNone" Foreground="Gray" Text="None" Margin="5 0 0 0"/>
+                    <TextBlock Text="Custom settings" Margin="5" />
+                    <StackPanel Name="CustomSettingsPanel" Margin="5 0 0 0" />
+                    <TextBlock Name="CustomSettingsNone" Foreground="Gray" Text="None" Margin="5 0 0 0" />
                 </StackPanel>
             </TabItem>
             <!-- Git is not yet done, so disable it from the settings for now -->
@@ -34,18 +28,18 @@
                             You must have git installed and set in your environment settings to be able to use this option.
                         </TextBlock>
                         <TextBlock Margin="0 5 0 0">Repository URL*</TextBlock>
-                        <TextBox Name="RepoUrl" Margin="0 10 0 0" MaxHeight="0" Watermark="https://github.com/user/repo.git"/>
+                        <TextBox Name="RepoUrl" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="https://github.com/user/repo.git" />
                         <TextBlock Margin="0 7  0 0">Selected Branch</TextBlock>
-                        <TextBox Name="SelectedBranch" ToolTip.Tip="Leave this value empty to select the default/current branch" Margin="0 10 0 0" MaxHeight="0" Watermark="main"/>
+                        <TextBox Name="SelectedBranch" ToolTip.Tip="Leave this value empty to select the default/current branch" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="main" />
                     </StackPanel>
                 </StackPanel>
             </TabItem>
             <TabItem Header="Author">
                 <StackPanel Orientation="Vertical">
                     <TextBlock Margin="0 5 0 0">Author Name*</TextBlock>
-                    <TextBox Name="AuthorName" Margin="0 10 0 0" MaxHeight="0" Watermark="Your Name"/>
+                    <TextBox Name="AuthorName" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="Your Name" />
                     <TextBlock Margin="0 7  0 0">Author Groups</TextBlock>
-                    <TextBox Name="AuthorGroup" ToolTip.Tip="Leave this value empty to select all groups" Margin="0 10 0 0" MaxHeight="0" Watermark="Group1,Group2"/>
+                    <TextBox Name="AuthorGroup" ToolTip.Tip="Leave this value empty to select all groups" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="Group1,Group2" />
                 </StackPanel>
             </TabItem>
         </TabControl>

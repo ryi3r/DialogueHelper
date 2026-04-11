@@ -18,7 +18,6 @@ public class StyleParser
     public readonly Dictionary<string, Bitmap> ImageAssets = [];
     public StyleScript? Script;
     public bool InitializedScript;
-    public readonly Dictionary<string, dynamic?> GlobalEnv = [];
 
     public StyleParser(string path)
     {

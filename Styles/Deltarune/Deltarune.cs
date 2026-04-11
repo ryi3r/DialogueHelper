@@ -1,3 +1,6 @@
+//css_reference System.IO.Pipelines
+//css_reference Microsoft.CSharp
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -33,54 +36,17 @@ public class Deltarune : StyleScript
     public static CustomProperty<bool> EnablePortrait = new("Enable Portrait", "enablePortrait", false);
     public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", "darkZone", false);
 
-    static ExternalData _data = null!;
-    public static bool EnvLastNewline
-    {
-        get => _data.Env["LastNewline"];
-        set => _data.Env["LastNewline"] = value;
-    }
-    public static bool EnvStartedAsterisk
-    {
-        get => _data.Env["StartedAsterisk"];
-        set => _data.Env["StartedAsterisk"] = value;
-    }
-    public static double EnvX
-    {
-        get => _data.Env["X"];
-        set => _data.Env["X"] = value;
-    }
-    public static double EnvY
-    {
-        get => _data.Env["Y"];
-        set => _data.Env["Y"] = value;
-    }
-    public static int EnvSkip
-    {
-        get => _data.Env["Skip"];
-        set => _data.Env["Skip"] = value;
-    }
-    public static bool EnvFirstDrawnChar
-    {
-        get => _data.Env["FirstDrawnChar"];
-        set => _data.Env["FirstDrawnChar"] = value;
-    }
-    public static int EnvCheckedIndex
-    {
-        get => _data.Env["CheckedIndex"];
-        set => _data.Env["CheckedIndex"] = value;
-    }
+    public static bool EnvLastNewline;
+    public static bool EnvStartedAsterisk;
+    public static double EnvX;
+    public static double EnvY;
+    public static int EnvSkip;
+    public static bool EnvFirstDrawnChar;
+    public static int EnvCheckedIndex;
 
-    public static (double X, double Y) EnvPortraitOffset
-    {
-        get => _data.Env["PortraitOffset"];
-        set => _data.Env["PortraitOffset"] = value;
-    }
+    public static (double X, double Y) EnvPortraitOffset;
 
-    public static int EnvStrLen
-    {
-        get => _data.Env["StrLen"];
-        set => _data.Env["StrLen"] = value;
-    }
+    public static int EnvStrLen;
 
     public override async Task Init(CustomToolWindowHandler wh)
     {
@@ -385,7 +351,6 @@ public class Deltarune : StyleScript
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
-        _data = data;
         EnvLastNewline = false;
         EnvStartedAsterisk = false;
         EnvX = -1;
@@ -414,7 +379,6 @@ public class Deltarune : StyleScript
 
     public override async Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
     {
-        _data = data;
         if (data.Char.IsIgnore || (!data.Font.GlyphDictionary.ContainsKey(data.Char.Char) && !data.Char.IsNewline))
             return false;
         if (EnvSkip > 0)

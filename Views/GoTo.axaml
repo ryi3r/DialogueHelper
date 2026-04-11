@@ -1,16 +1,10 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="175" Width="350" Height="175" CanResize="False"
-        x:Class="DialogueHelper.Views.GoTo"
-        Title="GoTo">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="175" Width="350" Height="175" CanResize="False" x:Class="DialogueHelper.Views.GoTo" Title="GoTo">
     <Panel Margin="5">
         <StackPanel Orientation="Vertical" Spacing="8">
             <TextBlock>Entry Name</TextBlock>
-            <TextBox Name="EntryName" Watermark="EntryName"/>
+            <TextBox Name="EntryName" PlaceholderText="EntryName" />
             <TextBlock>Subentry Index</TextBlock>
-            <TextBox Name="SubentryIndex" Watermark="1"/>
+            <TextBox Name="SubentryIndex" PlaceholderText="1" />
         </StackPanel>
         <Button Click="GoToEntry_OnClick" VerticalAlignment="Bottom" HorizontalAlignment="Right">Go to entry</Button>
     </Panel>

@@ -14,8 +14,6 @@ namespace DialogueHelper.PreviewRenderer;
 
 public class ExternalData(MainWindow mainWindow, Canvas canvas)
 {
-    public Dictionary<string, dynamic?> Env = [];
-    public Dictionary<string, dynamic?> GlobalEnv = [];
     public required StyleParser Style;
     public required FontMetadata Font;
     public required BoxMetadata Box;

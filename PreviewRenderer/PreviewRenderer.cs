@@ -58,7 +58,6 @@ public class PreviewRenderer(MainWindow mainWindow)
             return;
         var eData = new ExternalData(MainWindow, canvas)
         {
-            GlobalEnv = style.GlobalEnv,
             Box = box,
             Char = new()
             {
@@ -71,7 +70,6 @@ public class PreviewRenderer(MainWindow mainWindow)
 
                 StartPosition = ((int)box.TextOffset[0], (int)box.TextOffset[1]),
             },
-            Env = [],
             Font = font,
             Glyph = new() { Scale = (fontScale * previewScale, fontScale * previewScale), Color = defaultColor },
             Style = style,

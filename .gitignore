@@ -8,3 +8,4 @@ riderModule.iml
 crash.txt
 /.vscode/settings.json
 backup.dh
+*.lscache
