@@ -42,18 +42,31 @@ foreach (var code in Data.Code)
                 }
             }
             var key = _args[0].ValueString.Resource.Content;
+            if (!key.Contains('_'))
+                continue; // simple fallout because TOBY is an indie game developer (gml_GlobalScript_scr_anyface -> msgsetsubloc(arg1, "\\TX \\F0 \\E~1 \\Fb \\T0 %", string(_emotion));) <-- this shit can be the death of me
             var value = _args[1].ValueString.Resource.Content;
-            if (data.TryGetValue(key, out var r))
+            while (true)
             {
-                if (r != value)
+                if (data.TryGetValue(key, out var r))
                 {
-                    //ScriptMessage(string.Join("\n", code.Instructions[(i - 20)..(i + 1)].Select(x => $"{x}->{UndertaleInstruction.GetInstructionType(x.Kind)}")));
-                    //ScriptMessage(string.Join("\n", _args.Select(x => $"{x}->{x.Kind},{x.Type1},{UndertaleInstruction.GetInstructionType(x.Kind)}")));
-                    throw new($"on key {key} expected {value} but found {r}");
+                    if (r != value)
+                    {
+                        //ScriptMessage(string.Join("\n", code.Instructions[(i - 20)..(i + 1)].Select(x => $"{x}->{UndertaleInstruction.GetInstructionType(x.Kind)}")));
+                        //ScriptMessage(string.Join("\n", _args.Select(x => $"{x}->{x.Kind},{x.Type1},{UndertaleInstruction.GetInstructionType(x.Kind)}")));
+
+                        // ch4 has duplicated keys :sob: (ex. scr_monstersetup_slash_scr_monstersetup_gml_21_0)
+                        //throw new($"on key {key} expected {value} but found {r}");
+                        key += "_DUPLICATED"; // i guess?
+                    }
+                    else
+                        break;
+                }
+                else
+                {
+                    data.Add(key, value);
+                    break;
                 }
             }
-            else
-                data.Add(key, value);
         }
     }
 }

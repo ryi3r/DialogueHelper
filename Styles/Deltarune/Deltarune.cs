@@ -807,7 +807,7 @@ public class Deltarune : StyleScript
                     continue;
                 charPos += ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2;
             }
-            if (charPos + 32 > (data.Style.ImageAssets[data.Box.Images[0].Path].Size.Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - (EnablePortrait.Value && !EnablePortrait.ReadOnly ? EnvPortraitOffset.X : 0) && !EnvFirstDrawnChar)
+            if (charPos + 16 >= (data.Style.ImageAssets[data.Box.Images[0].Path].Size.Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - (EnablePortrait.Value && !EnablePortrait.ReadOnly ? EnvPortraitOffset.X : 0) && !EnvFirstDrawnChar)
             {
                 actAsNewline = true;
                 if (EnvStartedAsterisk)

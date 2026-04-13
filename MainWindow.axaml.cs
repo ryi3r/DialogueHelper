@@ -1069,9 +1069,18 @@ public partial class MainWindow : Window
 
     async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
     {
-        StyleData = new StyleParser(StyleData!.Folder);
-        await StyleData.CompileCode();
-        InitializeCustomScript();
+        try
+        {
+            StyleData = new StyleParser(StyleData!.Folder);
+            await StyleData.CompileCode();
+            InitializeCustomScript();
+        }
+        catch (Exception ex)
+        {
+            var sErr = new StyleError { ErrorBox = { Text = ex.ToString() } };
+            sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", SelectedStyle);
+            await sErr.ShowDialog(this);
+        }
         UpdatingEntry = true;
         EditableText_OnTextChanging(null, null);
         OriginalText_OnTextChanging(null, null);
