@@ -13,9 +13,9 @@
                 <MenuItem Header="Exit" Click="Exit_OnClick" HotKey="Ctrl+Escape" InputGesture="Ctrl+Escape" />
             </MenuItem>
             <MenuItem Header="Built-in Tools">
-                <MenuItem Header="Force style reload" Click="ForceStyleReload_OnClick" />
-                <MenuItem Header="Go to" Click="GoTo_OnClick" />
-                <MenuItem Header="Go to parent entry" Click="GoToParentEntry_OnClick" />
+                <MenuItem Header="Force style reload" Click="ForceStyleReload_OnClick" HotKey="Ctrl+R" InputGesture="Ctrl+R" />
+                <MenuItem Header="Go to" Click="GoTo_OnClick" HotKey="Ctrl+G" InputGesture="Ctrl+G" />
+                <MenuItem Header="Go to parent entry" Click="GoToParentEntry_OnClick" HotKey="Ctrl+Shift+G" InputGesture="Ctrl+Shift+G" />
                 <!-- <MenuItem Header="Assign groups to items" Click="GroupEditorSelect_OnClick" /> -->
             </MenuItem>
             <MenuItem Name="CustomToolsMenu" Header="Custom Tools">
