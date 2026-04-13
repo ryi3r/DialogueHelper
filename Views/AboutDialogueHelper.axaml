@@ -1,14 +1,11 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="100" CanResize="False" Width="350" Height="100"
-        x:Class="DialogueHelper.Views.AboutDialogueHelper"
-        Title="About Dialogue Helper">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="350" d:DesignHeight="100" CanResize="False" Width="350" Height="100" x:Class="DialogueHelper.Views.AboutDialogueHelper" Title="About Dialogue Helper">
     <Panel Margin="5">
         <TextBlock TextWrapping="Wrap">
-            <Span FontWeight="Bold"><TextBlock>Dialogue Helper</TextBlock> <TextBlock Name="Version">$V</TextBlock></Span>
-            <LineBreak/>Developed by <Span FontWeight="Bold" Foreground="CornflowerBlue">ryi3r</Span>.
+            <Span FontWeight="Bold">
+                <TextBlock>Dialogue Helper</TextBlock>
+                <TextBlock Name="Version">$V</TextBlock>
+            </Span>
+            <LineBreak />Developed by <Span FontWeight="Bold" Foreground="CornflowerBlue">ryi3r</Span>.
         </TextBlock>
         <StackPanel Orientation="Horizontal" Spacing="7" HorizontalAlignment="Right" VerticalAlignment="Bottom">
             <Button Click="OpenProgRepo_OnClick">Open Program Repo</Button>

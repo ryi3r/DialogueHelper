@@ -5,13 +5,7 @@ namespace DialogueHelper.Views;
 
 public partial class FileInfo : Window
 {
-    public FileInfo()
-    {
-        InitializeComponent();
-    }
+    public FileInfo() => InitializeComponent();
 
-    void CloseButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    void CloseButton_OnClick(object? sender, RoutedEventArgs e) => Close();
 }

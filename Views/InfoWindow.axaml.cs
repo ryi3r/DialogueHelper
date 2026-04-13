@@ -7,7 +7,7 @@ public partial class InfoWindow : Window
 {
     public readonly TextBlock TitleBlock;
     public readonly TextBlock TextBlock;
-    
+
     public InfoWindow()
     {
         InitializeComponent();
@@ -23,8 +23,5 @@ public partial class InfoWindow : Window
         TextBlock.Text = text;
     }
 
-    void OkButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    void OkButton_OnClick(object? sender, RoutedEventArgs e) => Close();
 }

@@ -29,7 +29,7 @@
                         </TextBlock>
                         <TextBlock Margin="0 5 0 0">Repository URL*</TextBlock>
                         <TextBox Name="RepoUrl" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="https://github.com/user/repo.git" />
-                        <TextBlock Margin="0 7  0 0">Selected Branch</TextBlock>
+                        <TextBlock Margin="0 7 0 0">Selected Branch</TextBlock>
                         <TextBox Name="SelectedBranch" ToolTip.Tip="Leave this value empty to select the default/current branch" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="main" />
                     </StackPanel>
                 </StackPanel>
@@ -38,8 +38,9 @@
                 <StackPanel Orientation="Vertical">
                     <TextBlock Margin="0 5 0 0">Author Name*</TextBlock>
                     <TextBox Name="AuthorName" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="Your Name" />
-                    <TextBlock Margin="0 7  0 0">Author Groups</TextBlock>
-                    <TextBox Name="AuthorGroup" ToolTip.Tip="Leave this value empty to select all groups" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="Group1,Group2" />
+                    <TextBlock Margin="0 7 0 0">Author Groups</TextBlock>
+                    <TextBox Name="AuthorGroup" ToolTip.Tip="Leave this value empty to select all groups" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="Group1,Group2, ..." />
+                    <CheckBox Name="GroupOnlyEntries">Only show entries inside author groups</CheckBox>
                 </StackPanel>
             </TabItem>
         </TabControl>

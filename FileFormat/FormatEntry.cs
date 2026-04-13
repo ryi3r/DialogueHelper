@@ -19,6 +19,7 @@ public class FormatEntry
             ["\n", "%0A"],
             ["\r", "%0D"],
             ["@", "%40"],
+            ["+", "%2B"],
         }.Aggregate(data, (current, repl) => current.Replace(repl[0], repl[1]));
     }
 

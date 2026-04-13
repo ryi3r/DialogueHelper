@@ -15,7 +15,7 @@ public class FileData
 
     public static FileData LoadString(List<FormatEntry> fileEntries, LoadingWindow? lWin = null)
     {
-        var fData = new FileData();
+        var data = new FileData();
         lWin?.ProgressBar.Maximum = fileEntries.Count;
 
         var loaded = 0;
@@ -28,7 +28,7 @@ public class FileData
             // 8 == File end
             if (entry.Kind is 0 or 8 && isEntry)
             {
-                fData.Strings[currentEntry] = entries;
+                data.Strings[currentEntry] = entries;
                 entries = [];
             }
 
@@ -36,9 +36,9 @@ public class FileData
             {
                 case 9: // Settings
                     if (entry.Data.TryGetValue("Style", out var themeName))
-                        fData.ThemeName = themeName;
+                        data.ThemeName = themeName;
                     if (entry.Data.TryGetValue("Version", out var ver))
-                        fData.FileVersion = ver;
+                        data.FileVersion = ver;
                     break;
                 case 0: // New entry
                     currentEntry = entry.Data["ID"];
@@ -46,62 +46,45 @@ public class FileData
                     break;
                 case 1: // Add a string to the current entry
                     {
-                        var id = fData.LastStringId++;
+                        var id = data.LastStringId++;
                         entry.Data["ID"] = id.ToString();
                         var sCont = new StringContainer(entry);
                         entries.Add(id, sCont);
-                        fData.StringIds.Add(id, sCont);
+                        data.StringIds.Add(id, sCont);
                         if (sCont.LastEdited.LegacyAuthorName is not null)
                         {
-                            if (!fData.AuthorList.Contains(sCont.LastEdited.LegacyAuthorName))
-                                fData.AuthorList.Add(sCont.LastEdited.LegacyAuthorName);
-                            sCont.LastEdited.AuthorId = fData.AuthorList.IndexOf(sCont.LastEdited.LegacyAuthorName);
+                            if (!data.AuthorList.Contains(sCont.LastEdited.LegacyAuthorName))
+                                data.AuthorList.Add(sCont.LastEdited.LegacyAuthorName);
+                            sCont.LastEdited.AuthorId = data.AuthorList.IndexOf(sCont.LastEdited.LegacyAuthorName);
                             sCont.LastEdited.LegacyAuthorName = null;
                         }
                     }
                     break;
                 case 2: // Add author
-                    fData.AuthorList.Add(entry.Data[""]);
+                    data.AuthorList.Add(entry.Data[""]);
                     break;
             }
             lWin?.ProgressBar.Value = loaded++;
         }
 
-        return fData;
+        return data;
     }
 
     public string OutputString()
     {
         var fel = new List<FormatEntry>();
-        var fe = new FormatEntry()
-        {
-            Kind = 9,
-            Data =
-            {
-                ["Version"] = "1",
-            },
-        };
+        var fe = new FormatEntry { Kind = 9, Data = { ["Version"] = "1" } };
         if (ThemeName is not null)
             fe.Data["Style"] = ThemeName;
         fel.Add(fe);
         foreach (var entry in Strings)
         {
-            fel.Add(new()
-            {
-                Kind = 0,
-                Data =
-                {
-                    ["ID"] = entry.Key,
-                },
-            });
+            fel.Add(new() { Kind = 0, Data = { ["ID"] = entry.Key } });
             fel.AddRange(entry.Value.Select(str => str.Value.OutputFormatEntry()));
         }
 
-        fel.AddRange(AuthorList.Select(author => new FormatEntry() { Kind = 2, Data = { [""] = author, } }));
-        fel.Add(new()
-        {
-            Kind = 8,
-        });
-        return string.Join('\n', fel.Select(f => f.OutputString()));
+        fel.AddRange(AuthorList.Select(author => new FormatEntry { Kind = 2, Data = { [""] = author } }));
+        fel.Add(new() { Kind = 8 });
+        return string.Join('\n', fel.Select(x => x.OutputString()));
     }
 }

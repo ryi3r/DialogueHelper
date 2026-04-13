@@ -15,13 +15,9 @@ public partial class QuestionWindow : Window
         };
     }
 
-    void YesButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close(true);
-    }
+    public QuestionWindow(string question) : this() => InnerText.Text = question;
 
-    void NoButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close(false);
-    }
+    void YesButton_OnClick(object? sender, RoutedEventArgs e) => Close(true);
+
+    void NoButton_OnClick(object? sender, RoutedEventArgs e) => Close(false);
 }

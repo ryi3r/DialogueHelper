@@ -1,6 +1,6 @@
 namespace DialogueHelper.PreviewRenderer;
 
-public class ExternalChar
+public struct ExternalChar()
 {
     public required char Char;
     public required int Index;

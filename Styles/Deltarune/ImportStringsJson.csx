@@ -12,10 +12,8 @@ if (!Data.Code.Any(x => x.Name.Content == "gml_GlobalScript_msgnextloc"))
     return;
 }
 
-var bJson = File.ReadAllText("../input.json");
-var jData = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(bJson)!;
-if (jData.ContainsKey("date"))
-    jData.Remove("date");
+var data = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(File.ReadAllText("../input.json"))!;
+data.Remove("date");
 
 var refs = new Dictionary<UndertaleString, int>();
 foreach (var code in Data.Code)
@@ -24,41 +22,50 @@ foreach (var code in Data.Code)
         continue;
     foreach (var inst in code.Instructions)
     {
-        if (!(UndertaleInstruction.GetInstructionType(inst.Kind) == UndertaleInstruction.InstructionType.PushInstruction && inst.Type1 == UndertaleInstruction.DataType.String))
-            continue;
-        refs.TryAdd(inst.ValueString.Resource, 0);
-        refs[inst.ValueString.Resource]++;
+        if (UndertaleInstruction.GetInstructionType(inst.Kind) == UndertaleInstruction.InstructionType.PushInstruction && inst.Type1 == UndertaleInstruction.DataType.String)
+        {
+            refs.TryAdd(inst.ValueString.Resource, 0);
+            refs[inst.ValueString.Resource]++;
+        }
     }
 }
+
+var locFuncs = new HashSet<string>() { "gml_Script_msgsetloc", "gml_Script_msgnextloc", "gml_Script_stringsetloc", "gml_Script_msgsetsubloc", "gml_Script_msgnextsubloc", "gml_Script_stringsetsubloc", "gml_Script_c_msgsetloc", "gml_Script_c_msgnextloc", "gml_Script_c_msgnextloc", "gml_Script_c_msgsetsubloc", "gml_Script_c_msgnextsubloc" };
 
 foreach (var code in Data.Code)
 {
     if (code.ParentEntry is not null)
         continue;
-    var lastExists = false;
-    var entry = "";
-
-    foreach (var inst in code.Instructions)
+    for (var i = 0; i < code.Instructions.Count; i++)
     {
-        if (!(UndertaleInstruction.GetInstructionType(inst.Kind) == UndertaleInstruction.InstructionType.PushInstruction && inst.Type1 == UndertaleInstruction.DataType.String))
-            continue;
-        if (!lastExists)
+        var inst = code.Instructions[i];
+        if (UndertaleInstruction.GetInstructionType(inst.Kind) == UndertaleInstruction.InstructionType.CallInstruction && locFuncs.TryGetValue(inst.ValueFunction.Name.Content, out var argPos))
         {
-            var c = inst.ValueString.Resource.Content;
-            if (!jData.ContainsKey(c))
-                continue;
-            lastExists = true;
-            entry = c;
-        }
-        else
-        {
-            lastExists = false;
-            var res = inst.ValueString.Resource;
-            refs.TryAdd(res, 0);
-            if (refs[res] <= 1)
-                inst.ValueString.Resource.Content = jData[entry].GetString(); // safe to update
-            else
-                inst.ValueString = new(Data.Strings.MakeString(jData[entry].GetString(), createNew: true));
+            var _args = new List<UndertaleInstruction>();
+            var j = i;
+            for (var k = 0; k < 2; k++)
+            {
+                while (j >= 0)
+                {
+                    j--;
+                    var cur = code.Instructions[j];
+                    if (UndertaleInstruction.GetInstructionType(cur.Kind) == UndertaleInstruction.InstructionType.PushInstruction && cur.Type1 == UndertaleInstruction.DataType.String)
+                    {
+                        _args.Insert(0, cur);
+                        break;
+                    }
+                }
+            }
+            if (data.TryGetValue(_args[0].ValueString.Resource.Content, out var elm))
+            {
+                var res = _args[1].ValueString.Resource;
+                refs.TryAdd(res, 0);
+                var s = elm.GetString();
+                if (refs[res] <= 1)
+                    inst.ValueString.Resource.Content = s; // safe to update
+                else
+                    inst.ValueString = new(Data.Strings.MakeString(s, createNew: true));
+            }
         }
     }
 }

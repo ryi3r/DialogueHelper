@@ -8,16 +8,9 @@ public partial class GoTo : Window
 {
     public readonly MainWindow? MainWindow;
 
-    public GoTo()
-    {
-        InitializeComponent();
-    }
+    public GoTo() => InitializeComponent();
 
-    public GoTo(MainWindow mainWindow)
-    {
-        MainWindow = mainWindow;
-        InitializeComponent();
-    }
+    public GoTo(MainWindow mainWindow) : this() => MainWindow = mainWindow;
 
     void GoToEntry_OnClick(object? sender, RoutedEventArgs e)
     {

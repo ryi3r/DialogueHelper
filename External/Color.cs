@@ -1,4 +1,4 @@
-public class Color
+public struct Color
 {
     public byte R;
     public byte G;

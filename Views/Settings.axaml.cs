@@ -18,10 +18,7 @@ public partial class Settings : Window
 
     public bool Init;
 
-    public Settings()
-    {
-        InitializeComponent();
-    }
+    public Settings() => InitializeComponent();
 
     public Settings(MainWindow mainWindow)
     {
@@ -35,6 +32,7 @@ public partial class Settings : Window
         EnableGit.IsChecked = mainWindow.GitOptions.IsEnabled;
         RepoUrl.Text = mainWindow.GitOptions.RepoUrl;
         SelectedBranch.Text = mainWindow.GitOptions.Branch;
+        GroupOnlyEntries.IsChecked = mainWindow.ShowOnlyGroupEntries;
 
         StyleComboBox.Items.Clear();
     }
@@ -59,6 +57,7 @@ public partial class Settings : Window
 
             MainWindow.AuthorGroup = AuthorGroup.Text!;
             MainWindow.AuthorName = AuthorName.Text!;
+            MainWindow.ShowOnlyGroupEntries = GroupOnlyEntries.IsChecked ?? false;
 
             var selStyle = StyleData[StyleComboBox.SelectedIndex];
             MainWindow.ScriptNeedsInitialization = false;
@@ -108,7 +107,7 @@ public partial class Settings : Window
                 var props = MainWindow.StyleSettings[folder];
                 foreach (var prop in res)
                 {
-                    var p = props.FirstOrDefault(p => p.Name == prop.Name);
+                    var p = props.FirstOrDefault(x => x.Name == prop.Name);
                     if (p is not null)
                     {
                         var val = p.ValueToString();

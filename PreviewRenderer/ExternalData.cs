@@ -44,7 +44,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         bitmap.Dispose();
     }
 
-    public Bitmap ModifyImage(Bitmap bitmap, Color? color = null, double alpha = 1.0)
+    public Bitmap ModifyImage(Bitmap bitmap, Color? color = null)
     {
         using var stream1 = new MemoryStream();
         bitmap.Save(stream1);
@@ -60,7 +60,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
                     px.R = (byte)(px.R / 255f * (col.R / 255f) * 255f);
                     px.G = (byte)(px.G / 255f * (col.G / 255f) * 255f);
                     px.B = (byte)(px.B / 255f * (col.B / 255f) * 255f);
-                    px.A = (byte)(px.A / 255f * double.Clamp(alpha, 0d, 1d) * 255f);
+                    px.A = (byte)(px.A / 255f * (col.A / 255f) * 255f);
                 }
             }
         });
@@ -72,15 +72,15 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         }
     }
 
-    public Bitmap ModifyImageAndCache(Bitmap bitmap, Color color, double alpha = 1.0, string font = "")
+    public Bitmap ModifyImageAndCache(Bitmap bitmap, Color color, string font = "")
     {
-        var path = mainWindow.LoadedImages.FirstOrDefault(i => i.Value == bitmap).Key;
-        var idx = $"{Glyph.Color.Rgba}+{alpha}+{font}@{path}";
+        var path = mainWindow.LoadedImages.FirstOrDefault(i => i.Value == bitmap).Key ?? Style.ImageAssets.FirstOrDefault(x => x.Value == bitmap).Key;
+        var idx = $"{color.Rgba}+{font}@{path}";
         if (mainWindow.LoadedImages.TryGetValue(idx, out var value))
             return value;
         else
         {
-            var outBitmap = ModifyImage(bitmap, color, alpha);
+            var outBitmap = ModifyImage(bitmap, color);
             mainWindow.LoadedImages.Add(idx, outBitmap);
             mainWindow.LoadedImagesOrder.Add(idx);
             while (mainWindow.LoadedImages.Count > 0x80)
@@ -99,10 +99,9 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         var fontGlyph = Font.GlyphDictionary[Char.Char];
         if (!Style.ImageAssets.TryGetValue(Font.ImagePath, out var targetTexture))
             return null;
-        var alpha = Math.Round(Glyph.Alpha, 2);
-        if (Glyph.Color.Rgba != 0xffffffff || alpha < 1.0)
-            targetTexture = ModifyImageAndCache(targetTexture, Glyph.Color, alpha, Font.ImagePath);
-        var glyphImg = new Avalonia.Controls.Image()
+        if (Glyph.Color.Rgba != 0xffffffff)
+            targetTexture = ModifyImageAndCache(targetTexture, Glyph.Color, Font.ImagePath);
+        var glyphImg = new Avalonia.Controls.Image
         {
             Source = new CroppedBitmap(targetTexture, new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y)),
             Width = Glyph.Size.X,
@@ -127,7 +126,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
 
     public Avalonia.Controls.Image DrawTexture(Bitmap img, (double X, double Y) position)
     {
-        var node = new Avalonia.Controls.Image()
+        var node = new Avalonia.Controls.Image
         {
             Source = img,
             Width = img.Size.Width * GetCurrentScale(),
@@ -150,7 +149,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
 
     public Avalonia.Controls.Image DrawTextureScaled(Bitmap img, (double X, double Y) position, (double X, double Y) scale)
     {
-        var node = new Avalonia.Controls.Image()
+        var node = new Avalonia.Controls.Image
         {
             Source = img,
             Width = img.Size.Width * GetCurrentScale() * scale.X,
@@ -173,7 +172,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
 
     public Avalonia.Controls.Image DrawTextureSized(Bitmap img, (double X, double Y) position, (double X, double Y) size)
     {
-        var node = new Avalonia.Controls.Image()
+        var node = new Avalonia.Controls.Image
         {
             Source = img,
             Width = size.X * GetCurrentScale(),
@@ -196,7 +195,7 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
 
     public Avalonia.Controls.Image DrawTextureCropped(Bitmap img, (double X, double Y) position, (double X, double Y) size, (int X, int Y) srcPosition, (int X, int Y) srcSize)
     {
-        var node = new Avalonia.Controls.Image()
+        var node = new Avalonia.Controls.Image
         {
             Source = new CroppedBitmap(img, new(srcPosition.X, srcPosition.Y, srcSize.X, srcSize.Y)),
             Width = size.X * GetCurrentScale(),
@@ -217,63 +216,27 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         return node;
     }
 
-    public void SetCurrentBox(int boxId)
-    {
-        mainWindow.BoxComboBox.SelectedIndex = boxId;
-    }
+    public void SetCurrentBox(int boxId) => mainWindow.BoxComboBox.SelectedIndex = boxId;
 
-    public void SetCurrentFont(int fontId)
-    {
-        mainWindow.FontComboBox.SelectedIndex = fontId;
-    }
+    public void SetCurrentFont(int fontId) => mainWindow.FontComboBox.SelectedIndex = fontId;
 
-    public void SetCurrentScale(float scale)
-    {
-        mainWindow.PreviewScale.Value = (decimal)scale;
-    }
+    public void SetCurrentScale(float scale) => mainWindow.PreviewScale.Value = (decimal)scale;
 
-    public void SetCurrentBoxScale(float scale)
-    {
-        mainWindow.BoxScale.Value = (decimal)scale;
-    }
+    public void SetCurrentBoxScale(float scale) => mainWindow.BoxScale.Value = (decimal)scale;
 
-    public void SetCurrentFontScale(float scale)
-    {
-        mainWindow.FontScale.Value = (decimal)scale;
-    }
+    public void SetCurrentFontScale(float scale) => mainWindow.FontScale.Value = (decimal)scale;
 
-    public int GetCurrentBox()
-    {
-        return mainWindow.BoxComboBox.SelectedIndex;
-    }
+    public int GetCurrentBox() => mainWindow.BoxComboBox.SelectedIndex;
 
-    public int GetCurrentFont()
-    {
-        return mainWindow.FontComboBox.SelectedIndex;
-    }
+    public int GetCurrentFont() => mainWindow.FontComboBox.SelectedIndex;
 
-    public float GetCurrentScale()
-    {
-        return (float?)mainWindow.PreviewScale.Value ?? 0f;
-    }
+    public float GetCurrentScale() => (float?)mainWindow.PreviewScale.Value ?? 0;
 
-    public float GetCurrentBoxScale()
-    {
-        return (float?)mainWindow.BoxScale.Value ?? 0f;
-    }
+    public float GetCurrentBoxScale() => (float?)mainWindow.BoxScale.Value ?? 0;
 
-    public float GetCurrentFontScale()
-    {
-        return (float?)mainWindow.FontScale.Value ?? 0f;
-    }
+    public float GetCurrentFontScale() => (float?)mainWindow.FontScale.Value ?? 0;
 
-    public void SetChangeableBox(bool changeable)
-    {
-        mainWindow.BoxComboBox.IsEnabled = changeable;
-    }
+    public void SetChangeableBox(bool changeable) => mainWindow.BoxComboBox.IsEnabled = changeable;
 
-    public void SetChangeableFont(bool changeable)
-    {
-        mainWindow.FontComboBox.IsEnabled = changeable;
-    }
+    public void SetChangeableFont(bool changeable) => mainWindow.FontComboBox.IsEnabled = changeable;
 }

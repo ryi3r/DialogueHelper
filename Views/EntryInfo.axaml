@@ -1,18 +1,12 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="175" Width="600" Height="175" CanResize="False"
-        x:Class="DialogueHelper.Views.EntryInfo"
-        Title="Entry Info">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="175" Width="600" Height="175" CanResize="False" x:Class="DialogueHelper.Views.EntryInfo" Title="Entry Info">
     <Panel Margin="5">
         <StackPanel Orientation="Vertical" Spacing="7">
             <TextBlock>Last edited by</TextBlock>
-            <TextBox Name="AuthorText" AcceptsReturn="True" IsReadOnly="True"/>
+            <TextBox Name="AuthorText" AcceptsReturn="True" IsReadOnly="True" />
             <TextBlock>Last edited at</TextBlock>
             <StackPanel Orientation="Horizontal" Spacing="7">
-                <DatePicker Name="TimeDate" IsEnabled="False"/>
-                <TimePicker Name="TimeTime" IsEnabled="False"/>
+                <DatePicker Name="TimeDate" IsEnabled="False" />
+                <TimePicker Name="TimeTime" IsEnabled="False" />
             </StackPanel>
             <TextBlock Name="StringId">String ID: -1</TextBlock>
         </StackPanel>

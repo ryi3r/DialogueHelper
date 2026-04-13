@@ -7,7 +7,6 @@ using Avalonia.Media.Imaging;
 using DialogueHelper.External;
 using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace DialogueHelper.PreviewRenderer;
 
@@ -15,7 +14,7 @@ public class PreviewRenderer(MainWindow mainWindow)
 {
     public readonly MainWindow MainWindow = mainWindow;
 
-    public async void CreateRender(StyleParser style, int selectedBox, int selectedFont, float boxScale, float fontScale, float previewScale, Color defaultColor, string str, Canvas canvas)
+    public async void CreateRender(StyleParser style, int selectedBox, int selectedFont, float boxScale, float fontScale, float previewScale, Color textColor, Color boxColor, string str, Canvas canvas)
     {
         canvas.Children.Clear();
         // ensure always that selected box/font is in-bounds
@@ -32,15 +31,23 @@ public class PreviewRenderer(MainWindow mainWindow)
         var box = style.BoxMetadata[selectedBox];
         var font = style.FontMetadata[selectedFont];
 
-        canvas.Width = 0.0;
-        canvas.Height = 0.0;
+        canvas.Width = 0;
+        canvas.Height = 0;
 
+        var eData = new ExternalData(MainWindow, canvas)
+        {
+            Box = box,
+            Char = new() { Char = '\0', Index = 0, String = str, IsNewline = false, IsIgnore = false, StartPosition = ((int)box.TextOffset[0], (int)box.TextOffset[1]) },
+            Font = font,
+            Glyph = new() { Scale = (fontScale * previewScale, fontScale * previewScale), Color = textColor },
+            Style = style,
+        };
         foreach (var bImg in box.Images)
         {
             var imgAsset = style.ImageAssets[bImg.Path];
-            var avImg = new Image()
+            var avImg = new Image
             {
-                Source = imgAsset,
+                Source = eData.ModifyImageAndCache(imgAsset, boxColor),
                 Width = imgAsset.Size.Width * boxScale * previewScale,
                 Height = imgAsset.Size.Height * boxScale * previewScale,
             };
@@ -56,24 +63,6 @@ public class PreviewRenderer(MainWindow mainWindow)
         }
         if (!style.InitializedScript)
             return;
-        var eData = new ExternalData(MainWindow, canvas)
-        {
-            Box = box,
-            Char = new()
-            {
-                Char = 'A',
-                Index = 0,
-                String = str,
-
-                IsNewline = false,
-                IsIgnore = false,
-
-                StartPosition = ((int)box.TextOffset[0], (int)box.TextOffset[1]),
-            },
-            Font = font,
-            Glyph = new() { Scale = (fontScale * previewScale, fontScale * previewScale), Color = defaultColor },
-            Style = style,
-        };
         try
         {
             var wh = new CustomToolWindowHandler(MainWindow, style);

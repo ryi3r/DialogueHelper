@@ -17,8 +17,5 @@ public partial class StyleError : Window
         };
     }
 
-    void Ok_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    void Ok_OnClick(object? sender, RoutedEventArgs e) => Close();
 }

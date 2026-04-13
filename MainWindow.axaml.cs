@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -40,6 +38,7 @@ public partial class MainWindow : Window
     public bool ScriptNeedsInitialization;
     public string AuthorName = "";
     public string AuthorGroup = "";
+    public bool ShowOnlyGroupEntries;
     public readonly Dictionary<string, List<ICustomProperty>> StyleSettings = [];
     public StringContainer? SelectedString;
     public bool UpdatingEntry;
@@ -49,14 +48,17 @@ public partial class MainWindow : Window
     public readonly Dictionary<TreeViewItem, Dictionary<int, TreeViewItem>> EtvTargetChildren = [];
     // <child, parent>
     public readonly Dictionary<TreeViewItem, TreeViewItem> EtvParents = [];
-    public bool EditableTextIgnoreUpdateOnce;
     public List<WeakReference<TreeViewItem>> EtvTargetUpdates = [];
+    public List<(WeakReference<StringContainer> StringContainer, bool ModifySimilarStrings)> EqStringUpdates = [];
+    public string? LastSavePath;
     readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(0.02) };
     readonly DispatcherTimer _backupTimer = new() { Interval = TimeSpan.FromMinutes(3) };
 
     public MainWindow()
     {
         InitializeComponent();
+        if (Design.IsDesignMode)
+            return;
         PreviewRenderer = new(this);
         Closing += async (_, ev) =>
         {
@@ -90,17 +92,53 @@ public partial class MainWindow : Window
         });*/
         _timer.Tick += (_, _) =>
         {
-            WeakReference<TreeViewItem>? n = null;
-            lock (EtvTargetUpdates)
             {
-                if (EtvTargetUpdates.Count > 0)
+                WeakReference<TreeViewItem>? n = null;
+                lock (EtvTargetUpdates)
                 {
-                    n = EtvTargetUpdates[0];
-                    EtvTargetUpdates.RemoveAt(0);
+                    if (EtvTargetUpdates.Count > 0)
+                    {
+                        n = EtvTargetUpdates[0];
+                        EtvTargetUpdates.RemoveAt(0);
+                    }
+                }
+                if (n is not null && n.TryGetTarget(out var tn))
+                    UpdateEtvItem(tn);
+            }
+            {
+                (WeakReference<StringContainer> StringContainer, bool ModifySimilarStrings)? n = null;
+                lock (EqStringUpdates)
+                {
+                    if (EqStringUpdates.Count > 0)
+                    {
+                        n = EqStringUpdates[0];
+                        EqStringUpdates.RemoveAt(0);
+                    }
+                }
+                if (n is not null && n.Value.StringContainer.TryGetTarget(out var sc) && FileData is not null)
+                {
+                    if (!n.Value.ModifySimilarStrings)
+                    {
+                        sc.EqStrings.Remove(sc.Id);
+                        sc.EqStrings = [];
+                        foreach (var str in FileData.StringIds.Values)
+                        {
+                            if (str.OriginalText != sc.OriginalText)
+                                continue;
+                            str.EqStrings.Add(sc.Id);
+                            sc.EqStrings = str.EqStrings;
+                            break;
+                        }
+                    }
+                    if (SelectedString?.EqStrings == sc.EqStrings)
+                        ReloadEqStringsField();
+                    if (EtvReverseIndexes.TryGetValue(sc.Id, out var item) && !EtvKeys.ContainsKey(item))
+                    {
+                        UpdateEtvItem(EtvParents[item]);
+                        UpdateModifySimilarStrings(sc, item, false, n.Value.ModifySimilarStrings);
+                    }
                 }
             }
-            if (n is not null && n.TryGetTarget(out var tn))
-                UpdateEtvItem(tn);
         };
         _timer.Start();
         _backupTimer.Tick += (_, _) =>
@@ -123,7 +161,7 @@ public partial class MainWindow : Window
                 return;
         }
 
-        var file = await StorageProvider.OpenFilePickerAsync(
+        var files = await StorageProvider.OpenFilePickerAsync(
             new()
             {
                 Title = "Open Dialogue Helper file...",
@@ -136,28 +174,29 @@ public partial class MainWindow : Window
             }
         );
 
-        if (file.Count == 0)
+        if (files.Count == 0)
             return;
-        var fStorage = file[0];
+        var file = files[0];
 
         EntryTreeView.Items.Clear();
         SimilarStringsPanel.Items.Clear();
         SimilarStringsNone.IsVisible = true;
 
-        LoadFileToProject(file: fStorage);
+        LoadFileToProject(file: file);
     }
 
     public async void LoadFileToProject(string? path = null, IStorageFile? file = null, bool markAsModified = false)
     {
         if (path is null && file is null)
             throw new("path and file cannot be null to load a project from a file");
+        LastSavePath = file?.Path.LocalPath ?? path;
         var lWin = new LoadingWindow { CanResize = false };
         lWin.Closing += (_, ev) =>
         {
             if (!ev.IsProgrammatic)
                 ev.Cancel = true;
         };
-        lWin.ProgressBar.Value = 0.0;
+        lWin.ProgressBar.Value = 0;
         lWin.Show(this);
         lWin.Text.Text = "Loading the file...";
         using var stream = new StreamReader(file is not null ? await file.OpenReadAsync() : File.OpenRead(path!));
@@ -174,7 +213,7 @@ public partial class MainWindow : Window
                 if (!ev.IsProgrammatic)
                     ev.Cancel = true;
             };
-            lWin.ProgressBar.Value = 0.0;
+            lWin.ProgressBar.Value = 0;
             lWin.Show(this);
         }
         try
@@ -211,7 +250,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            var se = new StyleError()
+            var se = new StyleError
             {
                 Title = "Load error",
                 MessageBlock = { Text = "DialogueHelper has encountered an error while loading a file" },
@@ -252,7 +291,8 @@ public partial class MainWindow : Window
             var modified = 0;
             foreach (var str in strs)
             {
-                var tBlock = new TreeViewItem() { Header = str.Value.Text ?? str.Value.OriginalText };
+                var tBlock = new TreeViewItem { Header = str.Value.Text ?? str.Value.OriginalText };
+                ToolTip.SetTip(tBlock, $"String ID: {str.Value.Id}");
                 EtvParents.Add(tBlock, cont);
                 ColorTreeItem(tBlock, str.Value.Text, str.Value.OriginalText, str.Value.MarkAsModified);
                 if (str.Value.Text is not null && str.Value.Text != str.Value.OriginalText)
@@ -275,20 +315,14 @@ public partial class MainWindow : Window
     {
         if (!await EnsureFileOpen())
             return;
-        var key = EtvKeys[item];
-        var strs = FileData!.Strings[key];
+        var strs = FileData!.Strings[EtvKeys[item]];
 
         var i = 0;
         var modified = 0;
         var list = EtvTargetChildren[item];
         foreach (var str in strs)
         {
-            ColorTreeItem(
-                list[str.Key],
-                str.Value.Text,
-                str.Value.OriginalText,
-                str.Value.MarkAsModified
-            );
+            ColorTreeItem(list[str.Key], str.Value.Text, str.Value.OriginalText, str.Value.MarkAsModified);
             if (str.Value.MarkAsModified)
                 modified++;
             if (str.Value.Text is not null)
@@ -300,21 +334,11 @@ public partial class MainWindow : Window
             i++;
         }
 
-        item.Foreground = SolidColorBrush.Parse(
-            modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral"
-        );
+        item.Foreground = SolidColorBrush.Parse(modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral");
         await UpdateSearchFiltering(new() { [item] = EtvTargetChildren[item] });
     }
 
-    public static void ColorTreeItem(
-        TreeViewItem item,
-        string? text,
-        string ogText,
-        bool markAsModified
-    )
-    {
-        item.Foreground = SolidColorBrush.Parse((text is not null && text != ogText) || markAsModified ? "LightGreen" : "White");
-    }
+    public static void ColorTreeItem(TreeViewItem item, string? text, string ogText, bool markAsModified) => item.Foreground = SolidColorBrush.Parse((text is not null && text != ogText) || markAsModified ? "LightGreen" : "White");
 
     void OnLayoutUpdated(object? sender, EventArgs e)
     {
@@ -324,30 +348,25 @@ public partial class MainWindow : Window
 
     public async void EntryTreeView_OnSelectionChanged(object? sender, SelectionChangedEventArgs? e)
     {
-        if (!await EnsureFileOpen())
+        if (!await EnsureFileOpen(false))
             return;
-        /*if (EntryTreeView.SelectedItem is null)
-        {
-            await new InfoWindow(
-                "You need to select an item before trying to change item selection."
-            ).ShowDialog(this);
-            return;
-        }*/
         if (EntryTreeView.SelectedItem is TreeViewItem tBlock && EtvParents.TryGetValue(tBlock, out var parent))
         {
+            UpdatingEntry = true;
+            AllowEditingOriginal.IsChecked = false;
+            AllowEditingOriginal_OnClick(null, null!);
             var lastSel = SelectedString;
             SelectedString = FileData!.Strings[EtvKeys[parent]][EtvIndexes[tBlock]];
             MarkAsModified.IsChecked = SelectedString.MarkAsModified;
-            if (OriginalText.Text != SelectedString.OriginalText)
-                OriginalText.Text = SelectedString.OriginalText;
-            {
-                var t = SelectedString.Text ?? SelectedString.OriginalText;
-                if (EditableText.Text != t)
-                {
-                    EditableTextIgnoreUpdateOnce = true;
-                    EditableText.Text = t;
-                }
-            }
+            OriginalText.IsUndoEnabled = false;
+            OriginalText.Text = SelectedString.OriginalText;
+            OriginalText.IsUndoEnabled = true;
+            EditableText.IsUndoEnabled = false;
+            EditableText.Text = SelectedString.Text ?? SelectedString.OriginalText;
+            EditableText.IsUndoEnabled = true;
+            StringKey.IsUndoEnabled = false;
+            StringKey.Text = SelectedString.Key;
+            StringKey.IsUndoEnabled = true;
 
             foreach (var prop in CustomProperties)
             {
@@ -358,21 +377,28 @@ public partial class MainWindow : Window
             }
 
             if (lastSel is null || lastSel.EqStrings != SelectedString.EqStrings)
-            {
-                SimilarStringsNone.IsVisible = SelectedString.EqStrings.Count <= 0;
-                SimilarStringsPanel.SelectedIndex = -1;
-                SimilarStringsPanel.Items.Clear();
-                foreach (var sstr in SelectedString.EqStrings)
-                {
-                    var s = FileData.StringIds[sstr];
-                    SimilarStringsPanel.Items.Add($"({sstr}) {((s.Text is not null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}");
-                }
-            }
+                ReloadEqStringsField();
 
             UpdateCustomScriptFields();
+            UpdatingEntry = false;
         }
         else
             SelectedString = null;
+    }
+
+    public void ReloadEqStringsField()
+    {
+        SimilarStringsNone.IsVisible = (SelectedString?.EqStrings.Count ?? 0) <= 0;
+        SimilarStringsPanel.SelectedIndex = -1;
+        SimilarStringsPanel.Items.Clear();
+        if (SelectedString is not null && FileData is not null)
+        {
+            foreach (var sstr in SelectedString.EqStrings)
+            {
+                var s = FileData.StringIds[sstr];
+                SimilarStringsPanel.Items.Add($"({sstr}) {((s.Text is not null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}");
+            }
+        }
     }
 
     void UpdateBoxBounds()
@@ -398,8 +424,7 @@ public partial class MainWindow : Window
 
     public void LoadSettings()
     {
-        var file =
-            $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt";
+        var file = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt";
         if (!File.Exists(file))
             return;
         var f = File.ReadAllLines(file);
@@ -432,11 +457,7 @@ public partial class MainWindow : Window
                                 StyleSettings.Add(folder, []);
                             var spl = f[i].Split("@@");
                             // the visual name & type value will get overwritten once the style loads
-                            StyleSettings[folder].Add(new CustomProperty<string>(
-                                "<null>",
-                                WebUtility.UrlDecode(spl[0]),
-                                WebUtility.UrlDecode(spl[1])
-                            ));
+                            StyleSettings[folder].Add(new CustomProperty<string>("<null>", WebUtility.UrlDecode(spl[0]), WebUtility.UrlDecode(spl[1])));
                         }
                         break;
                 }
@@ -452,15 +473,14 @@ public partial class MainWindow : Window
             if (!Directory.Exists(dir))
                 Directory.CreateDirectory(dir);
         }
-        List<string> l =
-        [
+        var l = new List<string>() {
             GitOptions.IsEnabled ? "1" : "0",
             GitOptions.RepoUrl,
             GitOptions.Branch,
             AuthorGroup,
             AuthorName,
             SelectedStyle ?? "",
-        ];
+        };
         foreach (var ss in StyleSettings)
         {
             l.Add($"StyleSettings@@{WebUtility.UrlEncode(ss.Key)}");
@@ -472,7 +492,7 @@ public partial class MainWindow : Window
 
     async void OnOpened(object? sender, EventArgs e)
     {
-        var w = new LoadingWindow()
+        var w = new LoadingWindow
         {
             ProgressBar = {
                 IsIndeterminate = true,
@@ -487,12 +507,8 @@ public partial class MainWindow : Window
             foreach (var f in Directory.EnumerateFiles("RuntimeComp").Where(x => x.Contains(".dll") && x.Contains("IL-")))
                 File.Delete(f);
         }
-        MiddleStackPanel.RowDefinitions[0].Height = new GridLength(
-            235.0 * ClientSize.Height / 720.0
-        );
-        MiddleStackPanel.RowDefinitions[2].Height = new GridLength(
-            235.0 * ClientSize.Height / 720.0
-        );
+        MiddleStackPanel.RowDefinitions[0].Height = new GridLength(235 * ClientSize.Height / 720);
+        MiddleStackPanel.RowDefinitions[2].Height = new GridLength(230 * ClientSize.Height / 720);
         LoadSettings();
         if (SelectedStyle is null)
         {
@@ -545,8 +561,8 @@ public partial class MainWindow : Window
         }
 
         InitializeCustomScript();
-        EditableText_OnTextChanged(null, null);
-        OriginalText_OnTextChanged(null, null);
+        EditableText_OnTextChanging(null, null);
+        OriginalText_OnTextChanging(null, null);
 
         w.Close();
         var lastArg = Environment.GetCommandLineArgs()[^1];
@@ -566,24 +582,16 @@ public partial class MainWindow : Window
             CustomTools.Clear();
             CustomProperties.Clear();
 
-            var lastBoxSelected = int.Clamp(
-                BoxComboBox.SelectedIndex,
-                0,
-                StyleData.BoxMetadata.Count - 1
-            );
-            var lastFontSelected = int.Clamp(
-                FontComboBox.SelectedIndex,
-                0,
-                StyleData.FontMetadata.Count - 1
-            );
+            var lastBoxSelected = int.Clamp(BoxComboBox.SelectedIndex, 0, StyleData.BoxMetadata.Count - 1);
+            var lastFontSelected = int.Clamp(FontComboBox.SelectedIndex, 0, StyleData.FontMetadata.Count - 1);
             BoxComboBox.Items.Clear();
             FontComboBox.Items.Clear();
 
             foreach (var box in StyleData.BoxMetadata)
-                BoxComboBox.Items.Add(new ComboBoxItem() { Content = box.Name });
+                BoxComboBox.Items.Add(new ComboBoxItem { Content = box.Name });
 
             foreach (var font in StyleData.FontMetadata)
-                FontComboBox.Items.Add(new ComboBoxItem() { Content = font.Name });
+                FontComboBox.Items.Add(new ComboBoxItem { Content = font.Name });
 
             BoxComboBox.SelectedIndex = lastBoxSelected;
             FontComboBox.SelectedIndex = lastFontSelected;
@@ -597,7 +605,7 @@ public partial class MainWindow : Window
             CustomTools.Clear();
             CustomProperties.Clear();
 
-            var se = new StyleError()
+            var se = new StyleError
             {
                 MessageBlock = { Text = "While trying to initialize the style, the program encountered an error" },
                 ErrorBox = { Text = ex.ToString() },
@@ -615,12 +623,24 @@ public partial class MainWindow : Window
     {
         CustomToolsMenu.Items.Clear();
         if (CustomTools.Count <= 0)
-            CustomToolsMenu.Items.Add(new MenuItem() { IsEnabled = false, Header = "Empty" });
+            CustomToolsMenu.Items.Add(new MenuItem { IsEnabled = false, Header = "Empty" });
         else
         {
             foreach (var tool in CustomTools)
             {
-                var item = new MenuItem() { Header = tool.Name };
+                var item = new MenuItem { Header = tool.Name };
+                if (tool.HotKey is not null)
+                {
+                    try
+                    {
+                        item.HotKey = KeyGesture.Parse(tool.HotKey);
+                        item.InputGesture = item.HotKey;
+                    }
+                    catch (Exception)
+                    {
+                        // invalid user hotkey
+                    }
+                }
                 item.Click += async (_, _) =>
                 {
                     try
@@ -629,7 +649,7 @@ public partial class MainWindow : Window
                     }
                     catch (Exception ex)
                     {
-                        var se = new StyleError()
+                        var se = new StyleError
                         {
                             MessageBlock = { Text = "The custom tool has encountered an error" },
                             ErrorBox = { Text = ex.ToString() },
@@ -646,11 +666,7 @@ public partial class MainWindow : Window
         else
         {
             CustomPropertiesNone.IsVisible = false;
-            UpdateCustomProperties(
-                CustomPropertiesPanel,
-                CustomProperties.AsEnumerable(),
-                true
-            );
+            UpdateCustomProperties(CustomPropertiesPanel, CustomProperties.AsEnumerable(), true);
         }
     }
 
@@ -658,8 +674,8 @@ public partial class MainWindow : Window
     {
         foreach (var tool in props)
         {
-            var item = new StackPanel() { Orientation = Orientation.Horizontal, Margin = new(5) };
-            item.Children.Add(new TextBlock() { Margin = new(7), Text = tool.VisualName });
+            var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new(5) };
+            item.Children.Add(new TextBlock { Margin = new(7), Text = tool.VisualName });
             switch (tool.Type)
             {
                 case not null when tool.Type == typeof(bool):
@@ -677,8 +693,8 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.IsChecked ?? false) ? "true" : "false");
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -688,7 +704,7 @@ public partial class MainWindow : Window
 
                 case not null when tool.Type == typeof(byte):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (tool.Value as byte?) ?? 0,
                             Minimum = 0,
@@ -699,13 +715,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -714,7 +728,7 @@ public partial class MainWindow : Window
                     break;
                 case not null when tool.Type == typeof(short):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (tool.Value as short?) ?? 0,
                             Minimum = -0x8000,
@@ -725,13 +739,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -740,7 +752,7 @@ public partial class MainWindow : Window
                     break;
                 case not null when tool.Type == typeof(int):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (tool.Value as int?) ?? 0,
                             Minimum = -0x80000000,
@@ -751,13 +763,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -766,7 +776,7 @@ public partial class MainWindow : Window
                     break;
                 case not null when tool.Type == typeof(long):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (tool.Value as long?) ?? 0,
                             Minimum = -0x8000000000000000,
@@ -777,13 +787,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -793,7 +801,7 @@ public partial class MainWindow : Window
 
                 case not null when tool.Type == typeof(sbyte):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (tool.Value as sbyte?) ?? 0,
                             Minimum = -0x80,
@@ -804,13 +812,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -819,7 +825,7 @@ public partial class MainWindow : Window
                     break;
                 case not null when tool.Type == typeof(ushort):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (tool.Value as ushort?) ?? 0,
                             Minimum = 0,
@@ -830,13 +836,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -845,7 +849,7 @@ public partial class MainWindow : Window
                     break;
                 case not null when tool.Type == typeof(uint):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (tool.Value as uint?) ?? 0,
                             Minimum = 0,
@@ -856,13 +860,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -871,7 +873,7 @@ public partial class MainWindow : Window
                     break;
                 case not null when tool.Type == typeof(ulong):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (tool.Value as ulong?) ?? 0,
                             Minimum = 0,
@@ -882,13 +884,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -898,7 +898,7 @@ public partial class MainWindow : Window
 
                 case not null when tool.Type == typeof(float):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (decimal)((tool.Value as float?) ?? 0),
                             FormatString = "0.00",
@@ -907,13 +907,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -922,7 +920,7 @@ public partial class MainWindow : Window
                     break;
                 case not null when tool.Type == typeof(double):
                     {
-                        var node = new NumericUpDown()
+                        var node = new NumericUpDown
                         {
                             Value = (decimal)((tool.Value as double?) ?? 0),
                             FormatString = "0.00",
@@ -931,13 +929,11 @@ public partial class MainWindow : Window
                         };
                         node.ValueChanged += (_, _) =>
                         {
-                            tool.StringToValue(
-                                (node.Value ?? 0).ToString(CultureInfo.InvariantCulture)
-                            );
+                            tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -947,7 +943,7 @@ public partial class MainWindow : Window
 
                 case not null when tool.Type == typeof(string):
                     {
-                        var node = new TextBox()
+                        var node = new TextBox
                         {
                             Text = tool.Value as string,
                             IsReadOnly = tool.ReadOnly,
@@ -957,8 +953,8 @@ public partial class MainWindow : Window
                             tool.StringToValue(node.Text ?? "");
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -969,7 +965,7 @@ public partial class MainWindow : Window
                 case not null when tool.Type == typeof(Color):
                     {
                         var col = (Color)tool.Value!;
-                        var node = new ColorPicker()
+                        var node = new ColorPicker
                         {
                             IsEnabled = !tool.ReadOnly,
                             Color = new(col.R, col.G, col.B, col.A),
@@ -981,8 +977,8 @@ public partial class MainWindow : Window
                             tool.StringToValue(new Color { Argb = node.Color.ToUInt32() }.Rgba.ToString() ?? "");
                             if (isString)
                             {
-                                EditableText_OnTextChanged(null, null);
-                                OriginalText_OnTextChanged(null, null);
+                                EditableText_OnTextChanging(null, null);
+                                OriginalText_OnTextChanging(null, null);
                             }
                         };
                         tool.Node = node;
@@ -994,64 +990,77 @@ public partial class MainWindow : Window
         }
     }
 
-    void EditableText_OnTextChanged(object? sender, TextChangedEventArgs? e)
+    void EditableText_OnTextChanging(object? sender, TextChangingEventArgs? e)
     {
         if (PreviewRenderer is null)
             return;
-        if (SelectedString is not null && !UpdatingEntry && FileData is not null)
+        if (SelectedString is not null && !UpdatingEntry && FileData is not null && e is not null)
         {
-            if (!EditableTextIgnoreUpdateOnce)
+            IsFileModified = true;
+            Title = "Dialogue Helper*";
+            SelectedString.Text = EditableText.Text ?? "<null>";
+            foreach (var prop in CustomProperties)
             {
-                IsFileModified = true;
-                Title = "Dialogue Helper*";
-                SelectedString.Text = EditableText.Text ?? "<null>";
-                foreach (var prop in CustomProperties)
-                {
-                    if (prop.Value != prop.DefaultValue)
-                        SelectedString.CustomProperties[prop.Name] = prop.ValueToString();
-                    else
-                        SelectedString.CustomProperties.Remove(prop.Name);
-                }
-
-                if (SelectedString.Text != SelectedString.OriginalText)
-                {
-                    if (!FileData.AuthorList.Contains(AuthorName))
-                        FileData.AuthorList.Add(AuthorName);
-                    SelectedString.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
-                    SelectedString.LastEdited.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-                }
-                UpdateModifySimilarStrings();
+                if (prop.Value != prop.DefaultValue)
+                    SelectedString.CustomProperties[prop.Name] = prop.ValueToString();
+                else
+                    SelectedString.CustomProperties.Remove(prop.Name);
             }
-            else
-                EditableTextIgnoreUpdateOnce = false;
+
+            if (SelectedString.Text != SelectedString.OriginalText)
+            {
+                if (!FileData.AuthorList.Contains(AuthorName))
+                    FileData.AuthorList.Add(AuthorName);
+                SelectedString.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
+                SelectedString.LastEdited.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            }
+            UpdateModifySimilarStrings(null, null);
         }
-        EditableText.Text ??= "";
         PreviewRenderer.CreateRender(
             StyleData!,
             BoxComboBox.SelectedIndex,
             FontComboBox.SelectedIndex,
-            (float?)BoxScale.Value ?? 0f,
-            (float?)FontScale.Value ?? 0f,
-            (float?)PreviewScale.Value ?? 0f,
+            ((float?)BoxScale.Value) ?? 0,
+            ((float?)FontScale.Value) ?? 0,
+            ((float?)PreviewScale.Value) ?? 0,
             new() { Argb = InitialTextColor.Color.ToUInt32() },
-            EditableText.Text,
+            new() { Argb = BoxColor.Color.ToUInt32() },
+            EditableText.Text ?? "",
             DisplayEditableCanvas
         );
         UpdateBoxBounds();
     }
 
-    void OriginalText_OnTextChanged(object? sender, TextChangedEventArgs? e)
+    void OriginalText_OnTextChanging(object? sender, TextChangingEventArgs? e)
     {
         if (PreviewRenderer is null)
             return;
+        if (!OriginalText.IsReadOnly && SelectedString is not null && FileData is not null)
+        {
+            if (!FileData.AuthorList.Contains(AuthorName))
+                FileData.AuthorList.Add(AuthorName);
+            SelectedString.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
+            SelectedString.LastEdited.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            SelectedString.Text ??= SelectedString.OriginalText;
+            SelectedString.OriginalText = OriginalText.Text ?? "";
+            lock (EqStringUpdates)
+            {
+                if (!EqStringUpdates.Any(x => x.StringContainer.TryGetTarget(out var t) && t == SelectedString))
+                    EqStringUpdates.Add((new(SelectedString), ModifySimilarStrings.IsChecked!.Value));
+            }
+            IsFileModified = true;
+            Title = "Dialogue Helper*";
+        }
         PreviewRenderer.CreateRender(
             StyleData!,
             BoxComboBox.SelectedIndex,
             FontComboBox.SelectedIndex,
-            (float?)BoxScale.Value ?? 0.0f,
-            (float?)FontScale.Value ?? 0.0f,
-            (float?)PreviewScale.Value ?? 0.0f,
+            ((float?)BoxScale.Value) ?? 0,
+            ((float?)FontScale.Value) ?? 0,
+            ((float?)PreviewScale.Value) ?? 0,
             new() { Argb = InitialTextColor.Color.ToUInt32() },
+            new() { Argb = BoxColor.Color.ToUInt32() },
             OriginalText.Text ?? "",
             DisplayOriginalCanvas
         );
@@ -1064,28 +1073,63 @@ public partial class MainWindow : Window
         await StyleData.CompileCode();
         InitializeCustomScript();
         UpdatingEntry = true;
-        EditableText_OnTextChanged(null, null);
-        OriginalText_OnTextChanged(null, null);
+        EditableText_OnTextChanging(null, null);
+        OriginalText_OnTextChanging(null, null);
         UpdatingEntry = false;
     }
 
     void OnScaleValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
     {
-        EditableText_OnTextChanged(null, null);
-        OriginalText_OnTextChanged(null, null);
+        EditableText_OnTextChanging(null, null);
+        OriginalText_OnTextChanging(null, null);
     }
 
     async void SaveFile_OnClick(object? sender, RoutedEventArgs e)
     {
+        if (LastSavePath is null || LastSavePath.Length == 0)
+        {
+            SaveFileAs_OnClick(sender, e);
+            return;
+        }
+
+        var lWin = new LoadingWindow { CanResize = false };
+        lWin.Closing += (_, ev) =>
+        {
+            if (!ev.IsProgrammatic)
+                ev.Cancel = true;
+        };
+        lWin.ProgressBar.Value = 0;
+        lWin.Show(this);
+        lWin.Text.Text = "Saving the file...";
+        try
+        {
+            await using var stream = File.Create(LastSavePath);
+            stream.Write(Encoding.UTF8.GetBytes(FileData!.OutputString()));
+            IsFileModified = false;
+            Title = "Dialogue Helper";
+        }
+        catch (Exception ex)
+        {
+            var se = new StyleError
+            {
+                Title = "Save error",
+                MessageBlock = { Text = "DialogueHelper has encountered an error while saving a file" },
+                ErrorBox = { Text = ex.ToString() },
+            };
+            await se.ShowDialog(this);
+        }
+        lWin.Close();
+    }
+
+    async void SaveFileAs_OnClick(object? sender, RoutedEventArgs e)
+    {
         if (!await EnsureFileOpen())
             return;
-        var file = await StorageProvider.SaveFilePickerAsync(
-            new()
-            {
-                Title = "Save Dialogue Helper file...",
-                FileTypeChoices = [new("DH File") { Patterns = ["*.dh"] }],
-            }
-        );
+        var file = await StorageProvider.SaveFilePickerAsync(new()
+        {
+            Title = "Save Dialogue Helper file...",
+            FileTypeChoices = [new("DH File") { Patterns = ["*.dh"] }],
+        });
 
         if (file is null)
             return;
@@ -1099,6 +1143,7 @@ public partial class MainWindow : Window
         lWin.ProgressBar.Value = 0;
         lWin.Show(this);
         lWin.Text.Text = "Saving the file...";
+        LastSavePath = file.Path.LocalPath;
         try
         {
             await using var stream = await file.OpenWriteAsync();
@@ -1108,7 +1153,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            var se = new StyleError()
+            var se = new StyleError
             {
                 Title = "Save error",
                 MessageBlock = { Text = "DialogueHelper has encountered an error while saving a file" },
@@ -1122,110 +1167,119 @@ public partial class MainWindow : Window
     void BoxComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         SelectedString?.BoxStyle = BoxComboBox.SelectedIndex;
-        EditableText_OnTextChanged(null, null);
-        OriginalText_OnTextChanged(null, null);
+        EditableText_OnTextChanging(null, null);
+        OriginalText_OnTextChanging(null, null);
     }
 
     void FontComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         SelectedString?.FontStyle = FontComboBox.SelectedIndex;
-        EditableText_OnTextChanged(null, null);
-        OriginalText_OnTextChanged(null, null);
+        EditableText_OnTextChanging(null, null);
+        OriginalText_OnTextChanging(null, null);
     }
 
     async void EntryTextBox_OnTextChanged(object? sender, TextChangedEventArgs? e) => await UpdateSearchFiltering();
+
     async Task UpdateSearchFiltering(Dictionary<TreeViewItem, Dictionary<int, TreeViewItem>>? delta = null)
     {
-        if (!await EnsureFileOpen())
+        if (!await EnsureFileOpen(false))
             return;
         var matches = new List<string>();
         {
             var sb = new StringBuilder();
-            var updateRaw = false;
             var enclosedQuote = false;
             var t = EntryTextBox.Text ?? "";
-            foreach (var (i, chr) in t.Index())
+            for (var i = 0; i < t.Length; i++)
             {
-                if (updateRaw)
+                var @char = t[i];
+                switch (@char)
                 {
-                    updateRaw = false;
-                    sb.Append(chr);
-                }
-                else
-                {
-                    switch (chr)
-                    {
-                        case '\\':
-                            updateRaw = true;
-                            break;
-                        case '"':
-                            enclosedQuote = !enclosedQuote;
-                            break;
-                        case ' ':
-                            if (!enclosedQuote)
+                    case '\\':
+                        if (i + 1 < t.Length && t[i + 1] is '"' or '\\')
+                            sb.Append(t[++i]);
+                        else
+                            sb.Append(@char);
+                        break;
+                    case '"':
+                        enclosedQuote = !enclosedQuote;
+                        break;
+                    case ' ':
+                        if (!enclosedQuote)
+                        {
+                            if (sb.Length > 0)
                             {
                                 matches.Add(sb.ToString());
                                 sb.Clear();
                             }
-                            else
-                                sb.Append(chr);
-                            break;
-                        default:
-                            sb.Append(chr);
-                            break;
-                    }
+                        }
+                        else
+                            sb.Append(@char);
+                        break;
+                    default:
+                        if (!enclosedQuote && char.IsWhiteSpace(@char))
+                        {
+                            matches.Add(sb.ToString());
+                            sb.Clear();
+                        }
+                        else
+                            sb.Append(@char);
+                        break;
                 }
 
-                if (i == t.Length - 1)
+                if (i == t.Length - 1 && sb.Length > 0)
                     matches.Add(sb.ToString());
             }
         }
-        var searchCasing = new List<string>(
-            matches
+        var targetCasing = matches
                 .Where(m => m.StartsWith("Casing:", StringComparison.InvariantCultureIgnoreCase))
                 .Select(m => m[7..])
                 .Where(m => m.Length > 0)
-        );
-        var targetCasing = searchCasing.Any(casing => casing.Equals("sensible", StringComparison.InvariantCultureIgnoreCase))
+                .Any(casing => casing.Equals("sensible", StringComparison.InvariantCultureIgnoreCase))
             ? StringComparison.InvariantCulture
             : StringComparison.InvariantCultureIgnoreCase;
 
-        var searchGroup = new List<string>(
-            matches
+        var searchGroup = matches
                 .Where(m => m.StartsWith("Group:", StringComparison.InvariantCultureIgnoreCase))
                 .Select(m => m[6..])
-                .Where(m => m.Length > 0)
-        );
-        var searchOgText = new List<string>(
-            matches
+                .ToList();
+        var searchOgText = matches
                 .Where(m => m.StartsWith("OgText:", StringComparison.InvariantCultureIgnoreCase))
                 .Select(m => m[7..])
-                .Where(m => m.Length > 0)
-        );
-        var headerText = new List<string>(
-            matches
+                .ToList();
+        var headerText = matches
                 .Where(m => m.StartsWith("Header:", StringComparison.InvariantCultureIgnoreCase))
                 .Select(m => m[7..])
-                .Where(m => m.Length > 0)
-        );
-        var stateText = new List<string>(
-            matches
+                .ToList();
+        var stateText = matches
                 .Where(m => m.StartsWith("State:", StringComparison.InvariantCultureIgnoreCase))
                 .Select(m => m[6..])
-                .Where(m => m.Length > 0)
-        );
+                .ToList();
+        var idText = matches
+                .Where(m => m.StartsWith("Id:", StringComparison.InvariantCultureIgnoreCase))
+                .Select(m => m[3..])
+                .Select(m =>
+                    m.Split(',')
+                        .Select(x => int.TryParse(x.Trim(), out var n) ? n : (int?)null)
+                        .Where(x => x is not null)
+                        .Cast<int>()
+                        .ToArray()
+                )
+                .ToList();
+        var keyText = matches
+                .Where(m => m.StartsWith("Key:", StringComparison.InvariantCultureIgnoreCase))
+                .Select(m => m[4..])
+                .ToList();
 
-        var searchText = new List<string>(
-            matches
+        var searchText = matches
                 .Where(m =>
                     !m.StartsWith("Casing:", StringComparison.InvariantCultureIgnoreCase)
                     && !m.StartsWith("Group:", StringComparison.InvariantCultureIgnoreCase)
                     && !m.StartsWith("OgText:", StringComparison.InvariantCultureIgnoreCase)
                     && !m.StartsWith("Header:", StringComparison.InvariantCultureIgnoreCase)
                     && !m.StartsWith("State:", StringComparison.InvariantCultureIgnoreCase)
-                )
-                .Where(m => m.Length > 0)
-        );
+                    && !m.StartsWith("Id:", StringComparison.InvariantCultureIgnoreCase)
+                    && !m.StartsWith("Key:", StringComparison.InvariantCultureIgnoreCase)
+                ).ToList();
 
         foreach (var value in delta ?? EtvTargetChildren)
         {
@@ -1233,18 +1287,22 @@ public partial class MainWindow : Window
             if (!FileData!.Strings.TryGetValue(key, out var list))
                 continue;
             var foundMatch = false;
-            if (headerText.All(header => key.Contains(header, targetCasing)))
+            if (headerText.All(header => key.Contains(header, targetCasing)) && !headerText.Any(header => header.Length == 0 && key.Length > 0))
             {
                 if (value.Value.Count <= 0)
                     foundMatch = true;
                 foreach (var entry in value.Value)
                 {
                     var item = list[EtvIndexes[entry.Value]];
-                    if (searchGroup.Any(group => !item.AuthorGroups.Any(ag => ag.Contains(group, targetCasing))))
+                    if (idText.Any(ids => !ids.Contains(item.Id)))
                         goto NotFound;
-                    if (searchOgText.Any(ogText => !item.OriginalText.Contains(ogText, targetCasing)))
+                    if (keyText.Any(key => !(item.Key ?? "").Contains(key, targetCasing)) || keyText.Any(key => key.Length == 0 && (item.Key?.Length) > 0))
                         goto NotFound;
-                    if (searchText.Any(text => !(item.Text ?? item.OriginalText).Contains(text, targetCasing)))
+                    if (searchGroup.Any(group => !item.AuthorGroups.Any(ag => ag.Contains(group, targetCasing))) || searchGroup.Any(group => item.AuthorGroups.Any(ag => ag.Length > 0 && group.Length == 0)))
+                        goto NotFound;
+                    if (searchOgText.Any(ogText => !item.OriginalText.Contains(ogText, targetCasing)) || searchOgText.Any(ogText => ogText.Length == 0 && item.OriginalText.Length > 0))
+                        goto NotFound;
+                    if (searchText.Any(text => !(item.Text ?? item.OriginalText).Contains(text, targetCasing)) || searchText.Any(text => text.Length == 0 && (item.Text ?? item.OriginalText).Length > 0))
                         goto NotFound;
                     foreach (var state in stateText)
                     {
@@ -1277,56 +1335,53 @@ public partial class MainWindow : Window
         }
     }
 
-    void ModifySimilarStrings_OnClick(object? sender, RoutedEventArgs e) => UpdateModifySimilarStrings();
+    void ModifySimilarStrings_OnClick(object? sender, RoutedEventArgs e) => UpdateModifySimilarStrings(null, null);
 
-    void UpdateModifySimilarStrings()
+    void UpdateModifySimilarStrings(StringContainer? sc, TreeViewItem? si, bool updateText = true, bool updateOgText = false)
     {
-        if (SelectedString is null || FileData is null)
+        sc ??= SelectedString;
+        if (sc is null || FileData is null)
             return;
-        if (EntryTreeView.SelectedItem is TreeViewItem tvi)
+        if ((si ?? EntryTreeView.SelectedItem) is TreeViewItem tvi)
         {
             lock (EtvTargetUpdates)
             {
-                var alreadyHas = false;
                 var target = EtvParents[tvi];
-                foreach (var n in EtvTargetUpdates)
-                {
-                    if (n.TryGetTarget(out var t) && t == target)
-                        alreadyHas = true;
-                }
-                if (!alreadyHas)
+                if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == target))
                     EtvTargetUpdates.Add(new(target));
             }
         }
         if (ModifySimilarStrings.IsChecked ?? false)
         {
-            foreach (var id in SelectedString.EqStrings)
+            foreach (var id in sc.EqStrings)
             {
                 var s = FileData.StringIds[id];
-                if (s.Id == SelectedString.Id)
+                if (s.Id == sc.Id)
                     continue;
-                s.Text = SelectedString.Text;
-                s.LastEdited.AuthorId = SelectedString.LastEdited.AuthorId;
-                s.LastEdited.Timestamp = SelectedString.LastEdited.Timestamp;
-                s.MarkAsModified = SelectedString.MarkAsModified;
+                if (updateText)
+                {
+                    s.Text = sc.Text;
+                    s.LastEdited.AuthorId = sc.LastEdited.AuthorId;
+                    s.LastEdited.Timestamp = sc.LastEdited.Timestamp;
+                    s.MarkAsModified = sc.MarkAsModified;
+                }
+                if (updateOgText)
+                    s.OriginalText = sc.OriginalText;
 
                 lock (EtvTargetUpdates)
                 {
-                    var alreadyHas = false;
                     var target = EtvParents[EtvReverseIndexes[id]];
-                    foreach (var n in EtvTargetUpdates)
-                    {
-                        if (n.TryGetTarget(out var t) && t == target)
-                            alreadyHas = true;
-                    }
-                    if (!alreadyHas)
+                    if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == target))
                         EtvTargetUpdates.Add(new(target));
                 }
             }
-            foreach (var (i, sstr) in SelectedString.EqStrings.Index())
+            if (SelectedString == sc)
             {
-                var s = FileData.StringIds[sstr];
-                SimilarStringsPanel.Items[i] = $"({sstr}) {((s.Text is not null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}";
+                foreach (var (i, sstr) in sc.EqStrings.Index())
+                {
+                    var s = FileData.StringIds[sstr];
+                    SimilarStringsPanel.Items[i] = $"({sstr}) {((s.Text is not null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}";
+                }
             }
         }
     }
@@ -1344,6 +1399,10 @@ public partial class MainWindow : Window
                 return;
         }
 
+        lock (EqStringUpdates)
+            EqStringUpdates.Clear();
+        lock (EtvTargetUpdates)
+            EtvTargetUpdates.Clear();
         SelectedString = null;
         FileData = null;
         EntryTreeView.Items.Clear();
@@ -1360,8 +1419,19 @@ public partial class MainWindow : Window
         if (IsFileModified && await new UnsavedChanges().ShowDialog<bool>(this))
             return;
 
-        SelectedString = null;
+        lock (EqStringUpdates)
+            EqStringUpdates.Clear();
+        lock (EtvTargetUpdates)
+            EtvTargetUpdates.Clear();
         FileData = new();
+        SelectedString = null;
+        EntryTreeView.Items.Clear();
+        EtvKeys.Clear();
+        EtvTargetChildren.Clear();
+        EtvIndexes.Clear();
+        EtvReverseIndexes.Clear();
+        IsFileModified = false;
+        Title = "Dialogue Helper";
     }
 
     async void GoTo_OnClick(object? sender, RoutedEventArgs e) => await new GoTo(this).ShowDialog(this);
@@ -1373,9 +1443,7 @@ public partial class MainWindow : Window
             await new InfoWindow("You need to select an item before trying to copy it to the clipboard.").ShowDialog(this);
             return;
         }
-        await Clipboard!.SetTextAsync(
-            ((TreeViewItem)EntryTreeView.SelectedItem).Header!.ToString() ?? "<null>"
-        );
+        await Clipboard!.SetTextAsync(((TreeViewItem)EntryTreeView.SelectedItem).Header!.ToString() ?? "<null>");
     }
 
     void ExpandTreeItems_OnClick(object? sender, RoutedEventArgs e)
@@ -1394,13 +1462,13 @@ public partial class MainWindow : Window
     {
         if (!await EnsureFileOpen())
             return;
-        var ce = new CreateEntry() { TextBox = { AcceptsReturn = false } };
+        var ce = new CreateEntry { TextBox = { AcceptsReturn = false } };
         if (await ce.ShowDialog<bool?>(this) ?? false)
         {
-            var t = ce.TextBox.Text ?? "<null>";
+            var t = ce.TextBox.Text ?? "";
             if (!FileData!.Strings.ContainsKey(t))
             {
-                var tvi = new TreeViewItem() { Header = t };
+                var tvi = new TreeViewItem { Header = t };
                 EntryTreeView.Items.Add(tvi);
                 FileData.Strings.Add(t, []);
                 EtvTargetChildren.Add(tvi, []);
@@ -1429,7 +1497,7 @@ public partial class MainWindow : Window
             await new InfoWindow("You need to select an item before trying to create a string.").ShowDialog(this);
             return;
         }
-        var ce = new CreateEntry()
+        var ce = new CreateEntry
         {
             Title = "Create String",
             EntryText = { Text = "Set the string content" },
@@ -1444,11 +1512,11 @@ public partial class MainWindow : Window
             return;
         if (await ce.ShowDialog<bool?>(this) ?? false)
         {
-            var t = ce.TextBox.Text ?? "<null>";
-            var tvi = new TreeViewItem() { Header = t };
-            parent.ItemsSource = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? []) { tvi }.ToArray();
+            var t = ce.TextBox.Text ?? "";
+            var tvi = new TreeViewItem { Header = t };
+            parent.ItemsSource = (TreeViewItem[])[tvi, .. parent.ItemsSource?.Cast<TreeViewItem>().ToArray() ?? []];
             EtvParents.Add(tvi, parent);
-            var sc = new StringContainer()
+            var sc = new StringContainer
             {
                 Id = FileData!.LastStringId++,
                 OriginalText = t,
@@ -1460,6 +1528,8 @@ public partial class MainWindow : Window
             EtvIndexes.Add(tvi, sc.Id);
             EtvReverseIndexes.Add(sc.Id, tvi);
             sc.EqStrings.Add(sc.Id);
+            if (!FileData.AuthorList.Contains(AuthorName))
+                FileData.AuthorList.Add(AuthorName);
             sc.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
             sc.LastEdited.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
@@ -1472,6 +1542,26 @@ public partial class MainWindow : Window
 
             IsFileModified = true;
             Title = "Dialogue Helper*";
+        }
+    }
+
+    async void ToggleBlockFinished_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!await EnsureFileOpen())
+            return;
+        if (EntryTreeView.SelectedItem is null || EntryTreeView.SelectedItem is not TreeViewItem tvi || !EtvKeys.ContainsKey(tvi))
+        {
+            await new InfoWindow("You need to select a block before trying to swap its finished state.").ShowDialog(this);
+            return;
+        }
+        foreach (var sc in FileData!.Strings[EtvKeys[tvi]].Values)
+            sc.MarkAsModified = !sc.MarkAsModified;
+        IsFileModified = true;
+        Title = "Dialogue Helper*";
+        lock (EtvTargetUpdates)
+        {
+            if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == tvi))
+                EtvTargetUpdates.Add(new(tvi));
         }
     }
 
@@ -1492,7 +1582,10 @@ public partial class MainWindow : Window
             {
                 EntryTreeView.Items.Remove(item);
                 foreach (var entry in FileData!.Strings[key])
+                {
                     FileData.StringIds.Remove(entry.Key);
+                    entry.Value.EqStrings.Remove(entry.Key);
+                }
                 FileData.Strings.Remove(key);
                 EtvKeys.Remove(item);
                 foreach (var node in EtvTargetChildren[item])
@@ -1508,7 +1601,9 @@ public partial class MainWindow : Window
                 var parent = EtvParents[item];
                 if (EtvKeys.TryGetValue(parent, out key) && EtvIndexes.TryGetValue(item, out var index))
                 {
-                    FileData!.Strings[key].Remove(index);
+                    var str = FileData!.Strings[key];
+                    str[index].EqStrings.Remove(index);
+                    str.Remove(index);
                     FileData.StringIds.Remove(index);
                     {
                         var items = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? []);
@@ -1536,31 +1631,32 @@ public partial class MainWindow : Window
             await new InfoWindow("You need to select an item before trying to mark it as modified.").ShowDialog(this);
             return;
         }
-        var item = (TreeViewItem)EntryTreeView.SelectedItem;
-        if (EtvKeys.ContainsKey(item))
+        MarkItemAsModified(SelectedString, (TreeViewItem)EntryTreeView.SelectedItem, MarkAsModified.IsChecked ?? false, true);
+    }
+
+    public void MarkItemAsModified(StringContainer sc, TreeViewItem si, bool markAsModified, bool modifySimilar)
+    {
+        if (EtvKeys.ContainsKey(si))
             return;
-        SelectedString.MarkAsModified = MarkAsModified.IsChecked ?? false;
+        sc.MarkAsModified = markAsModified;
         IsFileModified = true;
         Title = "Dialogue Helper*";
-        UpdateModifySimilarStrings();
-        UpdateEtvItem(EtvParents[item]);
+        UpdateModifySimilarStrings(sc, si, modifySimilar);
+        UpdateEtvItem(EtvParents[si]);
     }
+
+    void AllowEditingOriginal_OnClick(object? sender, RoutedEventArgs e) => OriginalText.IsReadOnly = !AllowEditingOriginal.IsChecked!.Value;
 
     async void ShowEntryInfo_OnClick(object? sender, RoutedEventArgs e)
     {
         if (!await EnsureFileOpen())
             return;
-        if (SelectedString is null)
+        if (SelectedString is null || FileData is null)
             return;
         var ts = DateTime.UnixEpoch.AddSeconds(SelectedString.LastEdited.Timestamp).ToLocalTime();
-        var ei = new EntryInfo()
+        var ei = new EntryInfo
         {
-            AuthorText =
-            {
-                Text = SelectedString.LastEdited.AuthorId < 0 || SelectedString.LastEdited.AuthorId >= FileData!.AuthorList.Count
-                        ? "<null>"
-                        : FileData.AuthorList[SelectedString.LastEdited.AuthorId],
-            },
+            AuthorText = { Text = FileData.AuthorList.ElementAtOrDefault(SelectedString.LastEdited.AuthorId) ?? "", },
             TimeDate = { SelectedDate = ts },
             TimeTime = { SelectedTime = ts.TimeOfDay },
             StringId = { Text = $"String ID: {SelectedString.Id}" },
@@ -1576,10 +1672,10 @@ public partial class MainWindow : Window
             i.Value.MarkAsModified || (i.Value.Text is not null && i.Value.OriginalText != i.Value.Text)
         );
         var total = FileData.StringIds.Count;
-        var fi = new FileInfo()
+        var fi = new FileInfo
         {
             EditInfo = { Text = $"Edited {modi} strings out of {total} ({modi / (double)total:P} completion)" },
-            Authors = { Text = $"Authors: {string.Join(", ", FileData.AuthorList)}" },
+            Authors = { Text = $"Authors: {string.Join(", ", new HashSet<string>(FileData.AuthorList).Order())}" },
         };
         await fi.ShowDialog(this);
     }
@@ -1617,19 +1713,39 @@ public partial class MainWindow : Window
     }
 
     ///<returns>returns true if file is open</returns>
-    public async Task<bool> EnsureFileOpen()
+    public async Task<bool> EnsureFileOpen(bool showMessage = true)
     {
         if (FileData is null)
         {
-            await new InfoWindow("You need to have a file open to use this functionality.").ShowDialog(this);
+            if (showMessage)
+                await new InfoWindow("You need to have a file open to use this functionality.").ShowDialog(this);
             return false;
         }
         return true;
     }
 
-    private void InitialTextColor_OnColorChanged(object? sender, ColorChangedEventArgs e)
+    void InitialTextColor_OnColorChanged(object? sender, ColorChangedEventArgs e)
     {
-        EditableText_OnTextChanged(null, null);
-        OriginalText_OnTextChanged(null, null);
+        EditableText_OnTextChanging(null, null);
+        OriginalText_OnTextChanging(null, null);
+    }
+
+    async void GroupEditorSelect_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!await EnsureFileOpen())
+            return;
+        await new GroupEditor(this).ShowDialog(this);
+    }
+
+    private void StringKey_OnTextChanging(object? sender, TextChangingEventArgs? e)
+    {
+        if (SelectedString is null || FileData is null || UpdatingEntry || e is null)
+            return;
+        SelectedString.Key = StringKey.Text;
+
+        if (!FileData.AuthorList.Contains(AuthorName))
+            FileData.AuthorList.Add(AuthorName);
+        SelectedString.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
+        SelectedString.LastEdited.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
     }
 }

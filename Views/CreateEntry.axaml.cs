@@ -6,11 +6,8 @@ namespace DialogueHelper.Views;
 public partial class CreateEntry : Window
 {
     public bool AcceptEmpty;
-    
-    public CreateEntry()
-    {
-        InitializeComponent();
-    }
+
+    public CreateEntry() => InitializeComponent();
 
     void FinishButton_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -18,8 +15,5 @@ public partial class CreateEntry : Window
             Close(true);
     }
 
-    void CancelButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close(false);
-    }
+    void CancelButton_OnClick(object? sender, RoutedEventArgs e) => Close(false);
 }

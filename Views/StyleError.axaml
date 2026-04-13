@@ -1,10 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="450" Width="450" Height="450" MinHeight="250"  
-        x:Class="DialogueHelper.Views.StyleError"
-        Title="User style error">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="450" Width="450" Height="450" MinHeight="250" x:Class="DialogueHelper.Views.StyleError" Title="User style error">
     <Grid RowDefinitions="60, *, 50">
         <TextBlock Grid.Row="0" Name="MessageBlock" HorizontalAlignment="Center" Margin="0 7 0 15" TextWrapping="WrapWithOverflow">The program encountered an error while loading the style "StyleName", therefore the style hasn't been loaded.</TextBlock>
         <TextBox Grid.Row="1" Name="ErrorBox" ScrollViewer.AllowAutoHide="False" IsReadOnly="True" AcceptsReturn="True" AcceptsTab="True" Foreground="LightCoral" Margin="5">Error Message</TextBox>

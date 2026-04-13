@@ -15,13 +15,7 @@ public partial class UnsavedChanges : Window
         };
     }
 
-    void ReturnToApp_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close(true);
-    }
+    void ReturnToApp_OnClick(object? sender, RoutedEventArgs e) => Close(true);
 
-    void IgnoreWarning_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close(false);
-    }
+    void IgnoreWarning_OnClick(object? sender, RoutedEventArgs e) => Close(false);
 }

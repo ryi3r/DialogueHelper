@@ -9,6 +9,11 @@ public class StringContainer
     public int Id = -1;
     public string? Text;
     public string OriginalText = "";
+    public string? Key
+    {
+        get;
+        set => field = value is not null && value.Length == 0 ? null : value;
+    }
     public readonly LastEdited LastEdited = new();
     public int BoxStyle;
     public int FontStyle;
@@ -24,6 +29,8 @@ public class StringContainer
     {
         if (fEntry.Data.TryGetValue("ID", out var id))
             Id = int.Parse(id);
+        if (fEntry.Data.TryGetValue("Key", out var key))
+            Key = key;
         if (fEntry.Data.TryGetValue("OriginalText", out var originalText))
             OriginalText = originalText;
         else if (fEntry.Data.TryGetValue("OriginalContent", out originalText))
@@ -75,6 +82,8 @@ public class StringContainer
             fe.Data["AuthorGroups"] = string.Join('@', AuthorGroups.Select(WebUtility.UrlEncode));
         if (MarkAsModified)
             fe.Data["MarkAsModified"] = "";
+        if (Key is not null)
+            fe.Data["Key"] = Key;
         return fe;
     }
 }

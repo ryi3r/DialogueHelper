@@ -5,17 +5,17 @@ using DialogueHelper.PreviewRenderer;
 
 public class StyleScript
 {
-    public virtual async Task Init(CustomToolWindowHandler wh) { }
+    public virtual Task Init(CustomToolWindowHandler wh) => Task.CompletedTask;
 
-    public virtual async Task<IEnumerable<ICustomProperty>> RegisterCustomSettings() => [];
+    public virtual Task<IEnumerable<ICustomProperty>> RegisterCustomSettings() => Task.FromResult<IEnumerable<ICustomProperty>>([]);
 
-    public virtual async Task<IEnumerable<ICustomProperty>> RegisterCustomProperties() => [];
+    public virtual Task<IEnumerable<ICustomProperty>> RegisterCustomProperties() => Task.FromResult<IEnumerable<ICustomProperty>>([]);
 
-    public virtual async Task<IEnumerable<CustomTool>> RegisterCustomTools() => [];
-
-    // if true then it finishes drawing early.
-    public virtual async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data) => false;
+    public virtual Task<IEnumerable<CustomTool>> RegisterCustomTools() => Task.FromResult<IEnumerable<CustomTool>>([]);
 
     // if true then it finishes drawing early.
-    public virtual async Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data) => false;
+    public virtual Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data) => Task.FromResult(false);
+
+    // if true then it finishes drawing early.
+    public virtual Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data) => Task.FromResult(false);
 }

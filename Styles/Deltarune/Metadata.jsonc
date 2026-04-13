@@ -8,5 +8,6 @@
 		"&",
 		"#"
 	],
-	"Ignore": ["`"]
+	// this is directly done in the code instead
+	"Ignore": []
 }

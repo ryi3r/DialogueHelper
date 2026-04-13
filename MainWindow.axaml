@@ -2,19 +2,21 @@
     <DockPanel>
         <Menu DockPanel.Dock="Top" Height="25">
             <MenuItem Header="File">
-                <MenuItem Header="New File" Click="CreateFile_OnClick" />
-                <MenuItem Header="Open File" Click="OpenFile_OnClick" />
-                <MenuItem Header="Save File" Click="SaveFile_OnClick" />
-                <MenuItem Header="Close File" Click="CloseFile_OnClick" />
+                <MenuItem Header="New File" Click="CreateFile_OnClick" HotKey="Ctrl+N" InputGesture="Ctrl+N" />
+                <MenuItem Header="Open File" Click="OpenFile_OnClick" HotKey="Ctrl+O" InputGesture="Ctrl+O" />
+                <MenuItem Header="Save File" Click="SaveFile_OnClick" HotKey="Ctrl+S" InputGesture="Ctrl+S" />
+                <MenuItem Header="Save File as..." Click="SaveFileAs_OnClick" HotKey="Ctrl+Shift+S" InputGesture="Ctrl+Shift+S" />
+                <MenuItem Header="Close File" Click="CloseFile_OnClick" HotKey="Ctrl+Shift+N" InputGesture="Ctrl+Shift+N" />
                 <Separator />
-                <MenuItem Header="Settings" Click="Settings_OnClick" />
+                <MenuItem Header="Settings" Click="Settings_OnClick" HotKey="Ctrl+Shift+O" InputGesture="Ctrl+Shift+O" />
                 <Separator />
-                <MenuItem Header="Exit" Click="Exit_OnClick" />
+                <MenuItem Header="Exit" Click="Exit_OnClick" HotKey="Ctrl+Escape" InputGesture="Ctrl+Escape" />
             </MenuItem>
             <MenuItem Header="Built-in Tools">
                 <MenuItem Header="Force style reload" Click="ForceStyleReload_OnClick" />
                 <MenuItem Header="Go to" Click="GoTo_OnClick" />
                 <MenuItem Header="Go to parent entry" Click="GoToParentEntry_OnClick" />
+                <!-- <MenuItem Header="Assign groups to items" Click="GroupEditorSelect_OnClick" /> -->
             </MenuItem>
             <MenuItem Name="CustomToolsMenu" Header="Custom Tools">
                 <MenuItem Name="CustomToolsEmpty" IsEnabled="False" Header="Empty" />
@@ -36,7 +38,13 @@
                             You may search through <Span FontWeight="Bold">search groups</Span>,
                             these groups allow you to search more efficiently.
                             <LineBreak /><LineBreak />
-                            The search groups are the following:<LineBreak /><Span FontWeight="Bold">Group</Span>: Search for author group names, such as "authorGroup1"<LineBreak /><Span FontWeight="Bold">OgText</Span>: Search for a matching string in the Original Text<LineBreak /><Span FontWeight="Bold">Header</Span>: Search for a matching string in the string header<LineBreak /><Span FontWeight="Bold">State</Span>: Check the status of the text, valid options to input here are: <Span FontWeight="Bold">Modified</Span> and <Span FontWeight="Bold">Original</Span>/<Span FontWeight="Bold">Base</Span><LineBreak /><Span FontWeight="Bold">Casing</Span>: Set the casing to check for, valid options to input here are: <Span FontWeight="Bold">Sensible</Span> and <Span FontWeight="Bold">Insensible</Span><LineBreak /><LineBreak />
+                            The search groups are the following:
+                            <LineBreak /><Span FontWeight="Bold">Group</Span>: Search for author group names, such as "authorGroup1"
+                            <LineBreak /><Span FontWeight="Bold">OgText</Span>: Search for a original text containing the specified Original Text
+                            <LineBreak /><Span FontWeight="Bold">Header</Span>: Search for a header containing the specified string header
+                            <LineBreak /><Span FontWeight="Bold">Key</Span>: Search for a key containing the specified string key
+                            <LineBreak /><Span FontWeight="Bold">State</Span>: Check the status of the text, valid options to input here are: <Span FontWeight="Bold">Modified</Span> and <Span FontWeight="Bold">Original</Span>/<Span FontWeight="Bold">Base</Span><LineBreak /><Span FontWeight="Bold">Casing</Span>: Set the casing to check for, valid options to input here are: <Span FontWeight="Bold">Sensible</Span> and <Span FontWeight="Bold">Insensible</Span><LineBreak /><Span FontWeight="Bold">Id</Span>: Search for specific text ids, separated by commas (,): note that all entries are 0-indexed, and should be used as such: <Span FontWeight="Bold">Id:0,1</Span>: This will only search for entries 0 and 1 respectively.
+                            <LineBreak /><LineBreak />
                             The order in which you input these doesn't matter, nor the casing you put them in.
                             <LineBreak />If you search without specifying a group, it'll default to the current (editable) text.
                             <LineBreak />If you want to search a full sentence, please put it in quotes: "This is the sentence I'm searching for!"
@@ -50,6 +58,8 @@
                         <MenuFlyout>
                             <MenuItem Click="CreateEntry_OnClick" Header="Create Entry" />
                             <MenuItem Click="CreateString_OnClick" Header="Create String" />
+                            <MenuItem Header="-" />
+                            <MenuItem Click="ToggleBlockFinished_OnClick" Header="Toggle block as finished" />
                             <MenuItem Header="-" />
                             <MenuItem Click="DeleteSelectedItem_OnClick" Header="Delete selected item" />
                             <MenuItem Header="-" />
@@ -80,15 +90,20 @@
                 </Grid>
                 <GridSplitter Name="OuterGridSplitter" Grid.Row="1" Margin="5" ResizeDirection="Rows" Background="Gray" />
                 <UniformGrid Grid.Row="2" Rows="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                    <TextBox Name="EditableText" TextChanged="EditableText_OnTextChanged" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" PlaceholderText="Editable Text" />
-                    <TextBox Name="OriginalText" TextChanged="OriginalText_OnTextChanged" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" IsReadOnly="True" PlaceholderText="Original Text" />
+                    <TextBox Name="EditableText" TextChanging="EditableText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" PlaceholderText="Editable Text" />
+                    <TextBox Name="OriginalText" TextChanging="OriginalText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" IsReadOnly="True" PlaceholderText="Original Text" />
                 </UniformGrid>
             </Grid>
             <GridSplitter Grid.Column="3" Margin="5" ResizeDirection="Columns" Background="Gray" />
             <DockPanel Grid.Column="4" Margin="5">
                 <StackPanel DockPanel.Dock="Top">
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <TextBlock Margin="7">String Key</TextBlock>
+                        <TextBox Name="StringKey" TextChanging="StringKey_OnTextChanging" UndoLimit="-1" MinWidth="175" />
+                    </StackPanel>
                     <CheckBox Click="ModifySimilarStrings_OnClick" Name="ModifySimilarStrings" Margin="8 0 0 0" IsChecked="True">Modify similar strings</CheckBox>
                     <CheckBox Click="MarkAsModified_OnClick" Name="MarkAsModified" Margin="8 0 0 0" IsChecked="False">Mark as modified</CheckBox>
+                    <CheckBox Click="AllowEditingOriginal_OnClick" Name="AllowEditingOriginal" Margin="8 0 0 0" IsChecked="False">Allow Editing Original</CheckBox>
                     <StackPanel Orientation="Horizontal" Margin="5">
                         <TextBlock Margin="7">Box</TextBlock>
                         <ComboBox SelectionChanged="BoxComboBox_OnSelectionChanged" Name="BoxComboBox" SelectedIndex="0">
@@ -116,6 +131,10 @@
                     <StackPanel Orientation="Horizontal" Margin="5">
                         <TextBlock Margin="7">Initial Text Color</TextBlock>
                         <ColorPicker Name="InitialTextColor" ColorChanged="InitialTextColor_OnColorChanged" />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <TextBlock Margin="7">Box Color</TextBlock>
+                        <ColorPicker Name="BoxColor" ColorChanged="InitialTextColor_OnColorChanged" />
                     </StackPanel>
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Top" Margin="10">

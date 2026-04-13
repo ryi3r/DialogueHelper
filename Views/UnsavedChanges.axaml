@@ -1,14 +1,8 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="175" CanResize="False" Width="450" Height="175"
-        x:Class="DialogueHelper.Views.UnsavedChanges"
-        Title="Unsaved Changes Detected">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="450" d:DesignHeight="175" CanResize="False" Width="450" Height="175" x:Class="DialogueHelper.Views.UnsavedChanges" Title="Unsaved Changes Detected">
     <StackPanel Orientation="Vertical" Margin="15" Spacing="7">
         <TextBlock TextWrapping="Wrap">
             <Span FontWeight="Bold" Foreground="Coral">WARNING!</Span>
-            <LineBreak/>You have unsaved changes, exiting the application now may cause data loss.
+            <LineBreak />You have unsaved changes, exiting the application now may cause data loss.
             If you selected this option by accident, you may go back and save before performing the action.
         </TextBlock>
         <Button Background="SeaGreen" Click="ReturnToApp_OnClick">Return to the app</Button>

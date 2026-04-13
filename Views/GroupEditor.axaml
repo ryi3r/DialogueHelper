@@ -1,0 +1,14 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="490" d:DesignHeight="450" Width="490" Height="450" CanResize="False" x:Class="DialogueHelper.Views.GroupEditor" Title="GroupEditor">
+    <Grid ColumnDefinitions="250, 4, *">
+        <TreeView DockPanel.Dock="Left" Margin="5" Name="TreeView" />
+        <GridSplitter Grid.Column="1" Margin="5" ResizeDirection="Columns" Background="Gray" />
+        <StackPanel Grid.Column="2" Orientation="Vertical" Margin="8" Spacing="5">
+            <TextBox PlaceholderText="Group1,Group2, ..." Height="20" />
+            <StackPanel Orientation="Horizontal">
+                <Button Click="AddGroup_OnClick">Add Group</Button>
+                <Button Click="RemoveGroup_OnClick">Remove Selected</Button>
+            </StackPanel>
+            <ListBox Width="200" HorizontalAlignment="Left" Name="EntryGroups" />
+        </StackPanel>
+    </Grid>
+</Window>

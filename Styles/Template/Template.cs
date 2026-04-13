@@ -8,54 +8,55 @@ using SixLabors.ImageSharp;
 
 public class Template : StyleScript
 {
-    public override async Task Init(CustomToolWindowHandler wh)
+    public override Task Init(CustomToolWindowHandler wh)
     {
         // This is called when the script is loaded and ready to go.
         //await wh.ShowDialog(new InfoWindow("Hello world!"));
+        return Task.CompletedTask;
     }
 
-    public override async Task<IEnumerable<ICustomProperty>> RegisterCustomSettings()
+    public override Task<IEnumerable<ICustomProperty>> RegisterCustomSettings()
     {
         // This may be called before Init, so be careful!
         // Store these somewhere if you're going to use them
-        return [
+        return Task.FromResult<IEnumerable<ICustomProperty>>([
             new CustomProperty<bool>("D" , "bool"),
             new CustomProperty<int>("E", "int"),
             new CustomProperty<string>("F", "string"),
-        ];
+        ]);
     }
 
-    public override async Task<IEnumerable<ICustomProperty>> RegisterCustomProperties()
+    public override Task<IEnumerable<ICustomProperty>> RegisterCustomProperties()
     {
         // Store these somewhere if you're going to use them
-        return [
+        return Task.FromResult<IEnumerable<ICustomProperty>>([
             new CustomProperty<bool>("A", "bool"),
             new CustomProperty<int>("B", "int"),
             new CustomProperty<string>("C", "string"),
-        ];
+        ]);
     }
 
-    public override async Task<IEnumerable<CustomTool>> RegisterCustomTools()
+    public override Task<IEnumerable<CustomTool>> RegisterCustomTools()
     {
-        return [new("Custom Tool", CustomToolTest), new("File Picker Example", CustomToolFileTest)];
+        return Task.FromResult<IEnumerable<CustomTool>>([new("Custom Tool", CustomToolTest), new("File Picker Example", CustomToolFileTest)]);
     }
 
-    public async Task CustomToolFileTest(CustomToolWindowHandler wh)
+    async Task CustomToolFileTest(CustomToolWindowHandler wh)
     {
         var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Example",
             AllowMultiple = true,
-            FileTypeFilter = [new("Json file") { Patterns = ["*.json"] }, new("All files") { Patterns = ["*"] }]
+            FileTypeFilter = [new("Json file") { Patterns = ["*.json"] }, new("All files") { Patterns = ["*"] }],
         });
-        var w = new InfoWindow($"File(s) chosen: {string.Join(", ", f.Select(f => f.Name))}")
+        var w = new InfoWindow($"File(s) chosen: {string.Join(", ", f.Select(x => x.Name))}")
         {
-            Title = "Example"
+            Title = "Example",
         };
         await wh.ShowDialog(w);
     }
 
-    public async Task CustomToolTest(CustomToolWindowHandler wh)
+    async Task CustomToolTest(CustomToolWindowHandler wh)
     {
         var w = new InfoWindow("This is a tool test message.");
         await wh.ShowDialog(w);

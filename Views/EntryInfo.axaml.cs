@@ -5,13 +5,7 @@ namespace DialogueHelper.Views;
 
 public partial class EntryInfo : Window
 {
-    public EntryInfo()
-    {
-        InitializeComponent();
-    }
-    
-    void CloseButton_OnClick(object? sender, RoutedEventArgs e)
-    {
-        Close();
-    }
+    public EntryInfo() => InitializeComponent();
+
+    void CloseButton_OnClick(object? sender, RoutedEventArgs e) => Close();
 }
