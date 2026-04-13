@@ -1419,6 +1419,7 @@ public partial class MainWindow : Window
         EtvTargetChildren.Clear();
         EtvIndexes.Clear();
         EtvReverseIndexes.Clear();
+        LastSavePath = null;
         IsFileModified = false;
         Title = "Dialogue Helper";
     }
@@ -1439,6 +1440,7 @@ public partial class MainWindow : Window
         EtvTargetChildren.Clear();
         EtvIndexes.Clear();
         EtvReverseIndexes.Clear();
+        LastSavePath = null;
         IsFileModified = false;
         Title = "Dialogue Helper";
     }
