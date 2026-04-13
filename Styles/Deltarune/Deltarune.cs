@@ -1,3 +1,5 @@
+//css_reference System.Diagnostics.Process
+//css_reference System.Console
 //css_reference System.IO.Pipelines
 //css_reference Microsoft.CSharp
 
@@ -14,7 +16,6 @@ using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.PreviewRenderer;
 using DialogueHelper.Views;
-using HarfBuzzSharp;
 
 public class Deltarune : StyleScript
 {
@@ -107,11 +108,12 @@ public class Deltarune : StyleScript
         if (f.Count <= 0)
             return;
         File.Delete($"{wh.GetStylePath()}/output.json");
-        using var proc = new Process()
+        using var proc = new Process
         {
             StartInfo =
             {
                 UseShellExecute = false,
+                CreateNoWindow = true,
                 FileName = filePath,
                 Arguments = $"load \"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
                 WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
@@ -189,11 +191,12 @@ public class Deltarune : StyleScript
             await JsonSerializer.SerializeAsync(file, data, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             await file.DisposeAsync();
             var targetPath = $"\"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\"";
-            using var proc = new Process()
+            using var proc = new Process
             {
                 StartInfo =
                 {
                     UseShellExecute = false,
+                    CreateNoWindow = true,
                     FileName = filePath,
                     Arguments = $"load {targetPath} -s ../ImportStringsJson.csx -o {targetPath}",
                     WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
@@ -310,11 +313,12 @@ public class Deltarune : StyleScript
         if (fSave is null)
             return;
         File.Delete($"{wh.GetStylePath()}/output.json");
-        using var proc = new Process()
+        using var proc = new Process
         {
             StartInfo =
             {
                 UseShellExecute = false,
+                CreateNoWindow = true,
                 FileName = filePath,
                 Arguments = $"load \"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
                 WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
@@ -406,11 +410,12 @@ public class Deltarune : StyleScript
         });
         if (f.Count <= 0)
             return;
-        using var proc = new Process()
+        using var proc = new Process
         {
             StartInfo =
             {
                 UseShellExecute = false,
+                CreateNoWindow = true,
                 FileName = filePath,
                 Arguments = $"load \"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
                 WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
