@@ -1559,7 +1559,7 @@ public partial class MainWindow : Window
         }
     }
 
-    async void ToggleBlockFinished_OnClick(object? sender, RoutedEventArgs e)
+    async void MarkBlockAsFinished_OnClick(object? sender, RoutedEventArgs e)
     {
         if (!await EnsureFileOpen())
             return;
@@ -1569,7 +1569,27 @@ public partial class MainWindow : Window
             return;
         }
         foreach (var sc in FileData!.Strings[EtvKeys[tvi]].Values)
-            sc.MarkAsModified = !sc.MarkAsModified;
+            sc.MarkAsModified = true;
+        IsFileModified = true;
+        Title = "Dialogue Helper*";
+        lock (EtvTargetUpdates)
+        {
+            if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == tvi))
+                EtvTargetUpdates.Add(new(tvi));
+        }
+    }
+
+    async void MarkBlockAsUnfinished_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!await EnsureFileOpen())
+            return;
+        if (EntryTreeView.SelectedItem is null || EntryTreeView.SelectedItem is not TreeViewItem tvi || !EtvKeys.ContainsKey(tvi))
+        {
+            await new InfoWindow("You need to select a block before trying to swap its finished state.").ShowDialog(this);
+            return;
+        }
+        foreach (var sc in FileData!.Strings[EtvKeys[tvi]].Values)
+            sc.MarkAsModified = false;
         IsFileModified = true;
         Title = "Dialogue Helper*";
         lock (EtvTargetUpdates)

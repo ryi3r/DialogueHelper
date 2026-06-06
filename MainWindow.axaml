@@ -59,7 +59,8 @@
                             <MenuItem Click="CreateEntry_OnClick" Header="Create Entry" />
                             <MenuItem Click="CreateString_OnClick" Header="Create String" />
                             <MenuItem Header="-" />
-                            <MenuItem Click="ToggleBlockFinished_OnClick" Header="Toggle block as finished" />
+                            <MenuItem Click="MarkBlockAsFinished_OnClick" Header="Mark block as finished"/>
+                            <MenuItem Click="MarkBlockAsUnfinished_OnClick" Header="Mark block as unfinished" />
                             <MenuItem Header="-" />
                             <MenuItem Click="DeleteSelectedItem_OnClick" Header="Delete selected item" />
                             <MenuItem Header="-" />
