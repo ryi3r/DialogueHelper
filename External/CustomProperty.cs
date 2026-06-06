@@ -1,7 +1,5 @@
 using System;
 using Avalonia.Controls;
-using Avalonia.Media;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace DialogueHelper.External;
 

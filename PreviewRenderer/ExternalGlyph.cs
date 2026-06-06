@@ -1,5 +1,3 @@
-using SixLabors.ImageSharp;
-
 namespace DialogueHelper.PreviewRenderer;
 
 public struct ExternalGlyph()

@@ -381,6 +381,9 @@ public partial class MainWindow : Window
 
             UpdateCustomScriptFields();
             UpdatingEntry = false;
+
+            EditableText_OnTextChanging(null, null);
+            OriginalText_OnTextChanging(null, null);
         }
         else
             SelectedString = null;

@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia.Media.Imaging;
 using CSScriptLib;
-using SixLabors.ImageSharp;
+using SkiaSharp;
 
 namespace DialogueHelper.StylesParser;
 
@@ -40,9 +40,9 @@ public class StyleParser
             {
                 if (ImageAssets.ContainsKey(img.Path))
                     continue;
-                var baseImage = Image.Load($"{path}/{img.Path}");
+                using var baseImage = SKBitmap.Decode($"{path}/{img.Path}");
                 var stream = new MemoryStream();
-                baseImage.SaveAsWebp(stream);
+                baseImage.Encode(stream, SKEncodedImageFormat.Webp, 100);
                 baseImage.Dispose();
                 stream.Seek(0, SeekOrigin.Begin);
                 ImageAssets.Add(img.Path, new Bitmap(stream));
@@ -53,9 +53,9 @@ public class StyleParser
         {
             if (ImageAssets.ContainsKey(font.ImagePath))
                 continue;
-            var baseImage = Image.Load($"{path}/{font.ImagePath}");
+            using var baseImage = SKBitmap.Decode($"{path}/{font.ImagePath}");
             var stream = new MemoryStream();
-            baseImage.SaveAsWebp(stream);
+            baseImage.Encode(stream, SKEncodedImageFormat.Webp, 100);
             baseImage.Dispose();
             stream.Seek(0, SeekOrigin.Begin);
             ImageAssets.Add(font.ImagePath, new Bitmap(stream));

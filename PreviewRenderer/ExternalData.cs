@@ -6,9 +6,7 @@ using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using DialogueHelper.StylesParser;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using Image = SixLabors.ImageSharp.Image;
+using SkiaSharp;
 
 namespace DialogueHelper.PreviewRenderer;
 
@@ -24,9 +22,9 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
     {
         if (mainWindow.LoadedImages.TryGetValue(path, out var value))
             return value;
-        var baseImage = Image.Load($"{Style.Folder}/{path}");
+        using var baseImage = SKBitmap.Decode($"{Style.Folder}/{path}");
         using var stream = new MemoryStream();
-        baseImage.SaveAsBmp(stream);
+        baseImage.Encode(stream, SKEncodedImageFormat.Webp, 100);
         baseImage.Dispose();
         stream.Seek(0, SeekOrigin.Begin);
         var bitmap = new Bitmap(stream);
@@ -49,24 +47,25 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         using var stream1 = new MemoryStream();
         bitmap.Save(stream1);
         stream1.Seek(0, SeekOrigin.Begin);
-        var tex = Image.Load<Rgba32>(stream1);
+        using var tex = SKBitmap.Decode(stream1);
         var col = color ?? Glyph.Color;
-        tex.ProcessPixelRows(accessor =>
+        using var pxs = tex.PeekPixels();
+        for (var i = 0; i < tex.Height; i++)
         {
-            for (var i = 0; i < accessor.Height; i++)
+            var row = pxs.GetPixelSpan<SKColor>(0, i);
+            for (var x = 0; x < tex.Width; x++)
             {
-                foreach (ref var px in accessor.GetRowSpan(i))
-                {
-                    px.R = (byte)(px.R / 255f * (col.R / 255f) * 255f);
-                    px.G = (byte)(px.G / 255f * (col.G / 255f) * 255f);
-                    px.B = (byte)(px.B / 255f * (col.B / 255f) * 255f);
-                    px.A = (byte)(px.A / 255f * (col.A / 255f) * 255f);
-                }
+                var px = row[x];
+                row[x] = px
+                    .WithRed((byte)(px.Red / 255f * (col.R / 255f) * 255f))
+                    .WithGreen((byte)(px.Green / 255f * (col.G / 255f) * 255f))
+                    .WithBlue((byte)(px.Blue / 255f * (col.B / 255f) * 255f))
+                    .WithAlpha((byte)(px.Alpha / 255f * (col.A / 255f) * 255f));
             }
-        });
+        }
         {
             using var stream2 = new MemoryStream();
-            tex.SaveAsWebp(stream2);
+            tex.Encode(stream2, SKEncodedImageFormat.Webp, 100);
             stream2.Seek(0, SeekOrigin.Begin);
             return new Bitmap(stream2);
         }

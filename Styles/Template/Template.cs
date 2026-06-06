@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using DialogueHelper.External;
 using DialogueHelper.PreviewRenderer;
 using DialogueHelper.Views;
-using SixLabors.ImageSharp;
 
 public class Template : StyleScript
 {

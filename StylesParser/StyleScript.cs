@@ -13,9 +13,13 @@ public class StyleScript
 
     public virtual Task<IEnumerable<CustomTool>> RegisterCustomTools() => Task.FromResult<IEnumerable<CustomTool>>([]);
 
-    // if true then it finishes drawing early.
+    /// <summary>
+    /// if it returns true then it finishes drawing early.
+    /// </summary>
     public virtual Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data) => Task.FromResult(false);
 
-    // if true then it finishes drawing early.
+    /// <summary>
+    /// if it returns true then it finishes drawing early.
+    /// </summary>
     public virtual Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data) => Task.FromResult(false);
 }

@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>WinExe</OutputType>
         <TargetFramework>net10.0</TargetFramework>
@@ -10,24 +11,21 @@
         <Copyright>ryi3r 2025-2026</Copyright>
         <PackageId>Dialogue Helper</PackageId>
         <Product>Dialogue Helper</Product>
-        <AssemblyVersion>2.1.0.1</AssemblyVersion>
-        <FileVersion>2.1.0.1</FileVersion>
+        <AssemblyVersion>2.1.1.0</AssemblyVersion>
+        <FileVersion>2.1.1.0</FileVersion>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     </PropertyGroup>
-
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.0.1" />
-        <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.0.1" />
-        <PackageReference Include="Avalonia.Desktop" Version="12.0.1" />
-        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.1" />
-        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.1" />
-        <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.0" />
-        <PackageReference Include="CS-Script" Version="4.14.6" />
-        <PackageReference Include="SixLabors.ImageSharp" Version="3.1.12" />
-        <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.7" />
+        <PackageReference Include="Avalonia" Version="12.0.4" />
+        <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.0.4" />
+        <PackageReference Include="Avalonia.Desktop" Version="12.0.4" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.4" />
+        <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.4" />
+        <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.2" />
+        <PackageReference Include="CS-Script" Version="4.14.9" />
+        <PackageReference Include="SkiaSharp" Version="3.119.4" />
     </ItemGroup>
-
     <ItemGroup>
         <Content Include="Styles/**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -41,7 +39,6 @@
         <Content Include="LICENSE">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-
         <Compile Remove="Styles/**" />
         <Compile Include="Styles/**/*.cs" Condition="'$(Configuration)' == 'Debug'" />
     </ItemGroup>
