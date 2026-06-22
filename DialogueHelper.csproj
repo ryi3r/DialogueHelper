@@ -11,25 +11,35 @@
         <Copyright>ryi3r 2025-2026</Copyright>
         <PackageId>Dialogue Helper</PackageId>
         <Product>Dialogue Helper</Product>
-        <AssemblyVersion>2.1.1.0</AssemblyVersion>
-        <FileVersion>2.1.1.0</FileVersion>
+        <AssemblyVersion>2.2</AssemblyVersion>
+        <FileVersion>2.2</FileVersion>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Remove="Avalonia.SpellChecker/**/*" />
+        <AvaloniaXaml Remove="Avalonia.SpellChecker/**/*" />
+        <ProjectReference Include="Avalonia.SpellChecker/Avalonia.SpellChecker/Avalonia.SpellChecker.csproj" />
         <PackageReference Include="Avalonia" Version="12.0.4" />
         <PackageReference Include="Avalonia.Controls.ColorPicker" Version="12.0.4" />
         <PackageReference Include="Avalonia.Desktop" Version="12.0.4" />
         <PackageReference Include="Avalonia.Themes.Fluent" Version="12.0.4" />
         <PackageReference Include="Avalonia.Fonts.Inter" Version="12.0.4" />
-        <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.2" />
-        <PackageReference Include="CS-Script" Version="4.14.9" />
+        <PackageReference Include="AvaloniaUI.DiagnosticsSupport" Version="2.2.3" />
+        <PackageReference Include="CS-Script" Version="4.14.11" />
         <PackageReference Include="SkiaSharp" Version="3.119.4" />
     </ItemGroup>
     <ItemGroup>
         <Content Include="Styles/**">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <Content Include="Backgrounds/**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Content Include="SpellCheckDictionaries/**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+
         <Content Remove="Styles/Deltarune/UndertaleModCli/**" />
         <Content Include="Styles/Deltarune/UndertaleModCli/**/*.txt">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>

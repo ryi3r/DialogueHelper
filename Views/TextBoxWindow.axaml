@@ -1,11 +1,11 @@
-<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="400" Width="400" Height="400" x:Class="DialogueHelper.Views.TextBoxWindow" Title="TextBox Window">
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="200" Width="400" Height="400" x:Class="DialogueHelper.Views.TextBoxWindow" Title="TextBox Window">
     <DockPanel Margin="5">
         <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Name="InnerText">Logs.</TextBlock>
-        <TextBox DockPanel.Dock="Top" Margin="0 5 0 0" Name="TextBox" AcceptsReturn="True" IsReadOnly="True" VerticalAlignment="Stretch" MinHeight="333" MaxHeight="333"/>
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Bottom" VerticalAlignment="Bottom" MinHeight="30" Spacing="7">
             <Button Name="CopyClipboardTextButton" Click="CopyClipboardTextButton_OnClick">Copy to clipboard</Button>
             <Button Name="SaveTextButton" Click="SaveTextButton_OnClick">Save to file</Button>
             <Button Name="OkButton" Click="OkButton_OnClick">Ok</Button>
         </StackPanel>
+        <TextBox DockPanel.Dock="Bottom" Margin="0 5 0 5" Name="TextBox" AcceptsReturn="True" IsReadOnly="True" VerticalAlignment="Stretch" />
     </DockPanel>
 </Window>

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
@@ -14,6 +15,7 @@ public partial class Settings : Window
 {
     public readonly MainWindow? MainWindow;
     public readonly List<StyleParser> StyleData = [];
+    public readonly List<string> BackgroundData = [];
     public List<string> IgnoreStyles = [];
 
     public bool Init;
@@ -35,6 +37,7 @@ public partial class Settings : Window
         GroupOnlyEntries.IsChecked = mainWindow.ShowOnlyGroupEntries;
 
         StyleComboBox.Items.Clear();
+        BackgroundComboBox.Items.Clear();
     }
 
     void Ok_OnClick(object? sender, RoutedEventArgs e)
@@ -68,7 +71,10 @@ public partial class Settings : Window
                 MainWindow.SelectedStyle = abs;
                 MainWindow.ScriptNeedsInitialization = true;
             }
+            MainWindow._lastBgndPath = "";
+            MainWindow.BgndPath = BackgroundData[BackgroundComboBox.SelectedIndex];
             MainWindow.SaveSettings();
+            MainWindow.LoadBackground();
         }
         Close();
     }
@@ -90,42 +96,63 @@ public partial class Settings : Window
             };
         }
 
-        foreach (var f in Directory.EnumerateDirectories("Styles"))
+        if (!Design.IsDesignMode)
         {
-            var folder = Path.GetFullPath(f);
-            if (IgnoreStyles.Contains(folder))
-                continue;
-            try
+            foreach (var f in Directory.EnumerateDirectories(Path.Combine(AppContext.BaseDirectory, "Styles")))
             {
-                var style = new StyleParser(folder);
-                await Task.Run(() => style.CompileCode());
-                StyleData.Add(style);
-                StyleComboBox.Items.Add(new TextBlock() { Text = $"{style.Metadata.Name} by {style.Metadata.Author}" });
-                if (!MainWindow!.StyleSettings.ContainsKey(folder))
-                    MainWindow.StyleSettings.Add(folder, []);
-                var res = await (style.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()));
-                var props = MainWindow.StyleSettings[folder];
-                foreach (var prop in res)
+                var folder = Path.GetFullPath(f);
+                if (IgnoreStyles.Contains(folder))
+                    continue;
+                try
                 {
-                    var p = props.FirstOrDefault(x => x.Name == prop.Name);
-                    if (p is not null)
+                    var style = new StyleParser(folder);
+                    await Task.Run(() => style.CompileCode());
+                    StyleData.Add(style);
+                    StyleComboBox.Items.Add(new TextBlock { Text = $"{style.Metadata.Name} by {style.Metadata.Author}" });
+                    if (!MainWindow!.StyleSettings.ContainsKey(folder))
+                        MainWindow.StyleSettings.Add(folder, []);
+                    var res = await (style.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()));
+                    var props = MainWindow.StyleSettings[folder];
+                    foreach (var prop in res)
                     {
-                        var val = p.ValueToString();
-                        if (val.Length > 0)
-                            prop.StringToValue(val);
-                        var ind = props.IndexOf(p);
-                        props.RemoveAt(ind);
-                        props.Insert(ind, prop);
+                        var p = props.FirstOrDefault(x => x.Name == prop.Name);
+                        if (p is not null)
+                        {
+                            var val = p.ValueToString();
+                            if (val.Length > 0)
+                                prop.StringToValue(val);
+                            var ind = props.IndexOf(p);
+                            props.RemoveAt(ind);
+                            props.Insert(ind, prop);
+                        }
+                        else
+                            props.Add(prop);
                     }
-                    else
-                        props.Add(prop);
+                }
+                catch (Exception ex)
+                {
+                    var sErr = new StyleError { ErrorBox = { Text = ex.ToString() } };
+                    sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", folder);
+                    await sErr.ShowDialog(this);
                 }
             }
-            catch (Exception ex)
+            foreach (var f in Directory.EnumerateDirectories(Path.Combine(AppContext.BaseDirectory, "Backgrounds")))
             {
-                var sErr = new StyleError() { ErrorBox = { Text = ex.ToString() } };
-                sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", folder);
-                await sErr.ShowDialog(this);
+                var folder = Path.GetFullPath(f);
+                if (IgnoreStyles.Contains(folder))
+                    continue;
+                try
+                {
+                    var style = JsonSerializer.Deserialize<BackgroundConfig>(File.ReadAllText(Path.Combine(folder, "Config.jsonc")), new JsonSerializerOptions { IncludeFields = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true })!;
+                    BackgroundData.Add(folder);
+                    BackgroundComboBox.Items.Add(new TextBlock { Text = $"{style.Name} by {style.Author}" });
+                }
+                catch (Exception ex)
+                {
+                    var sErr = new StyleError { ErrorBox = { Text = ex.ToString() } };
+                    sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", folder);
+                    await sErr.ShowDialog(this);
+                }
             }
         }
 
@@ -148,6 +175,10 @@ public partial class Settings : Window
                 if (styleIndex != -1)
                     StyleComboBox.SelectedIndex = styleIndex;
             }
+
+            var bgndIndex = BackgroundData.FindIndex(folder => Path.GetFullPath(folder) == Path.GetFullPath(MainWindow.BgndPath));
+            if (bgndIndex != -1)
+                BackgroundComboBox.SelectedIndex = bgndIndex;
         }
     }
 }

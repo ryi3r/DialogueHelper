@@ -1,0 +1,12 @@
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450" Width="400" Height="150" x:Class="Views.QuestionNumberInputWindow" Title="Question Number Input Window">
+    <Panel Margin="5">
+        <StackPanel Orientation="Vertical" Name="__InnerPanel">
+            <TextBlock TextWrapping="Wrap" Name="__InnerText">This is a sample question text, this is long enough to wrap around the window.</TextBlock>
+            <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
+                <TextBlock Name="__InnerNumberText" Margin="5 7 10 5">Text</TextBlock>
+                <NumericUpDown Name="__InnerNumberSel" Value="0" MinWidth="150" />
+            </StackPanel>
+        </StackPanel>
+        <Button VerticalAlignment="Bottom" HorizontalAlignment="Right" Name="OkButton" Click="OkButton_OnClick">Ok</Button>
+    </Panel>
+</Window>

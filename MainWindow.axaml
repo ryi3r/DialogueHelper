@@ -1,154 +1,165 @@
-<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720" x:Class="DialogueHelper.MainWindow" Title="Dialogue Helper" LayoutUpdated="OnLayoutUpdated" Opened="OnOpened" DragDrop.AllowDrop="True">
-    <DockPanel>
-        <Menu DockPanel.Dock="Top" Height="25">
-            <MenuItem Header="File">
-                <MenuItem Header="New File" Click="CreateFile_OnClick" HotKey="Ctrl+N" InputGesture="Ctrl+N" />
-                <MenuItem Header="Open File" Click="OpenFile_OnClick" HotKey="Ctrl+O" InputGesture="Ctrl+O" />
-                <MenuItem Header="Save File" Click="SaveFile_OnClick" HotKey="Ctrl+S" InputGesture="Ctrl+S" />
-                <MenuItem Header="Save File as..." Click="SaveFileAs_OnClick" HotKey="Ctrl+Shift+S" InputGesture="Ctrl+Shift+S" />
-                <MenuItem Header="Close File" Click="CloseFile_OnClick" HotKey="Ctrl+Shift+N" InputGesture="Ctrl+Shift+N" />
-                <Separator />
-                <MenuItem Header="Settings" Click="Settings_OnClick" HotKey="Ctrl+Shift+O" InputGesture="Ctrl+Shift+O" />
-                <Separator />
-                <MenuItem Header="Exit" Click="Exit_OnClick" HotKey="Ctrl+Escape" InputGesture="Ctrl+Escape" />
-            </MenuItem>
-            <MenuItem Header="Built-in Tools">
-                <MenuItem Header="Force style reload" Click="ForceStyleReload_OnClick" HotKey="Ctrl+R" InputGesture="Ctrl+R" />
-                <MenuItem Header="Go to" Click="GoTo_OnClick" HotKey="Ctrl+G" InputGesture="Ctrl+G" />
-                <MenuItem Header="Go to parent entry" Click="GoToParentEntry_OnClick" HotKey="Ctrl+Shift+G" InputGesture="Ctrl+Shift+G" />
-                <!-- <MenuItem Header="Assign groups to items" Click="GroupEditorSelect_OnClick" /> -->
-            </MenuItem>
-            <MenuItem Name="CustomToolsMenu" Header="Custom Tools">
-                <MenuItem Name="CustomToolsEmpty" IsEnabled="False" Header="Empty" />
-            </MenuItem>
-            <MenuItem Header="About">
-                <MenuItem Header="Show entry info" Click="ShowEntryInfo_OnClick" />
-                <MenuItem Header="Show file info" Click="ShowFileInfo_OnClick" />
-                <Separator />
-                <MenuItem Header="About Dialogue Helper..." Click="AboutDialogueHelper_OnClick" />
-            </MenuItem>
-        </Menu>
-        <Grid ColumnDefinitions="300, 4, *, 4, 300" DockPanel.Dock="Left" Name="MainGrid">
-            <StackPanel Name="LeftStackPanel" Grid.Column="0" Orientation="Vertical" Margin="5">
-                <TextBox TextChanged="EntryTextBox_OnTextChanged" Name="EntryTextBox" PlaceholderText="Search an entry">
-                    <ToolTip.Tip>
-                        <TextBlock>
-                            An accessible way to search entries.
-                            <LineBreak /><LineBreak />
-                            You may search through <Span FontWeight="Bold">search groups</Span>,
-                            these groups allow you to search more efficiently.
-                            <LineBreak /><LineBreak />
-                            The search groups are the following:
-                            <LineBreak /><Span FontWeight="Bold">Group</Span>: Search for author group names, such as "authorGroup1"
-                            <LineBreak /><Span FontWeight="Bold">OgText</Span>: Search for a original text containing the specified Original Text
-                            <LineBreak /><Span FontWeight="Bold">Header</Span>: Search for a header containing the specified string header
-                            <LineBreak /><Span FontWeight="Bold">Key</Span>: Search for a key containing the specified string key
-                            <LineBreak /><Span FontWeight="Bold">State</Span>: Check the status of the text, valid options to input here are: <Span FontWeight="Bold">Modified</Span> and <Span FontWeight="Bold">Original</Span>/<Span FontWeight="Bold">Base</Span><LineBreak /><Span FontWeight="Bold">Casing</Span>: Set the casing to check for, valid options to input here are: <Span FontWeight="Bold">Sensible</Span> and <Span FontWeight="Bold">Insensible</Span><LineBreak /><Span FontWeight="Bold">Id</Span>: Search for specific text ids, separated by commas (,): note that all entries are 0-indexed, and should be used as such: <Span FontWeight="Bold">Id:0,1</Span>: This will only search for entries 0 and 1 respectively.
-                            <LineBreak /><LineBreak />
-                            The order in which you input these doesn't matter, nor the casing you put them in.
-                            <LineBreak />If you search without specifying a group, it'll default to the current (editable) text.
-                            <LineBreak />If you want to search a full sentence, please put it in quotes: "This is the sentence I'm searching for!"
-                            <LineBreak />This is due to how the engine searches for groups, so please keep it in mind.
-                            <LineBreak />To use the search groups, you can use Name:Value, something such as Header:MyHeader will work.
-                        </TextBlock>
-                    </ToolTip.Tip>
-                </TextBox>
-                <TreeView Name="EntryTreeView" Margin="5" SelectionChanged="EntryTreeView_OnSelectionChanged">
-                    <TreeView.ContextFlyout>
-                        <MenuFlyout>
-                            <MenuItem Click="CreateEntry_OnClick" Header="Create Entry" />
-                            <MenuItem Click="CreateString_OnClick" Header="Create String" />
-                            <MenuItem Header="-" />
-                            <MenuItem Click="MarkBlockAsFinished_OnClick" Header="Mark block as finished"/>
-                            <MenuItem Click="MarkBlockAsUnfinished_OnClick" Header="Mark block as unfinished" />
-                            <MenuItem Header="-" />
-                            <MenuItem Click="DeleteSelectedItem_OnClick" Header="Delete selected item" />
-                            <MenuItem Header="-" />
-                            <MenuItem Click="CopyClipboardSelectedTreeItem_OnClick" Header="Copy to clipboard selected text" />
-                            <MenuItem Header="-" />
-                            <MenuItem Click="ExpandTreeItems_OnClick" Header="Expand all" />
-                            <MenuItem Click="CollapseTreeItems_OnClick" Header="Collapse all" />
-                        </MenuFlyout>
-                    </TreeView.ContextFlyout>
-                </TreeView>
-            </StackPanel>
-            <GridSplitter Grid.Column="1" Margin="5" ResizeDirection="Columns" Background="Gray" />
-            <Grid Name="OuterMiddleStackPanel" Grid.Column="2" RowDefinitions="*, 4, 175" Margin="5">
-                <Grid Name="MiddleStackPanel" ClipToBounds="True" RowDefinitions="235, 4, 235" LayoutUpdated="BoxImages_OnLayoutUpdated">
-                    <StackPanel Name="PanelOriginal" Grid.Row="0" Orientation="Vertical" ClipToBounds="True">
-                        <TextBlock Name="OriginalLabel" Margin="5">Original</TextBlock>
-                        <ScrollViewer Name="ScrollViewerOriginal" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" AllowAutoHide="False">
-                            <Canvas Name="DisplayOriginalCanvas" VerticalAlignment="Top" HorizontalAlignment="Left" />
-                        </ScrollViewer>
-                    </StackPanel>
-                    <GridSplitter Name="InnerGridSplitter" Grid.Row="1" Margin="5" ResizeDirection="Rows" Background="Gray" />
-                    <StackPanel Name="Panel" Grid.Row="2" VerticalAlignment="Top" Orientation="Vertical" ClipToBounds="True">
-                        <TextBlock Name="EditableLabel" Margin="5">Editable</TextBlock>
-                        <ScrollViewer Name="ScrollViewer" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" AllowAutoHide="False">
-                            <Canvas Name="DisplayEditableCanvas" VerticalAlignment="Top" HorizontalAlignment="Left" />
-                        </ScrollViewer>
-                    </StackPanel>
+<Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="720" Width="1280" Height="720" x:Class="DialogueHelper.MainWindow" Title="Dialogue Helper" LayoutUpdated="OnLayoutUpdated" Opened="OnOpened" DragDrop.AllowDrop="True">
+    <Grid>
+        <Canvas Name="BgndCanvas" />
+        <DockPanel>
+            <Menu DockPanel.Dock="Top" Height="25">
+                <MenuItem Header="File">
+                    <MenuItem Header="New File" Click="CreateFile_OnClick" HotKey="Ctrl+N" InputGesture="Ctrl+N" />
+                    <MenuItem Header="Open File" Click="OpenFile_OnClick" HotKey="Ctrl+O" InputGesture="Ctrl+O" />
+                    <MenuItem Header="Save File" Click="SaveFile_OnClick" HotKey="Ctrl+S" InputGesture="Ctrl+S" />
+                    <MenuItem Header="Save File as..." Click="SaveFileAs_OnClick" HotKey="Ctrl+Shift+S" InputGesture="Ctrl+Shift+S" />
+                    <MenuItem Header="Close File" Click="CloseFile_OnClick" HotKey="Ctrl+Shift+N" InputGesture="Ctrl+Shift+N" />
+                    <Separator />
+                    <MenuItem Header="Settings" Click="Settings_OnClick" HotKey="Ctrl+Shift+O" InputGesture="Ctrl+Shift+O" />
+                    <Separator />
+                    <MenuItem Header="Exit" Click="Exit_OnClick" HotKey="Ctrl+Escape" InputGesture="Ctrl+Escape" />
+                </MenuItem>
+                <MenuItem Header="Built-in Tools">
+                    <MenuItem Header="Force style reload" Click="ForceStyleReload_OnClick" HotKey="Ctrl+R" InputGesture="Ctrl+R" />
+                    <MenuItem Header="Go to" Click="GoTo_OnClick" HotKey="Ctrl+G" InputGesture="Ctrl+G" />
+                    <MenuItem Header="Go to parent entry" Click="GoToParentEntry_OnClick" HotKey="Ctrl+Shift+G" InputGesture="Ctrl+Shift+G" />
+                    <MenuItem Header="Split file into parts" Click="SplitFileIntoParts_OnClick" />
+                    <MenuItem Header="Merge parts into file" Click="MergePartsIntoFile_OnClick" />
+                    <!-- <MenuItem Header="Assign groups to items" Click="GroupEditorSelect_OnClick" /> -->
+                </MenuItem>
+                <MenuItem Name="CustomToolsMenu" Header="Custom Tools">
+                    <MenuItem Name="CustomToolsEmpty" IsEnabled="False" Header="Empty" />
+                </MenuItem>
+                <MenuItem Header="About">
+                    <MenuItem Header="Show entry info" Click="ShowEntryInfo_OnClick" />
+                    <MenuItem Header="Show file info" Click="ShowFileInfo_OnClick" />
+                    <Separator />
+                    <MenuItem Header="About Dialogue Helper..." Click="AboutDialogueHelper_OnClick" />
+                </MenuItem>
+            </Menu>
+            <Grid ColumnDefinitions="300, 4, *, 4, 300" DockPanel.Dock="Left" Name="MainGrid">
+                <StackPanel Name="LeftStackPanel" Grid.Column="0" Orientation="Vertical" Margin="5">
+                    <TextBox TextChanged="EntryTextBox_OnTextChanged" Name="EntryTextBox" PlaceholderText="Search an entry">
+                        <ToolTip.Tip>
+                            <TextBlock>
+                                An accessible way to search entries.
+                                <LineBreak /><LineBreak />
+                                You may search through <Span FontWeight="Bold">search groups</Span>,
+                                these groups allow you to search more efficiently.
+                                <LineBreak /><LineBreak />
+                                The search groups are the following:
+                                <LineBreak /><Span FontWeight="Bold">Group</Span>: Search for author group names, such as "authorGroup1"
+                                <LineBreak /><Span FontWeight="Bold">OgText</Span>: Search for a original text containing the specified Original Text
+                                <LineBreak /><Span FontWeight="Bold">Header</Span>: Search for a header containing the specified string header
+                                <LineBreak /><Span FontWeight="Bold">Key</Span>: Search for a key containing the specified string key
+                                <LineBreak /><Span FontWeight="Bold">State</Span>: Check the status of the text, valid options to input here are: <Span FontWeight="Bold">Modified</Span> and <Span FontWeight="Bold">Original</Span>/<Span FontWeight="Bold">Base</Span><LineBreak /><Span FontWeight="Bold">Casing</Span>: Set the casing to check for, valid options to input here are: <Span FontWeight="Bold">Sensible</Span> and <Span FontWeight="Bold">Insensible</Span><LineBreak /><Span FontWeight="Bold">Id</Span>: Search for specific text ids, separated by commas (,): note that all entries are 0-indexed, and should be used as such: <Span FontWeight="Bold">Id:0,1</Span>: This will only search for entries 0 and 1 respectively.
+                                <LineBreak /><Span FontWeight="Bold">Exact</Span>: Search for the text/og text with a certain exactness, by default it'll be <Span FontWeight="Bold">Contains</Span>, but you can specify <Span FontWeight="Bold">StartsWith</Span> or <Span FontWeight="Bold">EndsWith</Span>, <Span FontWeight="Bold">Exact</Span> for other kinds of exactness.
+                                <LineBreak /><LineBreak />
+                                The order in which you input these doesn't matter, nor the casing you put them in.
+                                <LineBreak />If you search without specifying a group, it'll default to the current (editable) text.
+                                <LineBreak />If you want to search a full sentence, please put it in quotes: "This is the sentence I'm searching for!"
+                                <LineBreak />This is due to how the engine searches for groups, so please keep it in mind.
+                                <LineBreak />To use the search groups, you can use Name:Value, something such as Header:MyHeader will work.
+                            </TextBlock>
+                        </ToolTip.Tip>
+                    </TextBox>
+                    <TreeView Name="EntryTreeView" Margin="5" SelectionChanged="EntryTreeView_OnSelectionChanged">
+                        <TreeView.ContextFlyout>
+                            <MenuFlyout>
+                                <CheckBox Name="CreateAfterSelectedItem">Insert after the selected item</CheckBox>
+                                <MenuItem Click="CreateEntry_OnClick" Header="Create Entry at the selected item" />
+                                <MenuItem Click="CreateString_OnClick" Header="Create String at the selected item" />
+                                <MenuItem Header="-" />
+                                <MenuItem Click="MarkAsFinished_OnClick" Header="Mark as finished" />
+                                <MenuItem Click="MarkAsUnfinished_OnClick" Header="Mark as unfinished" />
+                                <MenuItem Header="-" />
+                                <MenuItem Click="MoveUp_OnClick" Header="Move up" Name="MoveUp" />
+                                <MenuItem Click="MoveDown_OnClick" Header="Move down" Name="MoveDown" />
+                                <MenuItem Header="-" />
+                                <MenuItem Click="DeleteSelectedItem_OnClick" Header="Delete selected item" />
+                                <MenuItem Header="-" />
+                                <MenuItem Click="CopyClipboardSelectedTreeItem_OnClick" Header="Copy to clipboard selected text" />
+                                <MenuItem Click="RenameBlock_OnClick" Header="Rename selected block" Name="RenameBlock" />
+                                <MenuItem Header="-" />
+                                <MenuItem Click="ExpandTreeItems_OnClick" Header="Expand all" />
+                                <MenuItem Click="CollapseTreeItems_OnClick" Header="Collapse all" />
+                            </MenuFlyout>
+                        </TreeView.ContextFlyout>
+                    </TreeView>
+                </StackPanel>
+                <GridSplitter Grid.Column="1" Margin="5" ResizeDirection="Columns" Background="Gray" />
+                <Grid Name="OuterMiddleStackPanel" Grid.Column="2" RowDefinitions="*, 4, 175" Margin="5">
+                    <Grid Name="MiddleStackPanel" ClipToBounds="True" RowDefinitions="235, 4, 235" LayoutUpdated="BoxImages_OnLayoutUpdated">
+                        <StackPanel Name="PanelOriginal" Grid.Row="0" Orientation="Vertical" ClipToBounds="True">
+                            <TextBlock Name="OriginalLabel" Margin="5">Original</TextBlock>
+                            <ScrollViewer Name="ScrollViewerOriginal" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" AllowAutoHide="False">
+                                <Canvas Name="DisplayOriginalCanvas" VerticalAlignment="Top" HorizontalAlignment="Left" />
+                            </ScrollViewer>
+                        </StackPanel>
+                        <GridSplitter Name="InnerGridSplitter" Grid.Row="1" Margin="5" ResizeDirection="Rows" Background="Gray" />
+                        <StackPanel Name="Panel" Grid.Row="2" VerticalAlignment="Top" Orientation="Vertical" ClipToBounds="True">
+                            <TextBlock Name="EditableLabel" Margin="5">Editable</TextBlock>
+                            <ScrollViewer Name="ScrollViewer" VerticalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" AllowAutoHide="False">
+                                <Canvas Name="DisplayEditableCanvas" VerticalAlignment="Top" HorizontalAlignment="Left" />
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Grid>
+                    <GridSplitter Name="OuterGridSplitter" Grid.Row="1" Margin="5" ResizeDirection="Rows" Background="Gray" />
+                    <UniformGrid Grid.Row="2" Rows="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                        <TextBox Name="EditableText" TextChanging="EditableText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" PlaceholderText="Editable Text" />
+                        <TextBox Name="OriginalText" TextChanging="OriginalText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" IsReadOnly="True" PlaceholderText="Original Text" />
+                    </UniformGrid>
                 </Grid>
-                <GridSplitter Name="OuterGridSplitter" Grid.Row="1" Margin="5" ResizeDirection="Rows" Background="Gray" />
-                <UniformGrid Grid.Row="2" Rows="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                    <TextBox Name="EditableText" TextChanging="EditableText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" PlaceholderText="Editable Text" />
-                    <TextBox Name="OriginalText" TextChanging="OriginalText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" IsReadOnly="True" PlaceholderText="Original Text" />
-                </UniformGrid>
+                <GridSplitter Grid.Column="3" Margin="5" ResizeDirection="Columns" Background="Gray" />
+                <DockPanel Grid.Column="4" Margin="5">
+                    <StackPanel DockPanel.Dock="Top">
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <TextBlock Margin="7">String Key</TextBlock>
+                            <TextBox Name="StringKey" TextChanging="StringKey_OnTextChanging" UndoLimit="-1" MinWidth="175" />
+                        </StackPanel>
+                        <CheckBox Click="ModifySimilarStrings_OnClick" Name="ModifySimilarStrings" Margin="8 0 0 0" IsChecked="True">Modify similar strings</CheckBox>
+                        <CheckBox Click="MarkAsModified_OnClick" Name="MarkAsModified" Margin="8 0 0 0" IsChecked="False">Mark as modified</CheckBox>
+                        <CheckBox Click="AllowEditingOriginal_OnClick" Name="AllowEditingOriginal" Margin="8 0 0 0" IsChecked="False">Allow Editing Original</CheckBox>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <TextBlock Margin="7">Box</TextBlock>
+                            <ComboBox SelectionChanged="BoxComboBox_OnSelectionChanged" Name="BoxComboBox" SelectedIndex="0">
+                                <ComboBoxItem>Box Name</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <TextBlock Margin="7">Font</TextBlock>
+                            <ComboBox SelectionChanged="FontComboBox_OnSelectionChanged" Name="FontComboBox" SelectedIndex="0">
+                                <ComboBoxItem>Font Name</ComboBoxItem>
+                            </ComboBox>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <TextBlock Margin="7">Box Scale</TextBlock>
+                            <NumericUpDown Name="BoxScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <TextBlock Margin="7">Font Scale</TextBlock>
+                            <NumericUpDown Name="FontScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <TextBlock Margin="7">Preview Scale</TextBlock>
+                            <NumericUpDown Name="PreviewScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <TextBlock Margin="7">Initial Text Color</TextBlock>
+                            <ColorPicker Name="InitialTextColor" ColorChanged="InitialTextColor_OnColorChanged" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <TextBlock Margin="7">Box Color</TextBlock>
+                            <ColorPicker Name="BoxColor" ColorChanged="InitialTextColor_OnColorChanged" />
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel DockPanel.Dock="Top" Margin="10">
+                        <TextBlock Text="Custom properties" />
+                        <StackPanel Name="CustomPropertiesPanel" Margin="0 15 0 0" />
+                        <TextBlock Name="CustomPropertiesNone" Foreground="Gray" Text="None" />
+                    </StackPanel>
+                    <StackPanel Name="SimilarStringsBase" SizeChanged="SimilarStringsPanel_OnSizeChanged" DockPanel.Dock="Bottom" Margin="10">
+                        <TextBlock Name="SimilarStringsTitle" Text="Similar strings" />
+                        <TextBlock Name="SimilarStringsNone" Foreground="Gray" Text="None" Margin="0 15 0 0" />
+                        <ListBox SelectionChanged="SimilarStringsPanel_OnSelectionChanged" Name="SimilarStringsPanel" Margin="0 7 0 0" />
+                    </StackPanel>
+                </DockPanel>
             </Grid>
-            <GridSplitter Grid.Column="3" Margin="5" ResizeDirection="Columns" Background="Gray" />
-            <DockPanel Grid.Column="4" Margin="5">
-                <StackPanel DockPanel.Dock="Top">
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <TextBlock Margin="7">String Key</TextBlock>
-                        <TextBox Name="StringKey" TextChanging="StringKey_OnTextChanging" UndoLimit="-1" MinWidth="175" />
-                    </StackPanel>
-                    <CheckBox Click="ModifySimilarStrings_OnClick" Name="ModifySimilarStrings" Margin="8 0 0 0" IsChecked="True">Modify similar strings</CheckBox>
-                    <CheckBox Click="MarkAsModified_OnClick" Name="MarkAsModified" Margin="8 0 0 0" IsChecked="False">Mark as modified</CheckBox>
-                    <CheckBox Click="AllowEditingOriginal_OnClick" Name="AllowEditingOriginal" Margin="8 0 0 0" IsChecked="False">Allow Editing Original</CheckBox>
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <TextBlock Margin="7">Box</TextBlock>
-                        <ComboBox SelectionChanged="BoxComboBox_OnSelectionChanged" Name="BoxComboBox" SelectedIndex="0">
-                            <ComboBoxItem>Box Name</ComboBoxItem>
-                        </ComboBox>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <TextBlock Margin="7">Font</TextBlock>
-                        <ComboBox SelectionChanged="FontComboBox_OnSelectionChanged" Name="FontComboBox" SelectedIndex="0">
-                            <ComboBoxItem>Font Name</ComboBoxItem>
-                        </ComboBox>
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <TextBlock Margin="7">Box Scale</TextBlock>
-                        <NumericUpDown Name="BoxScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <TextBlock Margin="7">Font Scale</TextBlock>
-                        <NumericUpDown Name="FontScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <TextBlock Margin="7">Preview Scale</TextBlock>
-                        <NumericUpDown Name="PreviewScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <TextBlock Margin="7">Initial Text Color</TextBlock>
-                        <ColorPicker Name="InitialTextColor" ColorChanged="InitialTextColor_OnColorChanged" />
-                    </StackPanel>
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <TextBlock Margin="7">Box Color</TextBlock>
-                        <ColorPicker Name="BoxColor" ColorChanged="InitialTextColor_OnColorChanged" />
-                    </StackPanel>
-                </StackPanel>
-                <StackPanel DockPanel.Dock="Top" Margin="10">
-                    <TextBlock Text="Custom properties" />
-                    <StackPanel Name="CustomPropertiesPanel" Margin="0 15 0 0" />
-                    <TextBlock Name="CustomPropertiesNone" Foreground="Gray" Text="None" />
-                </StackPanel>
-                <StackPanel Name="SimilarStringsBase" SizeChanged="SimilarStringsPanel_OnSizeChanged" DockPanel.Dock="Bottom" Margin="10">
-                    <TextBlock Name="SimilarStringsTitle" Text="Similar strings" />
-                    <TextBlock Name="SimilarStringsNone" Foreground="Gray" Text="None" Margin="0 15 0 0" />
-                    <ListBox SelectionChanged="SimilarStringsPanel_OnSelectionChanged" Name="SimilarStringsPanel" Margin="0 7 0 0" />
-                </StackPanel>
-            </DockPanel>
-        </Grid>
-    </DockPanel>
+        </DockPanel>
+    </Grid>
 </Window>

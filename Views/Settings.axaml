@@ -3,6 +3,12 @@
         <TabControl Margin="5">
             <TabItem Header="Style">
                 <StackPanel Orientation="Vertical">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Margin="7">Selected Background*</TextBlock>
+                        <ComboBox Name="BackgroundComboBox" SelectedIndex="0">
+                            <ComboBoxItem>Background by Author</ComboBoxItem>
+                        </ComboBox>
+                    </StackPanel>
                     <TextBlock Foreground="LightCoral" Margin="5" TextWrapping="Wrap">
                         <Span FontWeight="Bold">Warning: </Span>
                         Ensure that the styles you use come from a <Span FontWeight="Bold">Trustworthy</Span> author, to ensure the safety of your system.

@@ -6,10 +6,7 @@ namespace DialogueHelper.FileFormat;
 
 public static class FileParser
 {
-    public static List<FormatEntry> ParseString(string data)
-    {
-        return [.. data.Replace("\r", "").Split('\n').Select(x => x.Trim()).Where(x => x.Length > 0).Select(ParseLine)];
-    }
+    public static List<FormatEntry> ParseString(string data) => [.. data.Replace("\r", "").Split('\n').Where(x => x.Length > 0).Select(ParseLine)];
 
     public static FormatEntry ParseLine(string line)
     {

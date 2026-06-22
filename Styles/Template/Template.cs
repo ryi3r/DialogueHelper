@@ -48,10 +48,7 @@ public class Template : StyleScript
             AllowMultiple = true,
             FileTypeFilter = [new("Json file") { Patterns = ["*.json"] }, new("All files") { Patterns = ["*"] }],
         });
-        var w = new InfoWindow($"File(s) chosen: {string.Join(", ", f.Select(x => x.Name))}")
-        {
-            Title = "Example",
-        };
+        var w = new InfoWindow($"File(s) chosen: {string.Join(", ", f.Select(x => x.Name))}") { Title = "Example" };
         await wh.ShowDialog(w);
     }
 

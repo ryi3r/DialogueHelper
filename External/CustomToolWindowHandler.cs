@@ -27,4 +27,8 @@ public class CustomToolWindowHandler(MainWindow mainWindow, StyleParser style)
     public void LoadFile(string? path = null, IStorageFile? file = null, bool markAsModified = false) => _mainWindow.LoadFileToProject(path, file, markAsModified);
 
     public void LoadString(string str, LoadingWindow? lWin = null, bool markAsModified = true) => _mainWindow.LoadStringToProject(str, lWin, markAsModified);
+
+    public Task<bool> EnsureFileOpen(bool showMessage = true) => _mainWindow.EnsureFileOpen(showMessage);
+
+    public async Task<bool> EnsureFileClosed(bool showMessage = true) => !await _mainWindow.EnsureFileOpen(false, showMessage);
 }

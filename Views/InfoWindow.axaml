@@ -1,8 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="150" Width="400" Height="150" x:Class="DialogueHelper.Views.InfoWindow" Title="Info Window">
     <Panel Margin="5">
-        <StackPanel Orientation="Vertical">
-            <TextBlock FontWeight="Bold" Foreground="CornflowerBlue" TextWrapping="Wrap" Name="InnerTitle">Information</TextBlock>
-            <TextBlock Foreground="CornflowerBlue" TextWrapping="Wrap" Name="InnerText">This is a sample information text, this is long enough to wrap around the window.</TextBlock>
+        <StackPanel Orientation="Vertical" Name="__InnerPanel">
+            <TextBlock FontWeight="Bold" Foreground="CornflowerBlue" TextWrapping="Wrap" Name="__InnerTitle">Information</TextBlock>
+            <TextBlock Foreground="CornflowerBlue" TextWrapping="Wrap" Name="__InnerText">This is a sample information text, this is long enough to wrap around the window.</TextBlock>
         </StackPanel>
         <Button VerticalAlignment="Bottom" HorizontalAlignment="Right" Name="OkButton" Click="OkButton_OnClick">Ok</Button>
     </Panel>

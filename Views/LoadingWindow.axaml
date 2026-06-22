@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d" Width="500" Height="100" x:Class="DialogueHelper.Views.LoadingWindow" Title="Loading...">
     <StackPanel>
-        <TextBlock Name="Text" HorizontalAlignment="Center" Margin="15">Loading...</TextBlock>
-        <ProgressBar Name="ProgressBar" Height="40" Margin="5" Value="50" ShowProgressText="True"></ProgressBar>
+        <TextBlock Name="__InnerText" HorizontalAlignment="Center" Margin="15">Loading...</TextBlock>
+        <ProgressBar Name="__InnerProgressBar" Height="40" Margin="5" Value="50" ShowProgressText="True"></ProgressBar>
     </StackPanel>
 </Window>

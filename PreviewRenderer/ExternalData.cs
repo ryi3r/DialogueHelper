@@ -93,14 +93,14 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         }
     }
 
-    public Avalonia.Controls.Image? DrawGlyph()
+    public Image? DrawGlyph()
     {
         var fontGlyph = Font.GlyphDictionary[Char.Char];
         if (!Style.ImageAssets.TryGetValue(Font.ImagePath, out var targetTexture))
             return null;
         if (Glyph.Color.Rgba != 0xffffffff)
             targetTexture = ModifyImageAndCache(targetTexture, Glyph.Color, Font.ImagePath);
-        var glyphImg = new Avalonia.Controls.Image
+        var glyphImg = new Image
         {
             Source = new CroppedBitmap(targetTexture, new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y)),
             Width = Glyph.Size.X,

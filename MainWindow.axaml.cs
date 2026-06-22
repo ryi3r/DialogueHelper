@@ -1,11 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
@@ -13,12 +18,14 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform.Storage;
+using Avalonia.SpellChecker;
 using Avalonia.Threading;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.Options;
 using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
+using Views;
 using FileInfo = DialogueHelper.Views.FileInfo;
 
 namespace DialogueHelper;
@@ -43,16 +50,20 @@ public partial class MainWindow : Window
     public StringContainer? SelectedString;
     public bool UpdatingEntry;
     public readonly Dictionary<TreeViewItem, string> EtvKeys = [];
-    public readonly Dictionary<TreeViewItem, int> EtvIndexes = [];
-    public readonly Dictionary<int, TreeViewItem> EtvReverseIndexes = [];
-    public readonly Dictionary<TreeViewItem, Dictionary<int, TreeViewItem>> EtvTargetChildren = [];
-    // <child, parent>
-    public readonly Dictionary<TreeViewItem, TreeViewItem> EtvParents = [];
+    public readonly Dictionary<string, TreeViewItem> EtvReverseKeys = [];
+    public readonly Dictionary<TreeViewItem, StringContainer> EtvIndexes = [];
+    public readonly Dictionary<StringContainer, TreeViewItem> EtvReverseIndexes = [];
+    public readonly Dictionary<TreeViewItem, Dictionary<StringContainer, TreeViewItem>> EtvTargetChildren = [];
+    public readonly Dictionary<TreeViewItem, TreeViewItem> EtvParents = []; // <child, parent>
     public List<WeakReference<TreeViewItem>> EtvTargetUpdates = [];
     public List<(WeakReference<StringContainer> StringContainer, bool ModifySimilarStrings)> EqStringUpdates = [];
     public string? LastSavePath;
     readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(0.02) };
     readonly DispatcherTimer _backupTimer = new() { Interval = TimeSpan.FromMinutes(3) };
+    public string BgndPath = "Backgrounds/Default";
+    public BackgroundConfig BgndConf = new() { Name = "Default", Author = "ryi3r" };
+    public List<Image> BgndImages = [];
+    internal string _lastBgndPath = "";
 
     public MainWindow()
     {
@@ -119,20 +130,20 @@ public partial class MainWindow : Window
                 {
                     if (!n.Value.ModifySimilarStrings)
                     {
-                        sc.EqStrings.Remove(sc.Id);
+                        sc.EqStrings.Remove(sc);
                         sc.EqStrings = [];
-                        foreach (var str in FileData.StringIds.Values)
+                        foreach (var str in FileData.IterAllStrings())
                         {
                             if (str.OriginalText != sc.OriginalText)
                                 continue;
-                            str.EqStrings.Add(sc.Id);
+                            str.EqStrings.Add(sc);
                             sc.EqStrings = str.EqStrings;
                             break;
                         }
                     }
                     if (SelectedString?.EqStrings == sc.EqStrings)
                         ReloadEqStringsField();
-                    if (EtvReverseIndexes.TryGetValue(sc.Id, out var item) && !EtvKeys.ContainsKey(item))
+                    if (EtvReverseIndexes.TryGetValue(sc, out var item) && !EtvKeys.ContainsKey(item))
                     {
                         UpdateEtvItem(EtvParents[item]);
                         UpdateModifySimilarStrings(sc, item, false, n.Value.ModifySimilarStrings);
@@ -150,6 +161,133 @@ public partial class MainWindow : Window
             f.Close();
         };
         _backupTimer.Start();
+        SizeChanged += (_, _) => LoadBackground();
+        var dictPath = Path.Combine(AppContext.BaseDirectory, "SpellCheckDictionaries");
+        var conf = new SpellCheckerConfig
+        {
+            DictionariesFolder = dictPath,
+            EnabledLanguages = [.. Directory.EnumerateFiles(dictPath).Where(x => x.EndsWith(".dic")).Select(x => x[(x.Replace('\\', '/').LastIndexOf('/') + 1)..x.LastIndexOf(".dic")])],
+        };
+        new TextBoxSpellChecker(conf).Initialize(EditableText);
+        new TextBoxSpellChecker(conf).Initialize(OriginalText);
+        Task.Run(async () =>
+        {
+            // todo: should this be a setting?
+            var ver = typeof(AboutDialogueHelper).Assembly.GetName().Version!;
+            var curVer = $"{ver.Major}.{ver.Minor}";
+            if (ver.Revision > 0 || ver.Build > 0)
+            {
+                curVer += $".{ver.Build}";
+                if (ver.Revision > 0)
+                    curVer += $".{ver.Revision}";
+            }
+
+            var http = new HttpClient();
+            var lastShown = (Version?)null;
+            while (true)
+            {
+                try
+                {
+                    var json = await http.GetFromJsonAsync<JsonDocument>("https://git.crystal-server.net/api/v1/repos/ryi3r/DialogueHelper/releases/latest");
+                    var gotVer = Version.Parse(json!.RootElement.GetProperty("tag_name").GetString()!);
+                    var targetUrl = json.RootElement.GetProperty("html_url").GetString();
+                    if ((targetUrl?.Length ?? 0) > 0 && gotVer != lastShown && gotVer > ver)
+                    {
+                        var ret = await Dispatcher.UIThread.InvokeAsync(async () =>
+                        {
+                            var nextVer = $"{gotVer.Major}.{gotVer.Minor}";
+                            if (gotVer.Revision > 0 || gotVer.Build > 0)
+                            {
+                                nextVer += $".{gotVer.Build}";
+                                if (gotVer.Revision > 0)
+                                    nextVer += $".{gotVer.Revision}";
+                            }
+
+                            var qw = new QuestionWindow("") { Width = 550 };
+                            qw.Text.Inlines!.Add("Do you wish to open the release link for this new ");
+                            qw.Text.Inlines.Add(new Run("Dialogue Helper") { FontWeight = FontWeight.Bold });
+                            qw.Text.Inlines.Add($" release?\nYou currently have version ");
+                            qw.Text.Inlines.Add(new Run(curVer) { FontWeight = FontWeight.Bold });
+                            qw.Text.Inlines.Add(", and the latest version is ");
+                            qw.Text.Inlines.Add(new Run(nextVer) { FontWeight = FontWeight.Bold });
+                            qw.Text.Inlines.Add(".\n\n");
+                            qw.Text.Inlines.Add(new Run("If you click no, you won't be asked again for the shown version on this session.") { FontWeight = FontWeight.Light, Foreground = new SolidColorBrush(Colors.Gray) });
+                            return await qw.ShowDialog<bool>(this);
+                        });
+                        if (ret)
+                            await Launcher.LaunchUriAsync(new(targetUrl!));
+                        lastShown = gotVer;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"exception while trying to get the latest release ! : {ex}");
+                }
+                await Task.Delay(TimeSpan.FromHours(2));
+            }
+        });
+    }
+
+    public async void LoadBackground()
+    {
+        if (!Path.Exists(BgndPath))
+            BgndPath = Path.GetFullPath("Backgrounds/Default");
+        if (_lastBgndPath != BgndPath)
+        {
+            try
+            {
+                BgndConf = JsonSerializer.Deserialize<BackgroundConfig>(File.ReadAllText(Path.Combine(BgndPath, "Config.jsonc")), new JsonSerializerOptions { IncludeFields = true, ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true })!;
+            }
+            catch (Exception ex)
+            {
+                var se = new StyleError
+                {
+                    Title = "Load error",
+                    MessageBlock = { Text = "DialogueHelper has encountered an error while loading the background config file" },
+                    ErrorBox = { Text = ex.ToString() },
+                };
+                await se.ShowDialog(this);
+                BgndConf = new() { Name = "Default", Author = "ryi3r" };
+            }
+            BgndCanvas.Children.Clear();
+            BgndImages.Clear();
+            Background = Brush.Parse(BgndConf.BgndColor);
+        }
+        foreach (var (i, simg) in BgndConf.Images.Index())
+        {
+            try
+            {
+                var img = _lastBgndPath != BgndPath ? new Image
+                {
+                    Source = new Bitmap(Path.Combine(BgndPath, simg.Image)),
+                    Opacity = simg.Opacity,
+                    StretchDirection = Enum.Parse<StretchDirection>(simg.StretchDirection),
+                    Stretch = Enum.Parse<Stretch>(simg.StretchMode),
+                    BlendMode = Enum.Parse<BitmapBlendingMode>(simg.BlendMode),
+                } : BgndImages[i];
+                Canvas.SetLeft(img, simg.ClientX ?? ((float)ClientSize.Width * simg.X));
+                Canvas.SetTop(img, simg.ClientY ?? ((float)ClientSize.Height * simg.Y));
+                img.Width = simg.ClientW ?? ((float)ClientSize.Width * simg.W);
+                img.Height = simg.ClientH ?? ((float)ClientSize.Height * simg.H);
+                if (_lastBgndPath != BgndPath)
+                {
+                    RenderOptions.SetBitmapInterpolationMode(img, Enum.Parse<BitmapInterpolationMode>(simg.Interpolation));
+                    BgndCanvas.Children.Add(img);
+                    BgndImages.Add(img);
+                }
+            }
+            catch (Exception ex)
+            {
+                var se = new StyleError
+                {
+                    Title = "Load error",
+                    MessageBlock = { Text = "DialogueHelper has encountered an error while loading the background config file" },
+                    ErrorBox = { Text = ex.ToString() },
+                };
+                await se.ShowDialog(this);
+            }
+        }
+        _lastBgndPath = BgndPath;
     }
 
     async void OpenFile_OnClick(object? sender, RoutedEventArgs e)
@@ -224,20 +362,20 @@ public partial class MainWindow : Window
             FileData = FileData.LoadString(fParse, lWin);
             lWin.Text.Text = "Caching base entries...";
             lWin.ProgressBar.Value = 0.0;
-            lWin.ProgressBar.Maximum = FileData.Strings.Count;
+            lWin.ProgressBar.Maximum = FileData.GetCountString();
 
-            var eqStr = new Dictionary<string, List<int>>();
+            var eqStr = new Dictionary<string, List<StringContainer>>();
             var cur = 0;
-            foreach (var strCont in FileData!.StringIds.Values)
+            foreach (var strCont in FileData!.IterAllStrings())
             {
                 if (eqStr.TryGetValue(strCont.OriginalText, out var arr))
                 {
                     strCont.EqStrings = arr;
-                    arr.Add(strCont.Id);
+                    arr.Add(strCont);
                 }
                 else
                 {
-                    arr = [strCont.Id];
+                    arr = [strCont];
                     eqStr.Add(strCont.OriginalText, arr);
                     strCont.EqStrings = arr;
                 }
@@ -271,41 +409,37 @@ public partial class MainWindow : Window
         EtvIndexes.Clear();
         EtvReverseIndexes.Clear();
         EtvTargetChildren.Clear();
+        EtvReverseKeys.Clear();
         if (!await EnsureFileOpen())
             return;
-        foreach (var (key, strs) in new Dictionary<string, Dictionary<int, StringContainer>>(FileData!.Strings))
+        foreach (var (key, strs) in FileData!.GetStringKeysValues().ToList())
         {
-            if (strs.Count <= 0)
-            {
-                FileData.Strings.Remove(key);
-                foreach (var str in strs)
-                    FileData.StringIds.Remove(str.Key);
-                continue;
-            }
             var cont = new TreeViewItem { Header = key };
             EntryTreeView.Items.Add(cont);
             EtvKeys.Add(cont, key);
-            var data = new Dictionary<int, TreeViewItem>();
+            EtvReverseKeys.Add(key, cont);
+            var data = new Dictionary<StringContainer, TreeViewItem>();
             EtvTargetChildren.Add(cont, data);
             var i = 0;
             var modified = 0;
             foreach (var str in strs)
             {
-                var tBlock = new TreeViewItem { Header = str.Value.Text ?? str.Value.OriginalText };
-                ToolTip.SetTip(tBlock, $"String ID: {str.Value.Id}");
+                var tBlock = new TreeViewItem { Header = str.Text ?? str.OriginalText };
+                ToolTip.SetTip(tBlock, $"String ID: {str.Id}");
                 EtvParents.Add(tBlock, cont);
-                ColorTreeItem(tBlock, str.Value.Text, str.Value.OriginalText, str.Value.MarkAsModified);
-                if (str.Value.Text is not null && str.Value.Text != str.Value.OriginalText)
-                    tBlock.Header = str.Value.Text;
-                if ((str.Value.Text is not null && str.Value.Text != str.Value.OriginalText) || str.Value.MarkAsModified)
+                ColorTreeItem(tBlock, str.Text, str.OriginalText, str.MarkAsModified);
+                if (str.Text is not null && str.Text != str.OriginalText)
+                    tBlock.Header = str.Text;
+                if ((str.Text is not null && str.Text != str.OriginalText) || str.MarkAsModified)
                     modified++;
                 i++;
-                EtvIndexes.Add(tBlock, str.Value.Id);
-                EtvReverseIndexes.Add(str.Value.Id, tBlock);
-                data.Add(str.Value.Id, tBlock);
+                EtvIndexes.Add(tBlock, str);
+                EtvReverseIndexes.Add(str, tBlock);
+                data.Add(str, tBlock);
             }
 
-            cont.ItemsSource = data.OrderBy(v => strs[v.Key].Id).Select(v => v.Value).ToArray();
+            foreach (var v in data.OrderBy(v => strs.IndexOf(v.Key)).Select(v => v.Value))
+                cont.Items.Add(v);
             cont.Foreground = SolidColorBrush.Parse(modified != 0 ? (modified >= i ? "LightGreen" : "MediumPurple") : "LightCoral");
         }
         await UpdateSearchFiltering();
@@ -315,20 +449,20 @@ public partial class MainWindow : Window
     {
         if (!await EnsureFileOpen())
             return;
-        var strs = FileData!.Strings[EtvKeys[item]];
+        var strs = FileData!.GetString(EtvKeys[item])!;
 
         var i = 0;
         var modified = 0;
         var list = EtvTargetChildren[item];
         foreach (var str in strs)
         {
-            ColorTreeItem(list[str.Key], str.Value.Text, str.Value.OriginalText, str.Value.MarkAsModified);
-            if (str.Value.MarkAsModified)
+            ColorTreeItem(list[str], str.Text, str.OriginalText, str.MarkAsModified);
+            if (str.MarkAsModified)
                 modified++;
-            if (str.Value.Text is not null)
+            if (str.Text is not null)
             {
-                list[str.Key].Header = str.Value.Text;
-                if (str.Value.Text != str.Value.OriginalText && !str.Value.MarkAsModified)
+                list[str].Header = str.Text;
+                if (str.Text != str.OriginalText && !str.MarkAsModified)
                     modified++;
             }
             i++;
@@ -350,13 +484,16 @@ public partial class MainWindow : Window
     {
         if (!await EnsureFileOpen(false))
             return;
-        if (EntryTreeView.SelectedItem is TreeViewItem tBlock && EtvParents.TryGetValue(tBlock, out var parent))
+        if (EntryTreeView.SelectedItem is not TreeViewItem tvi)
+            return;
+        RenameBlock.IsVisible = EtvKeys.ContainsKey(tvi);
+        if (EtvIndexes.TryGetValue(tvi, out var sc))
         {
             UpdatingEntry = true;
             AllowEditingOriginal.IsChecked = false;
             AllowEditingOriginal_OnClick(null, null!);
             var lastSel = SelectedString;
-            SelectedString = FileData!.Strings[EtvKeys[parent]][EtvIndexes[tBlock]];
+            SelectedString = sc;
             MarkAsModified.IsChecked = SelectedString.MarkAsModified;
             OriginalText.IsUndoEnabled = false;
             OriginalText.Text = SelectedString.OriginalText;
@@ -397,10 +534,7 @@ public partial class MainWindow : Window
         if (SelectedString is not null && FileData is not null)
         {
             foreach (var sstr in SelectedString.EqStrings)
-            {
-                var s = FileData.StringIds[sstr];
-                SimilarStringsPanel.Items.Add($"({sstr}) {((s.Text is not null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}");
-            }
+                SimilarStringsPanel.Items.Add($"({sstr.Id}) {((sstr.Text is not null && sstr.Text != sstr.OriginalText) ? sstr.Text : sstr.OriginalText)}");
         }
     }
 
@@ -440,22 +574,27 @@ public partial class MainWindow : Window
         AuthorName = f[4];
 
         SelectedStyle = f[5].Length <= 0 ? null : f[5];
-        var i = 6;
+
+        BgndPath = WebUtility.UrlDecode(f[6]);
+        if (!Path.Exists(BgndPath))
+            BgndPath = Path.GetFullPath("Backgrounds/Default");
+
+        var i = 7;
         var entryType = "";
         while (i < f.Length)
         {
             if (entryType == "")
                 entryType = f[i];
+            else if (f[i] == "@@end@@")
+                entryType = "";
             else
             {
-                switch (entryType[..entryType.IndexOf("@@", StringComparison.InvariantCulture)])
+                var idx = entryType.IndexOf("@@", StringComparison.InvariantCulture);
+                switch (entryType[..idx])
                 {
                     case "StyleSettings":
-                        if (f[i] == "@@end@@")
-                            entryType = "";
-                        else
                         {
-                            var folder = WebUtility.UrlDecode(entryType[(entryType.IndexOf("@@", StringComparison.InvariantCulture) + 2)..]);
+                            var folder = WebUtility.UrlDecode(entryType[(idx + 2)..]);
                             if (!StyleSettings.ContainsKey(folder))
                                 StyleSettings.Add(folder, []);
                             var spl = f[i].Split("@@");
@@ -467,6 +606,8 @@ public partial class MainWindow : Window
             }
             i++;
         }
+
+        LoadBackground();
     }
 
     public void SaveSettings()
@@ -483,6 +624,7 @@ public partial class MainWindow : Window
             AuthorGroup,
             AuthorName,
             SelectedStyle ?? "",
+            WebUtility.UrlEncode(BgndPath),
         };
         foreach (var ss in StyleSettings)
         {
@@ -1192,7 +1334,15 @@ public partial class MainWindow : Window
 
     async void EntryTextBox_OnTextChanged(object? sender, TextChangedEventArgs? e) => await UpdateSearchFiltering();
 
-    async Task UpdateSearchFiltering(Dictionary<TreeViewItem, Dictionary<int, TreeViewItem>>? delta = null)
+    enum SearchExactness
+    {
+        Contains,
+        StartsWith,
+        EndsWith,
+        Exact,
+    }
+
+    async Task UpdateSearchFiltering(Dictionary<TreeViewItem, Dictionary<StringContainer, TreeViewItem>>? delta = null)
     {
         if (!await EnsureFileOpen(false))
             return;
@@ -1250,6 +1400,22 @@ public partial class MainWindow : Window
             ? StringComparison.InvariantCulture
             : StringComparison.InvariantCultureIgnoreCase;
 
+        var searchExact = matches
+                .Where(m => m.StartsWith("Exact:", StringComparison.InvariantCultureIgnoreCase))
+                .Select(m => m[6..])
+                .Where(m => m.Length > 0)
+                .Select(casing =>
+                {
+                    if (casing.Equals("StartsWith", StringComparison.InvariantCultureIgnoreCase))
+                        return SearchExactness.StartsWith;
+                    if (casing.Equals("EndsWith", StringComparison.InvariantCultureIgnoreCase))
+                        return SearchExactness.EndsWith;
+                    if (casing.Equals("Exact", StringComparison.InvariantCultureIgnoreCase))
+                        return SearchExactness.Exact;
+                    return SearchExactness.Contains;
+                })
+                .FirstOrDefault(x => true, SearchExactness.Contains);
+
         var searchGroup = matches
                 .Where(m => m.StartsWith("Group:", StringComparison.InvariantCultureIgnoreCase))
                 .Select(m => m[6..])
@@ -1291,12 +1457,13 @@ public partial class MainWindow : Window
                     && !m.StartsWith("State:", StringComparison.InvariantCultureIgnoreCase)
                     && !m.StartsWith("Id:", StringComparison.InvariantCultureIgnoreCase)
                     && !m.StartsWith("Key:", StringComparison.InvariantCultureIgnoreCase)
+                    && !m.StartsWith("Exact:", StringComparison.InvariantCultureIgnoreCase)
                 ).ToList();
 
         foreach (var value in delta ?? EtvTargetChildren)
         {
             var key = EtvKeys[value.Key];
-            if (!FileData!.Strings.TryGetValue(key, out var list))
+            if (!FileData!.TryGetStringValue(key, out var list))
                 continue;
             var foundMatch = false;
             if (headerText.All(header => key.Contains(header, targetCasing)) && !headerText.Any(header => header.Length == 0 && key.Length > 0))
@@ -1305,16 +1472,32 @@ public partial class MainWindow : Window
                     foundMatch = true;
                 foreach (var entry in value.Value)
                 {
-                    var item = list[EtvIndexes[entry.Value]];
+                    var item = EtvIndexes[entry.Value];
                     if (idText.Any(ids => !ids.Contains(item.Id)))
                         goto NotFound;
                     if (keyText.Any(key => !(item.Key ?? "").Contains(key, targetCasing)) || keyText.Any(key => key.Length == 0 && (item.Key?.Length) > 0))
                         goto NotFound;
                     if (searchGroup.Any(group => !item.AuthorGroups.Any(ag => ag.Contains(group, targetCasing))) || searchGroup.Any(group => item.AuthorGroups.Any(ag => ag.Length > 0 && group.Length == 0)))
                         goto NotFound;
-                    if (searchOgText.Any(ogText => !item.OriginalText.Contains(ogText, targetCasing)) || searchOgText.Any(ogText => ogText.Length == 0 && item.OriginalText.Length > 0))
+                    if (searchOgText.Any(ogText => searchExact switch
+                    {
+                        SearchExactness.StartsWith => !item.OriginalText.StartsWith(ogText, targetCasing),
+                        SearchExactness.EndsWith => !item.OriginalText.EndsWith(ogText, targetCasing),
+                        SearchExactness.Exact => !item.OriginalText.Equals(ogText, targetCasing),
+                        _ => !item.OriginalText.Contains(ogText, targetCasing),
+                    }) || searchOgText.Any(ogText => ogText.Length == 0 && item.OriginalText.Length > 0))
                         goto NotFound;
-                    if (searchText.Any(text => !(item.Text ?? item.OriginalText).Contains(text, targetCasing)) || searchText.Any(text => text.Length == 0 && (item.Text ?? item.OriginalText).Length > 0))
+                    if (searchText.Any(text =>
+                    {
+                        var textBase = item.Text ?? item.OriginalText;
+                        return searchExact switch
+                        {
+                            SearchExactness.StartsWith => !textBase.StartsWith(text, targetCasing),
+                            SearchExactness.EndsWith => !textBase.EndsWith(text, targetCasing),
+                            SearchExactness.Exact => !textBase.Equals(text, targetCasing),
+                            _ => !textBase.Contains(text, targetCasing),
+                        };
+                    }) || searchText.Any(text => text.Length == 0 && (item.Text ?? item.OriginalText).Length > 0))
                         goto NotFound;
                     foreach (var state in stateText)
                     {
@@ -1365,9 +1548,8 @@ public partial class MainWindow : Window
         }
         if (ModifySimilarStrings.IsChecked ?? false)
         {
-            foreach (var id in sc.EqStrings)
+            foreach (var s in sc.EqStrings)
             {
-                var s = FileData.StringIds[id];
                 if (s.Id == sc.Id)
                     continue;
                 if (updateText)
@@ -1382,18 +1564,16 @@ public partial class MainWindow : Window
 
                 lock (EtvTargetUpdates)
                 {
-                    var target = EtvParents[EtvReverseIndexes[id]];
+                    var target = EtvParents[EtvReverseIndexes[s]];
                     if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == target))
                         EtvTargetUpdates.Add(new(target));
                 }
             }
             if (SelectedString == sc)
             {
+                SimilarStringsTitle.Text = $"Similar strings ({sc.EqStrings.Count})";
                 foreach (var (i, sstr) in sc.EqStrings.Index())
-                {
-                    var s = FileData.StringIds[sstr];
-                    SimilarStringsPanel.Items[i] = $"({sstr}) {((s.Text is not null && s.Text != s.OriginalText) ? s.Text : s.OriginalText)}";
-                }
+                    SimilarStringsPanel.Items[i] = $"({sstr.Id}) {((sstr.Text is not null && sstr.Text != sstr.OriginalText) ? sstr.Text : sstr.OriginalText)}";
             }
         }
     }
@@ -1480,16 +1660,28 @@ public partial class MainWindow : Window
         if (await ce.ShowDialog<bool?>(this) ?? false)
         {
             var t = ce.TextBox.Text ?? "";
-            if (!FileData!.Strings.ContainsKey(t))
+            if (!FileData!.ContainsKeyString(t))
             {
                 var tvi = new TreeViewItem { Header = t };
-                EntryTreeView.Items.Add(tvi);
-                FileData.Strings.Add(t, []);
+                var idx = EntryTreeView.Items.IndexOf(EntryTreeView.SelectedItem);
+                if (idx >= 0 && (CreateAfterSelectedItem.IsChecked ?? false))
+                    idx++;
+                if (idx < 0 || idx >= EntryTreeView.Items.Count)
+                {
+                    EntryTreeView.Items.Add(tvi);
+                    FileData.AddString(t, []);
+                }
+                else
+                {
+                    EntryTreeView.Items.Insert(idx, tvi);
+                    FileData.InsertString(idx, t, []);
+                }
                 EtvTargetChildren.Add(tvi, []);
                 EtvKeys.Add(tvi, t);
+                EtvReverseKeys.Add(t, tvi);
             }
 
-            var item = EtvKeys.First(v => v.Value == t).Key;
+            var item = EtvReverseKeys[t];
             EntryTreeView.ExpandSubTree(item);
             EntryTreeView.SelectedItem = item;
             EntryTreeView.ScrollIntoView(item);
@@ -1511,41 +1703,51 @@ public partial class MainWindow : Window
             await new InfoWindow("You need to select an item before trying to create a string.").ShowDialog(this);
             return;
         }
+        var s = (TreeViewItem)EntryTreeView.SelectedItem;
+        if (!EtvParents.TryGetValue(s, out var parent))
+            parent = s;
+        if (!EtvKeys.TryGetValue(parent, out var key))
+            return;
         var ce = new CreateEntry
         {
             Title = "Create String",
             EntryText = { Text = "Set the string content" },
             AcceptEmpty = true,
         };
-        TreeViewItem parent;
-        {
-            var s = (TreeViewItem)EntryTreeView.SelectedItem;
-            parent = EtvKeys.ContainsKey(s) ? s : EtvParents[s];
-        }
-        if (!EtvKeys.TryGetValue(parent, out var key))
-            return;
         if (await ce.ShowDialog<bool?>(this) ?? false)
         {
             var t = ce.TextBox.Text ?? "";
             var tvi = new TreeViewItem { Header = t };
-            parent.ItemsSource = (TreeViewItem[])[tvi, .. parent.ItemsSource?.Cast<TreeViewItem>().ToArray() ?? []];
             EtvParents.Add(tvi, parent);
             var sc = new StringContainer
             {
                 Id = FileData!.LastStringId++,
                 OriginalText = t,
-                EqStrings = FileData.StringIds.Values.FirstOrDefault(v => v.OriginalText == t)?.EqStrings ?? [],
+                EqStrings = FileData.IterAllStrings().FirstOrDefault(v => v.OriginalText == t)?.EqStrings ?? [],
             };
-            FileData.Strings[key].Add(sc.Id, sc);
-            FileData.StringIds.Add(sc.Id, sc);
-            EtvTargetChildren[parent].Add(sc.Id, tvi);
-            EtvIndexes.Add(tvi, sc.Id);
-            EtvReverseIndexes.Add(sc.Id, tvi);
-            sc.EqStrings.Add(sc.Id);
+            var strArr = FileData.GetString(key)!;
+            EtvTargetChildren[parent].Add(sc, tvi);
+            EtvIndexes.Add(tvi, sc);
+            EtvReverseIndexes.Add(sc, tvi);
+            sc.EqStrings.Add(sc);
             if (!FileData.AuthorList.Contains(AuthorName))
                 FileData.AuthorList.Add(AuthorName);
             sc.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
             sc.LastEdited.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+
+            var idx = !EtvParents.ContainsKey(s) ? -1 : parent.Items.IndexOf(s);
+            if (idx >= 0 && (CreateAfterSelectedItem.IsChecked ?? false))
+                idx++;
+            if (idx < 0 || idx >= parent.Items.Count)
+            {
+                parent.Items.Add(tvi);
+                strArr.Add(sc);
+            }
+            else
+            {
+                parent.Items.Insert(idx, tvi);
+                strArr.Insert(idx, sc);
+            }
 
             EntryTreeView.ExpandSubTree(parent);
             EntryTreeView.SelectedItem = tvi;
@@ -1559,44 +1761,52 @@ public partial class MainWindow : Window
         }
     }
 
-    async void MarkBlockAsFinished_OnClick(object? sender, RoutedEventArgs e)
+    async void MarkAsFinished_OnClick(object? sender, RoutedEventArgs e)
     {
         if (!await EnsureFileOpen())
             return;
-        if (EntryTreeView.SelectedItem is null || EntryTreeView.SelectedItem is not TreeViewItem tvi || !EtvKeys.ContainsKey(tvi))
+        if (EntryTreeView.SelectedItem is null || EntryTreeView.SelectedItem is not TreeViewItem tvi || (!EtvKeys.ContainsKey(tvi) && !EtvIndexes.ContainsKey(tvi)))
         {
-            await new InfoWindow("You need to select a block before trying to swap its finished state.").ShowDialog(this);
+            await new InfoWindow("You need to select an item before trying to mark it as finished.").ShowDialog(this);
             return;
         }
-        foreach (var sc in FileData!.Strings[EtvKeys[tvi]].Values)
-            sc.MarkAsModified = true;
+        if (EtvIndexes.TryGetValue(tvi, out var scS))
+        {
+            scS.MarkAsModified = true;
+            UpdateEtvItem(EtvParents[tvi]);
+        }
+        else
+        {
+            foreach (var sc in FileData!.GetString(EtvKeys[tvi])!)
+                sc.MarkAsModified = true;
+            UpdateEtvItem(tvi);
+        }
         IsFileModified = true;
         Title = "Dialogue Helper*";
-        lock (EtvTargetUpdates)
-        {
-            if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == tvi))
-                EtvTargetUpdates.Add(new(tvi));
-        }
     }
 
-    async void MarkBlockAsUnfinished_OnClick(object? sender, RoutedEventArgs e)
+    async void MarkAsUnfinished_OnClick(object? sender, RoutedEventArgs e)
     {
         if (!await EnsureFileOpen())
             return;
-        if (EntryTreeView.SelectedItem is null || EntryTreeView.SelectedItem is not TreeViewItem tvi || !EtvKeys.ContainsKey(tvi))
+        if (EntryTreeView.SelectedItem is null || EntryTreeView.SelectedItem is not TreeViewItem tvi || (!EtvKeys.ContainsKey(tvi) && !EtvIndexes.ContainsKey(tvi)))
         {
-            await new InfoWindow("You need to select a block before trying to swap its finished state.").ShowDialog(this);
+            await new InfoWindow("You need to select an item before trying to mark it as unfinished.").ShowDialog(this);
             return;
         }
-        foreach (var sc in FileData!.Strings[EtvKeys[tvi]].Values)
-            sc.MarkAsModified = false;
+        if (EtvIndexes.TryGetValue(tvi, out var scS))
+        {
+            scS.MarkAsModified = false;
+            UpdateEtvItem(EtvParents[tvi]);
+        }
+        else
+        {
+            foreach (var sc in FileData!.GetString(EtvKeys[tvi])!)
+                sc.MarkAsModified = false;
+            UpdateEtvItem(tvi);
+        }
         IsFileModified = true;
         Title = "Dialogue Helper*";
-        lock (EtvTargetUpdates)
-        {
-            if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == tvi))
-                EtvTargetUpdates.Add(new(tvi));
-        }
     }
 
     async void DeleteSelectedItem_OnClick(object? sender, RoutedEventArgs e)
@@ -1608,19 +1818,16 @@ public partial class MainWindow : Window
             await new InfoWindow("You need to select an item before trying to delete an item.").ShowDialog(this);
             return;
         }
-        var q = new QuestionWindow { InnerText = { Text = "Are you sure that you want to delete this item?\nThis action is irreversible." } };
+        var q = new QuestionWindow { Text = { Text = "Are you sure that you want to delete this item?\nThis action is irreversible." } };
         if (await q.ShowDialog<bool?>(this) ?? false)
         {
             var item = (TreeViewItem)EntryTreeView.SelectedItem;
             if (EtvKeys.TryGetValue(item, out var key))
             {
                 EntryTreeView.Items.Remove(item);
-                foreach (var entry in FileData!.Strings[key])
-                {
-                    FileData.StringIds.Remove(entry.Key);
-                    entry.Value.EqStrings.Remove(entry.Key);
-                }
-                FileData.Strings.Remove(key);
+                foreach (var entry in FileData!.GetString(key)!)
+                    entry.EqStrings.Remove(entry);
+                FileData.RemoveString(key);
                 EtvKeys.Remove(item);
                 foreach (var node in EtvTargetChildren[item])
                 {
@@ -1635,15 +1842,10 @@ public partial class MainWindow : Window
                 var parent = EtvParents[item];
                 if (EtvKeys.TryGetValue(parent, out key) && EtvIndexes.TryGetValue(item, out var index))
                 {
-                    var str = FileData!.Strings[key];
-                    str[index].EqStrings.Remove(index);
+                    var str = FileData!.GetString(key)!;
+                    index.EqStrings.Remove(index);
                     str.Remove(index);
-                    FileData.StringIds.Remove(index);
-                    {
-                        var items = new List<TreeViewItem>(parent.ItemsSource?.Cast<TreeViewItem>() ?? []);
-                        items.Remove(item);
-                        parent.ItemsSource = items.ToArray();
-                    }
+                    parent.Items.Remove(item);
                     SelectedString = null;
                     var idx = EtvIndexes[item];
                     EtvTargetChildren[parent].Remove(idx);
@@ -1702,10 +1904,10 @@ public partial class MainWindow : Window
     {
         if (!await EnsureFileOpen())
             return;
-        var modi = FileData!.StringIds.Count(i =>
-            i.Value.MarkAsModified || (i.Value.Text is not null && i.Value.OriginalText != i.Value.Text)
+        var modi = FileData!.IterAllStrings().Count(i =>
+            i.MarkAsModified || (i.Text is not null && i.OriginalText != i.Text)
         );
-        var total = FileData.StringIds.Count;
+        var total = FileData.GetAllCountString();
         var fi = new FileInfo
         {
             EditInfo = { Text = $"Edited {modi} strings out of {total} ({modi / (double)total:P} completion)" },
@@ -1720,11 +1922,11 @@ public partial class MainWindow : Window
     {
         if (SelectedString is null || SimilarStringsPanel.SelectedItem is null || FileData is null || SimilarStringsPanel.SelectedIndex < 0 || SimilarStringsPanel.SelectedIndex >= SelectedString.EqStrings.Count)
             return;
-        var eqStr = FileData.StringIds[SelectedString.EqStrings[SimilarStringsPanel.SelectedIndex]];
-        var key = EtvTargetChildren.FirstOrDefault(s => s.Value.ContainsKey(eqStr.Id)).Key;
+        var eqStr = SelectedString.EqStrings[SimilarStringsPanel.SelectedIndex];
+        var key = EtvTargetChildren.FirstOrDefault(s => s.Value.ContainsKey(eqStr)).Key;
         if (key is not null)
         {
-            var child = EtvTargetChildren[key][eqStr.Id];
+            var child = EtvTargetChildren[key][eqStr];
             // todo: this doesn't work properly due to an avalonia bug
             EntryTreeView.ExpandSubTree(key);
             EntryTreeView.ScrollIntoView(child);
@@ -1738,7 +1940,7 @@ public partial class MainWindow : Window
     {
         if (SelectedString is null || FileData is null)
             return;
-        var key = EtvTargetChildren.FirstOrDefault(s => s.Value.ContainsKey(SelectedString.Id)).Key;
+        var key = EtvTargetChildren.FirstOrDefault(s => s.Value.ContainsKey(SelectedString)).Key;
         if (key is null)
             return;
         EntryTreeView.SelectedItem = key;
@@ -1747,7 +1949,7 @@ public partial class MainWindow : Window
     }
 
     ///<returns>returns true if file is open</returns>
-    public async Task<bool> EnsureFileOpen(bool showMessage = true)
+    public async Task<bool> EnsureFileOpen(bool showMessage = true, bool showMessageOpen = false)
     {
         if (FileData is null)
         {
@@ -1755,6 +1957,8 @@ public partial class MainWindow : Window
                 await new InfoWindow("You need to have a file open to use this functionality.").ShowDialog(this);
             return false;
         }
+        else if (showMessageOpen)
+            await new InfoWindow("You need to have your open file closed to use this functionality.").ShowDialog(this);
         return true;
     }
 
@@ -1781,5 +1985,359 @@ public partial class MainWindow : Window
             FileData.AuthorList.Add(AuthorName);
         SelectedString.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
         SelectedString.LastEdited.Timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    }
+
+    async void SplitFileIntoParts_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!await EnsureFileOpen())
+            return;
+        var qw = new QuestionNumberInputWindow("Please select your target options.\n", "Target Split Count") { NumberSel = { Maximum = 1024, Value = 1, Minimum = 1, Increment = 1, FormatString = "0" } };
+        var sp = new StackPanel { Orientation = Orientation.Horizontal };
+        sp.Children.Add(new TextBlock { Margin = new(5, 7, 10, 5), Text = "Filename Template" });
+        var tif = new TextBox { Text = "Split_%%" };
+        ToolTip.SetTip(tif, new TextBlock { Text = "% is the character to replace for a sequential number, the more % in a row the more 0's it'll have for padding. Note that, the limit is 4 and it'll only target the last set of %'s." });
+        sp.Children.Add(tif);
+        qw.Panel.Children.Add(sp);
+        var confirmed = await qw.ShowDialog<bool>(this);
+        if (!confirmed)
+            return;
+        var split = (int)(qw.NumberSel.Value ?? 0);
+        if (split == 0)
+            return;
+        var folders = await StorageProvider.OpenFolderPickerAsync(new());
+        if (folders is null)
+            return;
+        var folder = folders[0].Path.LocalPath;
+        var max = FileData!.GetAllCountString();
+        var splitProg = max / split;
+        var pg = new LoadingWindow { Text = { Text = $"Splitting texts... (0/{max})" }, ProgressBar = { IsIndeterminate = false, Value = 0, Maximum = max } };
+        pg.Show();
+        var arr = new List<Dictionary<string, List<StringContainer>>>();
+        var cur = 0;
+        try
+        {
+            var template = tif.Text;
+            if (!template.Contains('%'))
+                template += '%';
+            if (!template.EndsWith(".dh"))
+                template += ".dh";
+            var rendp = template.LastIndexOf('%'); // will never be -1
+            var rstartp = rendp;
+            while (rstartp > 0 && template[rstartp - 1] == '%')
+                rstartp--;
+            var padLen = rendp + 1 - rstartp;
+            template = template.Remove(rstartp, padLen);
+            foreach (var (k, v) in FileData.GetStringKeysValues())
+            {
+                foreach (var sc in v)
+                {
+                    if ((cur % splitProg) == 0)
+                        arr.Add([]);
+
+                    var a = arr[^1];
+                    a.TryAdd(k, []);
+                    a[k].Add(sc);
+
+                    cur++;
+                    pg.Text.Text = $"Splitting texts... ({cur}/{max})";
+                    pg.ProgressBar.Value = cur / (float)max;
+                }
+            }
+
+            pg.ProgressBar.Value = 0;
+            max += arr.Count;
+            cur = 0;
+            pg.ProgressBar.Maximum = max;
+            pg.Text.Text = $"Saving files... (0/{max})";
+            foreach (var (i, scl) in arr.Index())
+            {
+                var f = new FileData();
+
+                foreach (var (k, scar) in scl)
+                {
+                    var sca = new List<StringContainer>();
+                    f.AddString(k, sca);
+                    foreach (var sc in scar)
+                    {
+                        var scd = new StringContainer(sc)
+                        {
+                            EqStrings = [], // not needed
+                            Id = f.LastStringId++,
+                        };
+                        if (scd.LastEdited.AuthorId != -1)
+                        {
+                            var ta = FileData.AuthorList[scd.LastEdited.AuthorId];
+                            if (!f.AuthorList.Contains(ta))
+                                f.AuthorList.Add(ta);
+                            scd.LastEdited.AuthorId = f.AuthorList.IndexOf(ta);
+                        }
+                        sca.Add(scd);
+                    }
+                }
+
+                await File.WriteAllTextAsync(Path.Combine(folder, template.Insert(rstartp, (i + 1).ToString($"D{padLen}"))), f.OutputString());
+
+                cur++;
+                pg.Text.Text = $"Saving files... ({cur}/{max})";
+                pg.ProgressBar.Value = cur / (float)max;
+            }
+        }
+        finally
+        {
+            pg.Close();
+        }
+    }
+
+    async void MergePartsIntoFile_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (await EnsureFileOpen(false, true))
+            return;
+        var fs = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Choose the Dialogue Helper files...",
+            AllowMultiple = true,
+            FileTypeFilter =
+            [
+                new("DH File") { Patterns = ["*.dh"] },
+                new("Legacy DH File") { Patterns = ["*.txt"] },
+            ],
+        });
+        if (fs is null)
+            return;
+        var iw = new LoadingWindow { Text = { Text = "Loading all dh files..." }, ProgressBar = { Maximum = 1d, } };
+        iw.Closing += (_, ev) =>
+        {
+            if (!ev.IsProgrammatic)
+                ev.Cancel = true;
+        };
+        iw.ProgressBar.Value = 0d;
+        iw.Show(this);
+        var loaded = new List<FileData>();
+        foreach (var f in fs)
+        {
+            try
+            {
+                var rw = new StreamReader(await f.OpenReadAsync());
+                var str = await rw.ReadToEndAsync();
+                rw.Dispose();
+                loaded.Add(FileData.LoadString(FileParser.ParseString(str)));
+            }
+            catch (Exception ex)
+            {
+                var se = new StyleError
+                {
+                    Title = "Load error",
+                    MessageBlock = { Text = "DialogueHelper has encountered an error while loading a file" },
+                    ErrorBox = { Text = ex.ToString() },
+                };
+                await se.ShowDialog(this);
+            }
+        }
+        var final = new FileData();
+        foreach (var l in loaded)
+        {
+            foreach (var a in l.AuthorList)
+            {
+                if (!final.AuthorList.Contains(a))
+                    final.AuthorList.Add(a);
+            }
+            foreach (var (k, s) in l.GetStringKeysValues())
+            {
+                if (final.ContainsKeyString(k))
+                    final.AddString(k, []);
+                var arr = final.GetString(k)!;
+                foreach (var n in s)
+                {
+                    n.Id = final.LastStringId++;
+                    if (n.LastEdited.AuthorId != -1)
+                    {
+                        var t = l.AuthorList[n.LastEdited.AuthorId];
+                        n.LastEdited.AuthorId = final.AuthorList.IndexOf(t);
+                    }
+                    arr.Add(n);
+                }
+            }
+        }
+        iw.Close();
+        LoadStringToProject(final.OutputString());
+        await new InfoWindow("Merged all files successfully!").ShowDialog(this);
+    }
+
+    async void MoveUp_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!await EnsureFileOpen())
+            return;
+        if (EntryTreeView.SelectedItem is null || EntryTreeView.SelectedItem is not TreeViewItem tvi || (!EtvKeys.ContainsKey(tvi) && !EtvIndexes.ContainsKey(tvi)))
+        {
+            await new InfoWindow("You need to select a block before trying to move it up.").ShowDialog(this);
+            return;
+        }
+        if (EtvParents.TryGetValue(tvi, out var parent))
+        {
+            var sc = EtvIndexes[tvi];
+            var k = EtvKeys[parent];
+            var idx = FileData!.GetIndexString(k);
+            var entry = FileData.GetAtString(idx)!;
+            var scIdx = entry.IndexOf(sc);
+            var moveToAnotherBlock = false;
+            if (scIdx == 0 && idx > 0)
+            {
+                var q = new QuestionWindow();
+                q.Text.Inlines!.Add("Do you wish to move this string to the ");
+                q.Text.Inlines.Add(new Run(FileData.GetAtStringKey(idx - 1)) { FontWeight = FontWeight.Bold });
+                q.Text.Inlines!.Add(" block?");
+                if (await q.ShowDialog<bool>(this))
+                    moveToAnotherBlock = true;
+            }
+            if (moveToAnotherBlock)
+            {
+                parent.Items.Remove(tvi);
+                entry.RemoveAt(scIdx);
+                EtvTargetChildren[parent].Remove(sc);
+                (k, var nb) = FileData.GetAtStringKeyValue(idx - 1)!.Value;
+                parent = EtvReverseKeys[k];
+                EtvParents[tvi] = parent;
+                nb.Add(sc);
+                parent.Items.Add(tvi);
+            }
+            else
+            {
+                entry.RemoveAt(scIdx);
+                entry.Insert(int.Max(scIdx - 1, 0), sc);
+                idx = parent.Items.IndexOf(tvi);
+                parent.Items.RemoveAt(idx);
+                parent.Items.Insert(int.Max(idx - 1, 0), tvi);
+            }
+        }
+        else
+        {
+            var k = EtvKeys[tvi];
+            var idx = FileData!.GetIndexString(k);
+            var entry = FileData.GetAtString(idx)!;
+            FileData.RemoveAtString(idx);
+            FileData.InsertString(int.Max(idx - 1, 0), k, entry);
+            idx = EntryTreeView.Items.IndexOf(tvi);
+            EntryTreeView.Items.RemoveAt(idx);
+            EntryTreeView.Items.Insert(int.Max(idx - 1, 0), tvi);
+        }
+        IsFileModified = true;
+        Title = "Dialogue Helper*";
+    }
+
+    async void MoveDown_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!await EnsureFileOpen())
+            return;
+        if (EntryTreeView.SelectedItem is null || EntryTreeView.SelectedItem is not TreeViewItem tvi || (!EtvKeys.ContainsKey(tvi) && !EtvIndexes.ContainsKey(tvi)))
+        {
+            await new InfoWindow("You need to select a block before trying to move it down.").ShowDialog(this);
+            return;
+        }
+        if (EtvParents.TryGetValue(tvi, out var parent))
+        {
+            var sc = EtvIndexes[tvi];
+            var k = EtvKeys[parent];
+            var idx = FileData!.GetIndexString(k);
+            var entry = FileData.GetAtString(idx)!;
+            var scIdx = entry.IndexOf(sc);
+            var moveToAnotherBlock = false;
+            if (scIdx == entry.Count - 1 && idx < FileData.GetCountString())
+            {
+                var q = new QuestionWindow();
+                q.Text.Inlines!.Add("Do you wish to move this string to the ");
+                q.Text.Inlines.Add(new Run(FileData.GetAtStringKey(idx + 1)) { FontWeight = FontWeight.Bold });
+                q.Text.Inlines!.Add(" block?");
+                if (await q.ShowDialog<bool>(this))
+                    moveToAnotherBlock = true;
+            }
+            if (moveToAnotherBlock)
+            {
+                parent.Items.Remove(tvi);
+                entry.RemoveAt(scIdx);
+                EtvTargetChildren[parent].Remove(sc);
+                (k, var nb) = FileData.GetAtStringKeyValue(idx + 1)!.Value;
+                parent = EtvReverseKeys[k];
+                EtvParents[tvi] = parent;
+                if (nb.Count > 0)
+                {
+                    nb.Insert(0, sc);
+                    parent.Items.Insert(0, tvi);
+                }
+                else
+                {
+                    nb.Add(sc);
+                    parent.Items.Add(tvi);
+                }
+            }
+            else
+            {
+                entry.RemoveAt(scIdx);
+                if (scIdx + 1 >= entry.Count)
+                    entry.Add(sc);
+                else
+                    entry.Insert(scIdx + 1, sc);
+                idx = parent.Items.IndexOf(tvi);
+                parent.Items.RemoveAt(idx);
+                if (idx + 1 >= parent.Items.Count)
+                    parent.Items.Add(tvi);
+                else
+                    parent.Items.Insert(idx + 1, tvi);
+            }
+        }
+        else
+        {
+            var k = EtvKeys[tvi];
+            var idx = FileData!.GetIndexString(k);
+            var entry = FileData.GetAtString(idx)!;
+            FileData.RemoveAtString(idx);
+            FileData.InsertString(idx + 1, k, entry);
+            idx = EntryTreeView.Items.IndexOf(tvi);
+            EntryTreeView.Items.RemoveAt(idx);
+            if (idx + 1 >= EntryTreeView.Items.Count)
+                EntryTreeView.Items.Add(tvi);
+            else
+                EntryTreeView.Items.Insert(idx + 1, tvi);
+        }
+        IsFileModified = true;
+        Title = "Dialogue Helper*";
+    }
+
+    async void RenameBlock_OnClick(object? sender, RoutedEventArgs e)
+    {
+        if (!await EnsureFileOpen())
+            return;
+        if (EntryTreeView.SelectedItem is null || EntryTreeView.SelectedItem is not TreeViewItem tvi || !EtvKeys.TryGetValue(tvi, out var k))
+        {
+            await new InfoWindow("You need to select a block before trying to rename it.").ShowDialog(this);
+            return;
+        }
+        var qw = new QuestionWindow("To which name do you wish to rename this block to?");
+        var sp = new StackPanel { Margin = new(0, 10, 0, 0), Orientation = Orientation.Horizontal };
+        sp.Children.Add(new TextBlock { Margin = new(5, 7, 10, 5), Text = "Name" });
+        var nn = new TextBox { Text = k, MinWidth = 250 };
+        sp.Children.Add(nn);
+        qw.Panel.Children.Add(sp);
+        qw.YesButton.Content = "Accept";
+        qw.NoButton.Content = "Cancel";
+        qw.ValidityCheck = (accept) =>
+        {
+            if (!accept)
+                return true;
+            return nn.Text.Length > 0 && (!EtvReverseKeys.ContainsKey(nn.Text) || nn.Text == k);
+        };
+        if (await qw.ShowDialog<bool>(this) && nn.Text != k)
+        {
+            EtvKeys[tvi] = nn.Text;
+            EtvReverseKeys.Remove(k);
+            EtvReverseKeys.Add(nn.Text, tvi);
+            var idx = FileData!.GetIndexString(k);
+            var scl = FileData.GetAtString(idx)!;
+            FileData.RemoveAtString(idx);
+            FileData.InsertString(idx, nn.Text, scl);
+            tvi.Header = nn.Text;
+
+            IsFileModified = true;
+            Title = "Dialogue Helper*";
+        }
     }
 }

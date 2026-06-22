@@ -1,0 +1,4 @@
+Open this url: https://github.com/UnderminersTeam/UndertaleModTool/releases/latest
+
+Scroll down to "Assets", then download UTMT_CLI_v<last version>-<your os>.zip
+Then, when you're gonna unzip UTMT CLI here, please don't put the FOLDER inside of here, put the FILES of the programs in here instead.

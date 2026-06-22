@@ -4,7 +4,7 @@ using System.Net;
 
 namespace DialogueHelper.FileFormat;
 
-public class StringContainer
+public class StringContainer()
 {
     public int Id = -1;
     public string? Text;
@@ -21,11 +21,24 @@ public class StringContainer
     public readonly List<string> AuthorGroups = [];
     public bool MarkAsModified;
 
-    public List<int> EqStrings = [];
+    public List<StringContainer> EqStrings = [];
 
-    public StringContainer() { }
+    public StringContainer(StringContainer toDuplicate) : this()
+    {
+        Id = toDuplicate.Id;
+        Text = toDuplicate.Text;
+        OriginalText = toDuplicate.OriginalText;
+        Key = toDuplicate.Key;
+        LastEdited = new(toDuplicate.LastEdited);
+        BoxStyle = toDuplicate.BoxStyle;
+        FontStyle = toDuplicate.FontStyle;
+        CustomProperties = toDuplicate.CustomProperties.ToDictionary();
+        AuthorGroups = [.. toDuplicate.AuthorGroups];
+        MarkAsModified = toDuplicate.MarkAsModified;
+        EqStrings = [.. EqStrings];
+    }
 
-    public StringContainer(FormatEntry fEntry)
+    public StringContainer(FormatEntry fEntry) : this()
     {
         if (fEntry.Data.TryGetValue("ID", out var id))
             Id = int.Parse(id);
@@ -61,7 +74,7 @@ public class StringContainer
 
     public FormatEntry OutputFormatEntry()
     {
-        var fe = new FormatEntry() { Kind = 1 };
+        var fe = new FormatEntry { Kind = 1 };
         if (Text is not null && Text != OriginalText && Text.Length > 0)
             fe.Data["Text"] = Text;
         fe.Data["OriginalText"] = OriginalText;

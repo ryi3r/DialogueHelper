@@ -5,23 +5,14 @@ namespace DialogueHelper.Views;
 
 public partial class InfoWindow : Window
 {
-    public readonly TextBlock TitleBlock;
-    public readonly TextBlock TextBlock;
+    public TextBlock TitleBlock => __InnerTitle;
+    public TextBlock TextBlock => __InnerText;
 
-    public InfoWindow()
-    {
-        InitializeComponent();
-        TitleBlock = InnerTitle;
-        TextBlock = InnerText;
-    }
+    public StackPanel Panel => __InnerPanel;
 
-    public InfoWindow(string text)
-    {
-        InitializeComponent();
-        TitleBlock = InnerTitle;
-        TextBlock = InnerText;
-        TextBlock.Text = text;
-    }
+    public InfoWindow() => InitializeComponent();
+
+    public InfoWindow(string text) : this() => TextBlock.Text = text;
 
     void OkButton_OnClick(object? sender, RoutedEventArgs e) => Close();
 }

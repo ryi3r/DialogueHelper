@@ -6,6 +6,6 @@ public partial class LoadingWindow : Window
 {
     public LoadingWindow() => InitializeComponent();
 
-    public TextBlock TextView => Text;
-    public ProgressBar ProgressBarView => ProgressBar;
+    public TextBlock Text => __InnerText;
+    public ProgressBar ProgressBar => __InnerProgressBar;
 }

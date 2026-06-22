@@ -1,0 +1,6 @@
+Open this url: https://github.com/LibreOffice/dictionaries
+
+Open the folder that maps to your country code (for example, English (USA) = en_US, Spanish (Colombia) = es_CO)
+Note that if you can't find the whole country code (with the underscores), just the initials is fine (for example, English = en, Spanish = es)
+Open the folder, now find 2 files that have your WHOLE country code, you'll be searching for a file that ends with .aff and .dic, download them.
+Then copy them here, and restart DialogueHelper, once you do it, it'll immediately be applied, no setting.

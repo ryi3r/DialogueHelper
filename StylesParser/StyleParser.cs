@@ -22,7 +22,7 @@ public class StyleParser
     public StyleParser(string path)
     {
         Folder = path;
-        var jsonSeri = new JsonSerializerOptions()
+        var jsonSeri = new JsonSerializerOptions
         {
             IncludeFields = true,
             AllowTrailingCommas = true,

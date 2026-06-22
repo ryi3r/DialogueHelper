@@ -40,7 +40,6 @@ public class Deltarune : StyleScript
     {
         MissingKey,
         DuplicatedKey,
-        UnusedKey,
     }
 
     public static CustomProperty<bool> EnablePortrait = new("Enable Portrait", "enablePortrait", false);
@@ -87,12 +86,8 @@ public class Deltarune : StyleScript
 
     public async Task ImportFromDataWin(CustomToolWindowHandler wh)
     {
-        if (wh.GetLoadedFileData() is not null)
-        {
-            var w = new InfoWindow("Please ensure that you do not have a file open.");
-            await wh.ShowDialog(w);
+        if (!await wh.EnsureFileClosed())
             return;
-        }
         var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
         if (!File.Exists(filePath))
         {
@@ -122,7 +117,7 @@ public class Deltarune : StyleScript
             },
         };
         proc.Start();
-        var lw = new LoadingWindow { ProgressBarView = { IsIndeterminate = true, ShowProgressText = false } };
+        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
         wh.Show(lw);
         try
         {
@@ -134,7 +129,22 @@ public class Deltarune : StyleScript
                     continue;
                 stdout.Append(line);
                 stdout.Append('\n');
-                lw.TextView.Text = line.Trim();
+                line = line.Trim();
+                if (line.EndsWith(')'))
+                {
+                    var idx = line.LastIndexOf('(');
+                    if (idx != -1)
+                    {
+                        var sep = line.IndexOf('/', idx + 1);
+                        if (sep != -1 && sep < line.Length - 1)
+                        {
+                            lw.ProgressBar.IsIndeterminate = false;
+                            lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
+                            lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
+                        }
+                    }
+                }
+                lw.Text.Text = line;
             }
             var stderr = await proc.StandardError.ReadToEndAsync();
 
@@ -142,8 +152,7 @@ public class Deltarune : StyleScript
             if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
             {
                 lw.Close();
-                var w = new InfoWindow($"UndertaleModCli exited with code {proc.ExitCode}\n\nstdout:\n{stdout}\nstderr:\n{stderr}");
-                await wh.ShowDialog(w);
+                await wh.ShowDialog(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Text file") { Patterns = ["*.txt"] }]));
                 return;
             }
             var stream = new MemoryStream(await File.ReadAllBytesAsync($"{wh.GetStylePath()}/output.json"));
@@ -161,11 +170,8 @@ public class Deltarune : StyleScript
 
     public async Task ExportToDataWin(CustomToolWindowHandler wh)
     {
-        if (wh.GetLoadedFileData() is null)
-        {
-            await wh.ShowDialog(new InfoWindow("Please ensure that you have a file open."));
+        if (!await wh.EnsureFileOpen())
             return;
-        }
         var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
         if (!File.Exists(filePath))
         {
@@ -179,15 +185,15 @@ public class Deltarune : StyleScript
         });
         if (f.Count <= 0)
             return;
-        var lw = new LoadingWindow { ProgressBarView = { IsIndeterminate = true, ShowProgressText = false } };
+        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
         wh.Show(lw);
         try
         {
             var stream = new MemoryStream(await File.ReadAllBytesAsync(Path.Combine(f[0].Path.LocalPath, "../lang/lang_ja.json")));
-            var baseJson = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream))!;
+            var baseJson = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(stream))!;
             await stream.DisposeAsync();
             var file = File.Create($"{wh.GetStylePath()}/input.json");
-            var (data, sc, warnedKeys) = ExportJson(baseJson, wh);
+            var (data, sc, warnedKeys) = ExportJson(baseJson, wh, lw);
             await JsonSerializer.SerializeAsync(file, data, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             await file.DisposeAsync();
             var targetPath = $"\"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\"";
@@ -212,7 +218,22 @@ public class Deltarune : StyleScript
                 if (line is null)
                     continue;
                 stdout.AppendLine(line);
-                lw.TextView.Text = line.Trim();
+                line = line.Trim();
+                if (line.EndsWith(')'))
+                {
+                    var idx = line.LastIndexOf('(');
+                    if (idx != -1)
+                    {
+                        var sep = line.IndexOf('/', idx + 1);
+                        if (sep != -1 && sep < line.Length - 1)
+                        {
+                            lw.ProgressBar.IsIndeterminate = false;
+                            lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
+                            lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
+                        }
+                    }
+                }
+                lw.Text.Text = line;
             }
             var stderr = await proc.StandardError.ReadToEndAsync();
 
@@ -230,11 +251,6 @@ public class Deltarune : StyleScript
                 sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
                 foreach (var (key, cont, warn) in warnedKeys)
                 {
-                    if (warn == WarningKind.UnusedKey)
-                    {
-                        sb.AppendLine($"- Unused key: `{key}`\n  - Text: `{(cont?.Text ?? cont?.OriginalText ?? "").Replace("\r", "\\r").Replace("\n", "\\n")}`\n");
-                        continue;
-                    }
                     sb.AppendLine($"- {(warn == WarningKind.DuplicatedKey ? "Duplicate key found" : "Key not found")} `{key}` (ID `{cont!.Id}`)");
                     sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
                     if (cont.Text is not null)
@@ -242,7 +258,7 @@ public class Deltarune : StyleScript
                     sb.AppendLine();
                 }
                 sb.AppendLine($"Found {warnedKeys.Count} warning(s).");
-                await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warnedKeys.Count == 1 ? "was" : "were")} {warnedKeys.Count} warned {(warnedKeys.Count == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = [new("*.md")] }]));
+                await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warnedKeys.Count == 1 ? "was" : "were")} {warnedKeys.Count} warned {(warnedKeys.Count == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = ["*.md"] }]));
                 lw.Show();
             }
         }
@@ -256,11 +272,8 @@ public class Deltarune : StyleScript
 
     public async Task ImportFromJson(CustomToolWindowHandler wh)
     {
-        if (wh.GetLoadedFileData() is not null)
-        {
-            await wh.ShowDialog(new InfoWindow("Please ensure that you do not have a file open."));
+        if (!await wh.EnsureFileClosed())
             return;
-        }
         var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select a file",
@@ -268,7 +281,7 @@ public class Deltarune : StyleScript
         });
         if (f.Count <= 0)
             return;
-        var lw = new LoadingWindow { ProgressBarView = { IsIndeterminate = true, ShowProgressText = false } };
+        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
         wh.Show(lw);
         try
         {
@@ -286,11 +299,8 @@ public class Deltarune : StyleScript
 
     public async Task ExportToJson(CustomToolWindowHandler wh)
     {
-        if (wh.GetLoadedFileData() is null)
-        {
-            await wh.ShowDialog(new InfoWindow("Please ensure that you have a file open."));
+        if (!await wh.EnsureFileOpen())
             return;
-        }
         var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
         if (!File.Exists(filePath))
         {
@@ -327,7 +337,7 @@ public class Deltarune : StyleScript
             },
         };
         proc.Start();
-        var lw = new LoadingWindow { ProgressBarView = { IsIndeterminate = true, ShowProgressText = false } };
+        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
         wh.Show(lw);
         try
         {
@@ -339,7 +349,22 @@ public class Deltarune : StyleScript
                     continue;
                 stdout.Append(line);
                 stdout.Append('\n');
-                lw.TextView.Text = line.Trim();
+                line = line.Trim();
+                if (line.EndsWith(')'))
+                {
+                    var idx = line.LastIndexOf('(');
+                    if (idx != -1)
+                    {
+                        var sep = line.IndexOf('/', idx + 1);
+                        if (sep != -1 && sep < line.Length - 1)
+                        {
+                            lw.ProgressBar.IsIndeterminate = false;
+                            lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
+                            lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
+                        }
+                    }
+                }
+                lw.Text.Text = line;
             }
             var stderr = await proc.StandardError.ReadToEndAsync();
 
@@ -352,10 +377,10 @@ public class Deltarune : StyleScript
                 return;
             }
             var outputStream = File.OpenRead($"{wh.GetStylePath()}/output.json");
-            var output = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(outputStream))!;
+            var output = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(outputStream))!;
             await outputStream.DisposeAsync();
             var stream = await fSave.OpenWriteAsync();
-            var (data, sc, warnedKeys) = ExportJson(output, wh);
+            var (data, sc, warnedKeys) = ExportJson(output, wh, lw);
             await JsonSerializer.SerializeAsync(stream, data, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             await stream.DisposeAsync();
             if (warnedKeys.Count > 0)
@@ -365,11 +390,6 @@ public class Deltarune : StyleScript
                 sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
                 foreach (var (key, cont, warn) in warnedKeys)
                 {
-                    if (warn == WarningKind.UnusedKey)
-                    {
-                        sb.AppendLine($"- Unused key: `{key}`\n  - Text: `{(cont?.Text ?? cont?.OriginalText ?? "").Replace("\r", "\\r").Replace("\n", "\\n")}`\n");
-                        continue;
-                    }
                     sb.AppendLine($"- {(warn == WarningKind.DuplicatedKey ? "Duplicate key found" : "Key not found")} `{key}` (ID `{cont!.Id}`)");
                     sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
                     if (cont.Text is not null)
@@ -391,11 +411,8 @@ public class Deltarune : StyleScript
 
     public async Task VerifyFileDialogueIntegrity(CustomToolWindowHandler wh)
     {
-        if (wh.GetLoadedFileData() is null)
-        {
-            await wh.ShowDialog(new InfoWindow("Please ensure that you have a file open."));
+        if (!await wh.EnsureFileOpen())
             return;
-        }
         var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
         if (!File.Exists(filePath))
         {
@@ -424,7 +441,7 @@ public class Deltarune : StyleScript
             },
         };
         proc.Start();
-        var lw = new LoadingWindow { ProgressBarView = { IsIndeterminate = true, ShowProgressText = false } };
+        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
         wh.Show(lw);
         try
         {
@@ -436,7 +453,22 @@ public class Deltarune : StyleScript
                     continue;
                 stdout.Append(line);
                 stdout.Append('\n');
-                lw.TextView.Text = line.Trim();
+                line = line.Trim();
+                if (line.EndsWith(')'))
+                {
+                    var idx = line.LastIndexOf('(');
+                    if (idx != -1)
+                    {
+                        var sep = line.IndexOf('/', idx + 1);
+                        if (sep != -1 && sep < line.Length - 1)
+                        {
+                            lw.ProgressBar.IsIndeterminate = false;
+                            lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
+                            lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
+                        }
+                    }
+                }
+                lw.Text.Text = line;
             }
             var stderr = await proc.StandardError.ReadToEndAsync();
 
@@ -449,9 +481,9 @@ public class Deltarune : StyleScript
                 return;
             }
             var outputStream = File.OpenRead($"{wh.GetStylePath()}/output.json");
-            var output = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(outputStream))!;
+            var output = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(outputStream))!;
             await outputStream.DisposeAsync();
-            var (data, sc, warnedKeys) = ExportJson(output, wh);
+            var (data, sc, warnedKeys) = ExportJson(output, wh, lw);
             var sb = new StringBuilder();
             sb.AppendLine("# Warnings\n");
             var warns = 0;
@@ -523,11 +555,6 @@ public class Deltarune : StyleScript
                 sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
                 foreach (var (key, cont, warn) in warnedKeys)
                 {
-                    if (warn == WarningKind.UnusedKey)
-                    {
-                        sb.AppendLine($"- Unused key: `{key}`\n  - Text: `{(cont?.Text ?? cont?.OriginalText ?? "").Replace("\r", "\\r").Replace("\n", "\\n")}`\n");
-                        continue;
-                    }
                     sb.AppendLine($"- {(warn == WarningKind.DuplicatedKey ? "Duplicate key found" : "Key not found")} `{key}` (ID `{cont!.Id}`)");
                     sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
                     if (cont.Text is not null)
@@ -577,56 +604,101 @@ public class Deltarune : StyleScript
 
     public void LoadJson(Dictionary<string, string> json, CustomToolWindowHandler wh)
     {
-        var sb = new StringBuilder();
+        var fd = new FileData();
         foreach (var (header, entries) in CalculateHeaders(json.Keys))
         {
-            sb.Append($"0;ID:{FormatEntry.GetSimpleUri(header)}\n");
+            var l = new List<StringContainer>();
             foreach (var key in entries)
-                sb.Append($"1;OriginalText:{FormatEntry.GetSimpleUri(json[key])};Key:{FormatEntry.GetSimpleUri(key)}\n");
+            {
+                l.Add(new()
+                {
+                    OriginalText = json[key]!,
+                    Key = key,
+                });
+            }
+            fd.AddString(header, l);
         }
-        sb.Append("8;");
-        wh.LoadString(sb.ToString());
+        wh.LoadString(fd.OutputString());
     }
 
-    public (Dictionary<string, string> data, Dictionary<string, StringContainer> cont, List<(string key, StringContainer? cont, WarningKind warnKind)> warnedKeys) ExportJson(Dictionary<string, string> json, CustomToolWindowHandler wh)
+    public record ExportedJson(OrderedDictionary<string, string> Data, OrderedDictionary<string, StringContainer> Container, List<(string key, StringContainer? cont, WarningKind warnKind)> WarnedKeys);
+
+    public ExportedJson ExportJson(OrderedDictionary<string, string> json, CustomToolWindowHandler wh, LoadingWindow lWin)
     {
-        var data = new Dictionary<string, string> { ["date"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString() };
+        var data = new OrderedDictionary<string, string> { ["date"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString() };
         var warnedKeys = new List<(string, StringContainer?, WarningKind)>();
-        var sc = new Dictionary<string, StringContainer>();
+        var scUns = new Dictionary<(string key, string jsonKey), StringContainer>();
         var file = wh.GetLoadedFileData()!;
         var headers = CalculateHeaders(json.Keys);
-        foreach (var (key, conts) in file.Strings)
+        lWin.Text.Text = "Processing strings...";
+        var count = 0;
+        foreach (var c in file.GetStringValues())
         {
-            foreach (var (_, cont) in conts.OrderBy(x => x.Key))
+            foreach (var v in c)
+                count++;
+        }
+        lWin.Text.Text = "Outputting data...";
+        lWin.ProgressBar.Maximum = count;
+        lWin.ProgressBar.Value = 0;
+        lWin.ProgressBar.ShowProgressText = true;
+        lWin.ProgressBar.IsIndeterminate = false;
+        string? GetContKey(string key, StringContainer cont)
+        {
+            var targetKey = (string?)null;
+            if (cont.Key is not null)
+                targetKey = cont.Key;
+            else if (headers.TryGetValue(key, out var keys))
+                targetKey = keys.FirstOrDefault(x => x is not null && !data.ContainsKey(x) && json[x] == cont.OriginalText, null);
+            return targetKey;
+        }
+        foreach (var (key, conts) in file.GetStringKeysValues())
+        {
+            foreach (var cont in conts)
             {
-                string? targetKey = null;
-                if (cont.Key is not null)
-                    targetKey = cont.Key;
-                else if (headers.TryGetValue(key, out var keys))
-                    targetKey = keys.FirstOrDefault(x => x is not null && !data.ContainsKey(x) && json[x] == cont.OriginalText, null);
-                if (targetKey is not null)
+                var tk = GetContKey(key, cont);
+                if (tk is not null)
                 {
-                    if (!data.TryAdd(targetKey, cont.Text ?? cont.OriginalText))
+                    if (!data.TryAdd(tk, cont.Text ?? cont.OriginalText))
                     {
                         warnedKeys.Add((key, cont, WarningKind.DuplicatedKey));
                         Console.WriteLine($"duplicate key found for {cont.Id} ({key}) with text \"{cont.OriginalText}\" (edited: \"{cont.Text}\")!");
                     }
                     else
-                        sc.Add(targetKey, cont);
+                        scUns.Add((key, tk), cont);
                 }
                 else
                 {
                     warnedKeys.Add((key, cont, WarningKind.MissingKey));
                     Console.WriteLine($"no key found for {cont.Id} ({key}) with text \"{cont.OriginalText}\" (edited: \"{cont.Text}\")!");
                 }
+                lWin.ProgressBar.Value++;
             }
         }
-        foreach (var (key, value) in json)
+        var keys = scUns.Keys.ToArray();
+        Array.Sort(keys, (a, b) =>
         {
-            if (!data.ContainsKey(key))
-                warnedKeys.Add((key, null, WarningKind.UnusedKey));
-        }
-        return (data, sc, warnedKeys);
+            var valueA = scUns[a];
+            var valueB = scUns[b];
+            var keyA = GetContKey(a.key, valueA);
+            var keyB = GetContKey(b.key, valueB);
+            if (keyA is null && keyB is null)
+                return valueA.Id.CompareTo(valueB.Id);
+            else
+            {
+                if (keyB is null)
+                    return -1;
+                if (keyA is null)
+                    return 1;
+                var r = keyA.CompareTo(keyB);
+                if (r == 0)
+                    return valueA.Id.CompareTo(valueB.Id);
+                return r;
+            }
+        });
+        var sc = new OrderedDictionary<string, StringContainer>();
+        foreach (var e in keys)
+            sc.Add(e.jsonKey, scUns[e]);
+        return new(data, sc, warnedKeys);
     }
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
