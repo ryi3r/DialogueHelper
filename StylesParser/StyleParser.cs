@@ -15,7 +15,7 @@ public class StyleParser
     public readonly List<FontMetadata> FontMetadata;
     public readonly string Folder;
     public readonly string? ScriptData;
-    public readonly Dictionary<string, Bitmap> ImageAssets = [];
+    public readonly Dictionary<string, SKBitmap> ImageAssets = [];
     public StyleScript? Script;
     public bool InitializedScript;
 
@@ -40,26 +40,14 @@ public class StyleParser
             {
                 if (ImageAssets.ContainsKey(img.Path))
                     continue;
-                using var baseImage = SKBitmap.Decode($"{path}/{img.Path}");
-                var stream = new MemoryStream();
-                baseImage.Encode(stream, SKEncodedImageFormat.Webp, 100);
-                baseImage.Dispose();
-                stream.Seek(0, SeekOrigin.Begin);
-                ImageAssets.Add(img.Path, new Bitmap(stream));
-                stream.Dispose();
+                ImageAssets.Add(img.Path, SKBitmap.Decode($"{path}/{img.Path}"));
             }
         }
         foreach (var font in FontMetadata)
         {
             if (ImageAssets.ContainsKey(font.ImagePath))
                 continue;
-            using var baseImage = SKBitmap.Decode($"{path}/{font.ImagePath}");
-            var stream = new MemoryStream();
-            baseImage.Encode(stream, SKEncodedImageFormat.Webp, 100);
-            baseImage.Dispose();
-            stream.Seek(0, SeekOrigin.Begin);
-            ImageAssets.Add(font.ImagePath, new Bitmap(stream));
-            stream.Dispose();
+            ImageAssets.Add(font.ImagePath, SKBitmap.Decode($"{path}/{font.ImagePath}"));
         }
     }
 

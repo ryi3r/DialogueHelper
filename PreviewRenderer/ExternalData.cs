@@ -18,96 +18,42 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
     public required ExternalChar Char;
     public required ExternalGlyph Glyph;
 
-    public Bitmap LoadTexture(string path)
+    public bool QueueRedraw;
+
+    public SKBitmap LoadTexture(string path)
     {
         if (mainWindow.LoadedImages.TryGetValue(path, out var value))
             return value;
-        using var baseImage = SKBitmap.Decode($"{Style.Folder}/{path}");
-        using var stream = new MemoryStream();
-        baseImage.Encode(stream, SKEncodedImageFormat.Webp, 100);
-        baseImage.Dispose();
-        stream.Seek(0, SeekOrigin.Begin);
-        var bitmap = new Bitmap(stream);
+        var bitmap = SKBitmap.Decode($"{Style.Folder}/{path}");
         mainWindow.LoadedImages.Add(path, bitmap);
         return bitmap;
     }
 
-    public void FreeTexture(Bitmap bitmap)
+    public void FreeTexture(SKBitmap bitmap)
     {
         var key = mainWindow.LoadedImages.FirstOrDefault(i => i.Value == bitmap).Key;
         if (key is null)
             return;
         mainWindow.LoadedImages.Remove(key);
-        mainWindow.LoadedImagesOrder.Remove(key);
         bitmap.Dispose();
     }
 
-    public Bitmap ModifyImage(Bitmap bitmap, Color? color = null)
-    {
-        using var stream1 = new MemoryStream();
-        bitmap.Save(stream1);
-        stream1.Seek(0, SeekOrigin.Begin);
-        using var tex = SKBitmap.Decode(stream1);
-        var col = color ?? Glyph.Color;
-        using var pxs = tex.PeekPixels();
-        for (var i = 0; i < tex.Height; i++)
-        {
-            var row = pxs.GetPixelSpan<SKColor>(0, i);
-            for (var x = 0; x < tex.Width; x++)
-            {
-                var px = row[x];
-                row[x] = px
-                    .WithRed((byte)(px.Red / 255f * (col.R / 255f) * 255f))
-                    .WithGreen((byte)(px.Green / 255f * (col.G / 255f) * 255f))
-                    .WithBlue((byte)(px.Blue / 255f * (col.B / 255f) * 255f))
-                    .WithAlpha((byte)(px.Alpha / 255f * (col.A / 255f) * 255f));
-            }
-        }
-        {
-            using var stream2 = new MemoryStream();
-            tex.Encode(stream2, SKEncodedImageFormat.Webp, 100);
-            stream2.Seek(0, SeekOrigin.Begin);
-            return new Bitmap(stream2);
-        }
-    }
-
-    public Bitmap ModifyImageAndCache(Bitmap bitmap, Color color, string font = "")
-    {
-        var path = mainWindow.LoadedImages.FirstOrDefault(i => i.Value == bitmap).Key ?? Style.ImageAssets.FirstOrDefault(x => x.Value == bitmap).Key;
-        var idx = $"{color.Rgba}+{font}@{path}";
-        if (mainWindow.LoadedImages.TryGetValue(idx, out var value))
-            return value;
-        else
-        {
-            var outBitmap = ModifyImage(bitmap, color);
-            mainWindow.LoadedImages.Add(idx, outBitmap);
-            mainWindow.LoadedImagesOrder.Add(idx);
-            while (mainWindow.LoadedImages.Count > 0x80)
-            {
-                var key = mainWindow.LoadedImagesOrder[0];
-                mainWindow.LoadedImagesOrder.RemoveAt(0);
-                mainWindow.LoadedImages[key].Dispose();
-                mainWindow.LoadedImages.Remove(key);
-            }
-            return outBitmap;
-        }
-    }
-
-    public Image? DrawGlyph()
+    public TintedImage? DrawGlyph()
     {
         var fontGlyph = Font.GlyphDictionary[Char.Char];
         if (!Style.ImageAssets.TryGetValue(Font.ImagePath, out var targetTexture))
             return null;
-        if (Glyph.Color.Rgba != 0xffffffff)
-            targetTexture = ModifyImageAndCache(targetTexture, Glyph.Color, Font.ImagePath);
-        var glyphImg = new Image
+        var glyphImg = new TintedImage
         {
-            Source = new CroppedBitmap(targetTexture, new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y)),
+            Source = targetTexture,
+            SourceRect = new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y),
+            TintEnabled = true,
+            Tint = Glyph.Color,
             Width = Glyph.Size.X,
             Height = Glyph.Size.Y,
             RenderTransform = new ScaleTransform(Glyph.Scale.X, Glyph.Scale.Y),
         };
-        RenderOptions.SetBitmapInterpolationMode(glyphImg, BitmapInterpolationMode.None);
+
         var x = Glyph.Position.X * Glyph.Scale.X;
         var y = Glyph.Position.Y * Glyph.Scale.Y;
         glyphImg.SetValue(Canvas.LeftProperty, x);
@@ -123,16 +69,17 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         return glyphImg;
     }
 
-    public Avalonia.Controls.Image DrawTexture(Bitmap img, (double X, double Y) position)
+    public TintedImage DrawTexture(SKBitmap img, (double X, double Y) position, Color? color = null)
     {
-        var node = new Avalonia.Controls.Image
+        var node = new TintedImage
         {
             Source = img,
-            Width = img.Size.Width * GetCurrentScale(),
-            Height = img.Size.Height * GetCurrentScale(),
+            TintEnabled = true,
+            Tint = color ?? new() { R = 255, G = 255, B = 255 },
+            Width = img.Width * GetCurrentScale(),
+            Height = img.Height * GetCurrentScale(),
         };
 
-        RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
         position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
         node.SetValue(Canvas.LeftProperty, position.X);
         node.SetValue(Canvas.TopProperty, position.Y);
@@ -146,16 +93,17 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         return node;
     }
 
-    public Avalonia.Controls.Image DrawTextureScaled(Bitmap img, (double X, double Y) position, (double X, double Y) scale)
+    public TintedImage DrawTextureScaled(SKBitmap img, (double X, double Y) position, (double X, double Y) scale, Color? color = null)
     {
-        var node = new Avalonia.Controls.Image
+        var node = new TintedImage
         {
             Source = img,
-            Width = img.Size.Width * GetCurrentScale() * scale.X,
-            Height = img.Size.Height * GetCurrentScale() * scale.Y,
+            TintEnabled = true,
+            Tint = color ?? new() { R = 255, G = 255, B = 255 },
+            Width = img.Width * GetCurrentScale() * scale.X,
+            Height = img.Height * GetCurrentScale() * scale.Y,
         };
 
-        RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
         position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
         node.SetValue(Canvas.LeftProperty, position.X);
         node.SetValue(Canvas.TopProperty, position.Y);
@@ -169,16 +117,17 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         return node;
     }
 
-    public Avalonia.Controls.Image DrawTextureSized(Bitmap img, (double X, double Y) position, (double X, double Y) size)
+    public TintedImage DrawTextureSized(SKBitmap img, (double X, double Y) position, (double X, double Y) size, Color? color = null)
     {
-        var node = new Avalonia.Controls.Image
+        var node = new TintedImage
         {
             Source = img,
+            TintEnabled = true,
+            Tint = color ?? new() { R = 255, G = 255, B = 255 },
             Width = size.X * GetCurrentScale(),
             Height = size.Y * GetCurrentScale(),
         };
 
-        RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
         position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
         node.SetValue(Canvas.LeftProperty, position.X);
         node.SetValue(Canvas.TopProperty, position.Y);
@@ -192,16 +141,18 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         return node;
     }
 
-    public Avalonia.Controls.Image DrawTextureCropped(Bitmap img, (double X, double Y) position, (double X, double Y) size, (int X, int Y) srcPosition, (int X, int Y) srcSize)
+    public TintedImage DrawTextureCropped(SKBitmap img, (double X, double Y) position, (double X, double Y) size, (int X, int Y) srcPosition, (int X, int Y) srcSize, Color? color = null)
     {
-        var node = new Avalonia.Controls.Image
+        var node = new TintedImage
         {
-            Source = new CroppedBitmap(img, new(srcPosition.X, srcPosition.Y, srcSize.X, srcSize.Y)),
+            Source = img,
+            TintEnabled = true,
+            Tint = color ?? new() { R = 255, G = 255, B = 255 },
+            SourceRect = new(srcPosition.X, srcPosition.Y, srcSize.X, srcSize.Y),
             Width = size.X * GetCurrentScale(),
             Height = size.Y * GetCurrentScale(),
         };
 
-        RenderOptions.SetBitmapInterpolationMode(node, BitmapInterpolationMode.None);
         position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
         node.SetValue(Canvas.LeftProperty, position.X);
         node.SetValue(Canvas.TopProperty, position.Y);

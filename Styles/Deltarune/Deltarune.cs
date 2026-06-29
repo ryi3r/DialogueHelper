@@ -2,16 +2,21 @@
 //css_reference System.Console
 //css_reference System.IO.Pipelines
 //css_reference Microsoft.CSharp
+//css_reference System.IO.Compression.ZipFile
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Avalonia.Media;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.PreviewRenderer;
@@ -52,6 +57,9 @@ public class Deltarune : StyleScript
     public static int EnvSkip;
     public static bool EnvFirstDrawnChar;
     public static int EnvCheckedIndex;
+    public static Stopwatch Stopwatch = Stopwatch.StartNew();
+    public static bool IsRainbow;
+    public static bool IsLastNewline;
     public ParsedString Parsed = new("");
 
     public static (double X, double Y) EnvPortraitOffset;
@@ -77,24 +85,78 @@ public class Deltarune : StyleScript
     {
         return Task.FromResult<IEnumerable<CustomTool>>([
             new("Import from data.win", ImportFromDataWin, "Ctrl+Shift+I"),
-            new("Export to data.win", ExportToDataWin, "Ctrl+Shift+E"),
+            new("Export to data.win (vanilla only)", ExportToDataWin, "Ctrl+Shift+E"),
             new("Import from json file", ImportFromJson, "Ctrl+Alt+I"),
             new("Export to json file", ExportToJson, "Ctrl+Alt+E"),
             new("Verify dialogues integrity", VerifyFileDialogueIntegrity, "Ctrl+Shift+P"),
         ]);
     }
 
+    public async Task<bool> DownloadUndertaleModToolCli(CustomToolWindowHandler wh)
+    {
+        var folderPath = $"{wh.GetStylePath()}/UndertaleModCli/";
+        var filePath = folderPath + $"UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
+        if (!File.Exists(filePath) && await wh.ShowDialog<bool>(new QuestionWindow("Do you wish to automatically download UndertaleModTool's Cli on the folder?")))
+        {
+            var pg = new LoadingWindow { Text = { Text = "Downloading..." }, ProgressBar = { Value = 0 }, };
+            try
+            {
+                using var http = new HttpClient();
+                http.DefaultRequestHeaders.UserAgent.ParseAdd("DialogueHelper-DeltaruneStyle/1.0");
+                var rel = await http.GetFromJsonAsync<JsonElement>("https://api.github.com/repos/UnderminersTeam/UndertaleModTool/releases/latest");
+                foreach (var r in rel.GetProperty("assets").EnumerateArray().Where(x => (x.GetProperty("name").GetString() ?? "").StartsWith("UTMT_CLI_")))
+                {
+                    var n = r.GetProperty("name").GetString()!;
+                    if (OperatingSystem.IsWindows() && !n.Contains("Windows"))
+                        continue;
+                    if (OperatingSystem.IsLinux() && !n.Contains("Ubuntu"))
+                        continue;
+                    if (OperatingSystem.IsMacOS() && !n.Contains("macOS"))
+                        continue;
+                    Console.WriteLine($"getting: {n}");
+                    wh.Show(pg);
+                    using var stream = await http.GetStreamAsync(r.GetProperty("browser_download_url").GetString()!);
+                    using var za = new ZipArchive(stream, ZipArchiveMode.Read);
+                    pg.ProgressBar.Maximum = za.Entries.Count;
+                    pg.ProgressBar.Value = 0;
+                    foreach (var e in za.Entries)
+                    {
+                        if (string.IsNullOrEmpty(e.Name))
+                            continue;
+                        pg.Text.Text = $"Extrating {e.Name}";
+                        var path = Path.Combine(folderPath, e.FullName);
+                        var fDirPath = Path.GetDirectoryName(path);
+                        if (!string.IsNullOrEmpty(fDirPath))
+                            Directory.CreateDirectory(fDirPath);
+                        await e.ExtractToFileAsync(path, true);
+                        pg.ProgressBar.Value++;
+                    }
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"fetch exception: {e}");
+                var w = new InfoWindow("Unable to fetch latest UndertaleModCli, please manually download and add UndertaleModCli to this style's folder.");
+                await wh.ShowDialog(w);
+                return false;
+            }
+            finally
+            {
+                pg.Close();
+            }
+        }
+        else
+            return true;
+        return false;
+    }
+
     public async Task ImportFromDataWin(CustomToolWindowHandler wh)
     {
         if (!await wh.EnsureFileClosed())
             return;
-        var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
-        if (!File.Exists(filePath))
-        {
-            var w = new InfoWindow("Please download and add UndertaleModCli to this style's folder.");
-            await wh.ShowDialog(w);
+        if (!await DownloadUndertaleModToolCli(wh))
             return;
-        }
         var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select the game data file",
@@ -109,7 +171,7 @@ public class Deltarune : StyleScript
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                FileName = filePath,
+                FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
                 Arguments = $"load \"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
                 WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
                 RedirectStandardError = true,
@@ -172,12 +234,8 @@ public class Deltarune : StyleScript
     {
         if (!await wh.EnsureFileOpen())
             return;
-        var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
-        if (!File.Exists(filePath))
-        {
-            await wh.ShowDialog(new InfoWindow("Please download and add UndertaleModCli to this style's folder."));
+        if (!await DownloadUndertaleModToolCli(wh))
             return;
-        }
         var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select the game data file",
@@ -203,7 +261,7 @@ public class Deltarune : StyleScript
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,
-                    FileName = filePath,
+                    FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
                     Arguments = $"load {targetPath} -s ../ImportStringsJson.csx -o {targetPath}",
                     WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
                     RedirectStandardError = true,
@@ -241,7 +299,7 @@ public class Deltarune : StyleScript
             if (proc.ExitCode != 0 || stderr.Trim().Length > 0)
             {
                 lw.Close();
-                await wh.ShowDialog(new InfoWindow($"UndertaleModCli exited with code {proc.ExitCode}\n\nstdout:\n{stdout}\nstderr:\n{stderr}"));
+                await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
                 return;
             }
             if (warnedKeys.Count > 0)
@@ -301,13 +359,8 @@ public class Deltarune : StyleScript
     {
         if (!await wh.EnsureFileOpen())
             return;
-        var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
-        if (!File.Exists(filePath))
-        {
-            var w = new InfoWindow("Please download and add UndertaleModCli to this style's folder.");
-            await wh.ShowDialog(w);
+        if (!await DownloadUndertaleModToolCli(wh))
             return;
-        }
         var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select the game data file",
@@ -329,7 +382,7 @@ public class Deltarune : StyleScript
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                FileName = filePath,
+                FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
                 Arguments = $"load \"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
                 WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
                 RedirectStandardError = true,
@@ -372,8 +425,7 @@ public class Deltarune : StyleScript
             if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
             {
                 lw.Close();
-                var w = new InfoWindow($"UndertaleModCli exited with code {proc.ExitCode}\n\nstdout:\n{stdout}\nstderr:\n{stderr}");
-                await wh.ShowDialog(w);
+                await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
                 return;
             }
             var outputStream = File.OpenRead($"{wh.GetStylePath()}/output.json");
@@ -413,13 +465,8 @@ public class Deltarune : StyleScript
     {
         if (!await wh.EnsureFileOpen())
             return;
-        var filePath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
-        if (!File.Exists(filePath))
-        {
-            var w = new InfoWindow("Please download and add UndertaleModCli to this style's folder.");
-            await wh.ShowDialog(w);
+        if (!await DownloadUndertaleModToolCli(wh))
             return;
-        }
         var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
         {
             Title = "Select the game data file",
@@ -433,7 +480,7 @@ public class Deltarune : StyleScript
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                FileName = filePath,
+                FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
                 Arguments = $"load \"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
                 WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
                 RedirectStandardError = true,
@@ -476,8 +523,7 @@ public class Deltarune : StyleScript
             if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
             {
                 lw.Close();
-                var w = new InfoWindow($"UndertaleModCli exited with code {proc.ExitCode}\n\nstdout:\n{stdout}\nstderr:\n{stderr}");
-                await wh.ShowDialog(w);
+                await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
                 return;
             }
             var outputStream = File.OpenRead($"{wh.GetStylePath()}/output.json");
@@ -710,6 +756,8 @@ public class Deltarune : StyleScript
         EnvSkip = 0;
         EnvFirstDrawnChar = true;
         EnvCheckedIndex = -1;
+        IsRainbow = false;
+        IsLastNewline = true;
         var lro = EnablePortrait.ReadOnly;
         EnablePortrait.ReadOnly = !data.Box.CustomProperties.TryGetValue("SupportsPortrait", out var val) || ((JsonElement)val).ToString().ToLowerInvariant() != "true";
         if (lro != EnablePortrait.ReadOnly)
@@ -771,11 +819,16 @@ public class Deltarune : StyleScript
                     }
                     break;
                 case DialogueColor col:
-                    if (!Parsed.ParseWarns.ContainsKey(data.Char.Index) && col.Color is not null)
+                    IsRainbow = false;
+                    if (!Parsed.ParseWarns.ContainsKey(data.Char.Index))
                     {
-                        data.Glyph.Color = col.Color.Value;
+                        if (col.Color is not null)
+                            data.Glyph.Color = col.Color.Value;
+                        else if (col.Rainbow)
+                            IsRainbow = true;
                         EnvSkip = ev.Argument.Length - 1;
-                        return false;
+                        if (col.Color is not null || col.Rainbow)
+                            return false;
                     }
                     break;
                 default:
@@ -788,6 +841,14 @@ public class Deltarune : StyleScript
             }
         }
 
+        if (IsRainbow)
+        {
+            data.QueueRedraw = true;
+            var rgb = HsvColor.FromHsv(((Stopwatch.Elapsed.TotalSeconds * 60d) + (data.Char.Index * 30d)) % 360d, 0.6, 1).ToRgb();
+            if (Stopwatch.Elapsed.TotalSeconds >= 360d * 2)
+                Stopwatch.Restart();
+            data.Glyph.Color = new() { R = rgb.R, B = rgb.B, G = rgb.G };
+        }
         switch ((Fonts)data.Style.FontMetadata.Index().First(x => x.Item == data.Font).Index)
         {
             case Fonts.Main:
@@ -884,7 +945,7 @@ public class Deltarune : StyleScript
                     continue;
                 charPos += ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2;
             }
-            if (charPos + 18 >= (data.Style.ImageAssets[data.Box.Images[0].Path].Size.Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - (EnablePortrait.Value && !EnablePortrait.ReadOnly ? EnvPortraitOffset.X : 0) && !EnvFirstDrawnChar)
+            if (!IsLastNewline && charPos + 18 >= (data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - (EnablePortrait.Value && !EnablePortrait.ReadOnly ? EnvPortraitOffset.X : 0) && !EnvFirstDrawnChar)
             {
                 actAsNewline = true;
                 if (EnvStartedAsterisk)
@@ -892,6 +953,7 @@ public class Deltarune : StyleScript
             }
         }
 
+        IsLastNewline = actAsNewline;
         if (actAsNewline)
         {
             EnvLastNewline = true;
@@ -948,6 +1010,7 @@ public class DialogueTimeSkip(string argument) : ParsedEvent(argument) { }
 public class DialogueColor(string argument) : ParsedEvent(argument)
 {
     public required Color? Color;
+    public required bool Rainbow;
 }
 /// <summary>
 /// \T_ (_ = char)
@@ -987,7 +1050,7 @@ public class DialogueSprite(string argument) : ParsedEvent(argument) { }
 /// <summary>
 /// \m_ (_ = int 1..=9): show small-face sprite on an array through index _
 /// </summary>
-public class DialogueMiniface(string argument) : ParsedEvent(argument) { }
+public class DialogueMiniFace(string argument) : ParsedEvent(argument) { }
 /// <summary>
 /// \O_ (_ = int 1..=9): create an object instance on an array through index _
 /// </summary>
@@ -1001,6 +1064,14 @@ public class DialogueInstanceUpdate(string argument) : ParsedEvent(argument) { }
 /// `
 /// </summary>
 public class DialogueIgnore(string argument) : ParsedEvent(argument) { }
+/// <summary>
+/// \v_ (_ = int 1..=2): update an instance on an array through index _
+/// </summary>
+public class DialogueVoiceClipMode(string argument) : ParsedEvent(argument) { }
+/// <summary>
+/// \V_ (_ = char A-Z, z): update an instance on an array through index _
+/// </summary>
+public class DialogueFloweryVoiceClip(string argument) : ParsedEvent(argument) { }
 
 public class ParsedString
 {
@@ -1071,7 +1142,7 @@ public class ParsedString
                             Events.Add(i, new DialogueIndexPortrait(fullSlice));
                             break;
                         case 'F':
-                            if (!"0SRNTLsAaBbruUKQCyi".Contains(slice[1]))
+                            if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
                                 ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
                             Events.Add(i, new DialogueCharPortrait(fullSlice));
                             break;
@@ -1091,6 +1162,7 @@ public class ParsedString
                             break;
                         case 'c':
                             {
+                                var rnb = false;
                                 Color? col = slice[1] switch
                                 {
                                     'R' => new() { Rgba = 0xff0000ff },
@@ -1105,16 +1177,33 @@ public class ParsedString
                                     'A' => new() { Rgba = 0x00aeffff },
                                     'S' => new() { Rgba = 0xff80ffff },
                                     'V' => new() { Rgba = 0x80ff80ff },
+                                    'Z' => null,
+                                    'a' => new() { Rgba = 0x84f9ffff },
+                                    'y' => new() { Rgba = 0xfff8a1ff },
+                                    'g' => new() { Rgba = 0xaeffbcff },
+                                    'o' => new() { Rgba = 0xffac87ff },
+                                    's' => new() { Rgba = 0xe2a8fcff },
+                                    'p' => new() { Rgba = 0xff8a90ff },
+                                    'b' => new() { Rgba = 0x86a7ffff },
                                     'I' => new() { Rgba = 0x549ff9ff },
                                     '0' => new() { Rgba = 0xff69b4ff },
                                     _ => null,
                                 };
-                                if (col is null)
+                                if (slice[1] == 'Z')
+                                    rnb = true;
+                                if (col is null && !rnb)
                                     ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting color: {fullSlice}"));
-                                Events.Add(i, new DialogueColor(fullSlice) { Color = col });
+                                Events.Add(i, new DialogueColor(fullSlice) { Color = col, Rainbow = rnb });
                             }
                             break;
-                        case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O':
+                        case 'V':
+                            {
+                                if (!"ABCDEFGHIJKLMNOPQRSTUVWXYZz".Contains(slice[1]))
+                                    ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid voice-clip selected: {slice[1]}"));
+                                Events.Add(i, new DialogueFloweryVoiceClip(fullSlice));
+                            }
+                            break;
+                        case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O' or 'v':
                             {
                                 if (!int.TryParse(slice[1].ToString(), out var v))
                                     valid = false;
@@ -1122,6 +1211,11 @@ public class ParsedString
                                 {
                                     switch (slice[0])
                                     {
+                                        case 'v':
+                                            if (v < 0 || v > 2)
+                                                ParseWarns.Add(i, new ParseOutOfRange(fullSlice, 0..2));
+                                            Events.Add(i, new DialogueVoiceClipMode(fullSlice));
+                                            break;
                                         case 's':
                                             if (v < 0 || v > 1)
                                                 ParseWarns.Add(i, new ParseOutOfRange(fullSlice, 0..1));
@@ -1142,7 +1236,7 @@ public class ParsedString
                                             Events.Add(i, new DialogueSprite(fullSlice));
                                             break;
                                         case 'm':
-                                            Events.Add(i, new DialogueMiniface(fullSlice));
+                                            Events.Add(i, new DialogueMiniFace(fullSlice));
                                             break;
                                         case 'O':
                                             Events.Add(i, new DialogueObject(fullSlice));

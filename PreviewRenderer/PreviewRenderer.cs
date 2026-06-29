@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
@@ -45,21 +46,22 @@ public class PreviewRenderer(MainWindow mainWindow)
         foreach (var bImg in box.Images)
         {
             var imgAsset = style.ImageAssets[bImg.Path];
-            var avImg = new Image
+            var avImg = new TintedImage
             {
-                Source = eData.ModifyImageAndCache(imgAsset, boxColor),
-                Width = imgAsset.Size.Width * boxScale * previewScale,
-                Height = imgAsset.Size.Height * boxScale * previewScale,
+                Source = imgAsset,
+                Tint = boxColor,
+                TintEnabled = true,
+                Width = imgAsset.Width * boxScale * previewScale,
+                Height = imgAsset.Height * boxScale * previewScale,
             };
-            RenderOptions.SetBitmapInterpolationMode(avImg, BitmapInterpolationMode.None);
             avImg.SetValue(Canvas.LeftProperty, bImg.Position[0]);
             avImg.SetValue(Canvas.TopProperty, bImg.Position[1]);
             canvas.Children.Add(avImg);
 
-            if (bImg.Position[0] + imgAsset.Size.Width > canvas.Width)
-                canvas.Width = bImg.Position[0] + imgAsset.Size.Width;
-            if (bImg.Position[1] + imgAsset.Size.Height > canvas.Height)
-                canvas.Height = bImg.Position[1] + imgAsset.Size.Height;
+            if (bImg.Position[0] + imgAsset.Width > canvas.Width)
+                canvas.Width = bImg.Position[0] + imgAsset.Width;
+            if (bImg.Position[1] + imgAsset.Height > canvas.Height)
+                canvas.Height = bImg.Position[1] + imgAsset.Height;
         }
         if (!style.InitializedScript)
             return;
@@ -76,15 +78,24 @@ public class PreviewRenderer(MainWindow mainWindow)
                     eData.Char.IsNewline = style.Metadata.NewLines.Contains(chr);
                     eData.Char.IsIgnore = style.Metadata.Ignore.Contains(chr);
                     eData.Glyph.Scale = (fontScale * previewScale, fontScale * previewScale);
+                    eData.QueueRedraw = false;
 
-                    if (await (style.Script?.DrawGlyph(wh, eData) ?? Task.FromResult(false)))
-                        break;
+                    try
+                    {
+                        if (await (style.Script?.DrawGlyph(wh, eData) ?? Task.FromResult(false)))
+                            break;
+                    }
+                    finally
+                    {
+                        if (eData.QueueRedraw)
+                            MainWindow.RedrawRenderer = true;
+                    }
                 }
             }
         }
         catch (Exception ex)
         {
-            var se = new StyleError()
+            var se = new StyleError
             {
                 MessageBlock = { Text = "The custom tool has encountered an error" },
                 ErrorBox = { Text = ex.ToString() }

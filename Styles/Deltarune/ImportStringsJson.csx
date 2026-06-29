@@ -67,7 +67,6 @@ void SearchInCode(UndertaleCode code, int scriptIndex)
         return;
     }
 
-    var x = 0;
     SearchStatements(code, [..
         code.Instructions
             .Index()
@@ -75,7 +74,7 @@ void SearchInCode(UndertaleCode code, int scriptIndex)
                 UndertaleInstruction.GetInstructionType(x.Item.Kind) == UndertaleInstruction.InstructionType.CallInstruction
                 && GetArgsIndexes(x.Item.ValueFunction.Name.Content) is not null
             ).Select(x => x.Index)
-        ], ref x, rootBlock.Children);
+        ], rootBlock.Children);
     return;
 
     (Index key, Index val)? GetArgsIndexes(string funcName)
@@ -90,43 +89,43 @@ void SearchInCode(UndertaleCode code, int scriptIndex)
         };
     }
 
-    void SearchExpression(UndertaleCode code, List<int> callInst, ref int cursor, IExpressionNode expr)
+    void SearchExpression(UndertaleCode code, List<int> callInst, IExpressionNode expr)
     {
         switch (expr)
         {
             case ArrayInitNode arrInit:
-                SearchExpressions(code, callInst, ref cursor, arrInit.Elements);
+                SearchExpressions(code, callInst, arrInit.Elements);
                 break;
             case AssignNode assign:
-                SearchExpression(code, callInst, ref cursor, assign.Value);
+                SearchExpression(code, callInst, assign.Value);
                 break;
             case BinaryNode bin:
-                SearchExpression(code, callInst, ref cursor, bin.Left);
-                SearchExpression(code, callInst, ref cursor, bin.Right);
+                SearchExpression(code, callInst, bin.Left);
+                SearchExpression(code, callInst, bin.Right);
                 break;
             case ConditionalNode cond:
-                SearchExpression(code, callInst, ref cursor, cond.Condition);
-                SearchExpression(code, callInst, ref cursor, cond.True);
-                SearchExpression(code, callInst, ref cursor, cond.False);
+                SearchExpression(code, callInst, cond.Condition);
+                SearchExpression(code, callInst, cond.True);
+                SearchExpression(code, callInst, cond.False);
                 break;
             case FunctionDeclNode funcDecl:
-                SearchStatement(code, callInst, ref cursor, funcDecl.Body);
+                SearchStatement(code, callInst, funcDecl.Body);
                 break;
             case NullishCoalesceNode nullCoalesce:
-                SearchExpression(code, callInst, ref cursor, nullCoalesce.Left);
-                SearchExpression(code, callInst, ref cursor, nullCoalesce.Right);
+                SearchExpression(code, callInst, nullCoalesce.Left);
+                SearchExpression(code, callInst, nullCoalesce.Right);
                 break;
             case ShortCircuitNode shortCircuit:
-                SearchExpressions(code, callInst, ref cursor, shortCircuit.Conditions);
+                SearchExpressions(code, callInst, shortCircuit.Conditions);
                 break;
             case NewObjectNode newObj:
-                SearchExpressions(code, callInst, ref cursor, newObj.Arguments);
+                SearchExpressions(code, callInst, newObj.Arguments);
                 break;
             case ThrowNode throwNode:
-                SearchExpression(code, callInst, ref cursor, throwNode.Value);
+                SearchExpression(code, callInst, throwNode.Value);
                 break;
             case VariableCallNode varCall:
-                SearchExpressions(code, callInst, ref cursor, varCall.Arguments);
+                SearchExpressions(code, callInst, varCall.Arguments);
                 break;
             case FunctionCallNode funcCall:
                 {
@@ -135,38 +134,75 @@ void SearchInCode(UndertaleCode code, int scriptIndex)
                     if (index is not null)
                     {
                         // What is wrong with Chapter 3?
+                        var lastInst = -1;
                         try
                         {
-                            var c = cursor++;
-                            var k = callInst[c];
-                            var inst = code.Instructions[k];
-                            if (inst.ValueFunction is null || funcCall.Function.Name.Content != inst.ValueFunction.Name.Content)
-                                throw new($"invalid function at cursor {c} (inst {k}) in {code.Name.Content}");
                             var keyString = (StringNode)funcCall.Arguments[index.Value.key];
                             var valueString = (StringNode)funcCall.Arguments[index.Value.val];
 
                             if (input.TryGetValue(keyString.Value.Content, out var val))
                             {
-                                var f = false;
-                                while (k >= 0)
+                                var keyInst = (UndertaleInstruction)null;
+                                var valueInst = (UndertaleInstruction)null;
+
+                                for (var cii = 0; cii < callInst.Count; cii++)
                                 {
-                                    inst = code.Instructions[k];
-                                    if (UndertaleInstruction.GetInstructionType(inst.Kind) == UndertaleInstruction.InstructionType.PushInstruction
-                                        && inst.Type1 == UndertaleInstruction.DataType.String && inst.ValueString is not null
-                                        && ReferenceEquals(inst.ValueString.Resource, valueString.Value))
+                                    var instNum = callInst[cii];
+                                    var baseInstNum = instNum;
+
+                                    var searchingKey = index.Value.val.GetOffset(funcCall.Arguments.Count) > index.Value.key.GetOffset(funcCall.Arguments.Count);
+
+                                    try
                                     {
-                                        f = true;
-                                        var valStr = (UndertaleString)valueString.Value;
+                                        var inst = code.Instructions[instNum];
+                                        if (funcCall.Function.Name.Content != inst.ValueFunction.Name.Content)
+                                            continue; // not found any proper function calls yet
+                                        if (inst.ValueFunction is null)
+                                            throw new($"invalid function (instuction n. {instNum}) in {code.Name.Content}: {funcCall.Function.Name.Content} != {inst.ValueFunction.Name.Content}");
+
+                                        while (instNum > lastInst)
+                                        {
+                                            inst = code.Instructions[instNum];
+                                            if (UndertaleInstruction.GetInstructionType(inst.Kind) == UndertaleInstruction.InstructionType.PushInstruction
+                                                && inst.Type1 == UndertaleInstruction.DataType.String && inst.ValueString is not null
+                                                && ReferenceEquals(inst.ValueString.Resource, (searchingKey ? keyString : valueString).Value))
+                                            {
+                                                if (searchingKey)
+                                                    keyInst = inst;
+                                                else
+                                                    valueInst = inst;
+                                                searchingKey = !searchingKey;
+                                                if (keyInst is not null && valueInst is not null)
+                                                    break;
+                                            }
+                                            instNum--;
+                                        }
+                                    }
+                                    finally
+                                    {
+                                        lastInst = baseInstNum;
+                                    }
+                                    if (keyInst is not null && valueInst is not null)
+                                    {
+                                        var valStr = valueInst.ValueString.Resource;
                                         if (refs.GetValueOrDefault(valStr, 0) <= 1)
                                             valStr.Content = val;
                                         else
-                                            inst.ValueString = new(Data.Strings.MakeString(val, true));
+                                        {
+                                            valueInst.ValueString = new(Data.Strings.MakeString(val, true));
+                                            refs[valStr]--;
+                                        }
                                         break;
                                     }
-                                    k--;
+                                    else
+                                    {
+                                        keyInst = null;
+                                        valueInst = null;
+                                    }
                                 }
-                                if (!f)
-                                    ScriptMessage($"wasn't able to replace the string in the instructions for: {keyString}: {valueString}");
+
+                                if (keyInst is null && valueInst is null)
+                                    ScriptMessage($"wasn't able to replace the string in the instructions for {keyString.Value.Content} = {valueString.Value.Content}");
                             }
                         }
                         catch (Exception e)
@@ -175,73 +211,73 @@ void SearchInCode(UndertaleCode code, int scriptIndex)
                         }
                     }
                     else
-                        SearchExpressions(code, callInst, ref cursor, funcCall.Arguments);
+                        SearchExpressions(code, callInst, [.. funcCall.Arguments.Reverse<IExpressionNode>()]);
                     break;
                 }
         }
     }
 
-    void SearchStatement(UndertaleCode code, List<int> callInst, ref int cursor, IStatementNode stmt)
+    void SearchStatement(UndertaleCode code, List<int> callInst, IStatementNode stmt)
     {
         if (stmt is IExpressionNode expr)
-            SearchExpression(code, callInst, ref cursor, expr);
+            SearchExpression(code, callInst, expr);
 
         switch (stmt)
         {
             case BlockNode block:
-                SearchStatements(code, callInst, ref cursor, block.Children);
+                SearchStatements(code, callInst, block.Children);
                 break;
             case DoUntilLoopNode doUntil:
-                SearchStatement(code, callInst, ref cursor, doUntil.Body);
-                SearchExpression(code, callInst, ref cursor, doUntil.Condition);
+                SearchStatement(code, callInst, doUntil.Body);
+                SearchExpression(code, callInst, doUntil.Condition);
                 break;
             case ForLoopNode forLoop:
-                if (forLoop.Initializer is not null) SearchStatement(code, callInst, ref cursor, forLoop.Initializer);
-                if (forLoop.Condition is not null) SearchExpression(code, callInst, ref cursor, forLoop.Condition);
-                if (forLoop.Incrementor is not null) SearchStatement(code, callInst, ref cursor, forLoop.Incrementor);
-                SearchStatement(code, callInst, ref cursor, forLoop.Body);
+                if (forLoop.Initializer is not null) SearchStatement(code, callInst, forLoop.Initializer);
+                if (forLoop.Condition is not null) SearchExpression(code, callInst, forLoop.Condition);
+                if (forLoop.Incrementor is not null) SearchStatement(code, callInst, forLoop.Incrementor);
+                SearchStatement(code, callInst, forLoop.Body);
                 break;
             case IfNode ifNode:
-                SearchExpression(code, callInst, ref cursor, ifNode.Condition);
-                SearchStatement(code, callInst, ref cursor, ifNode.TrueBlock);
-                SearchStatement(code, callInst, ref cursor, ifNode.ElseBlock);
+                SearchExpression(code, callInst, ifNode.Condition);
+                SearchStatement(code, callInst, ifNode.TrueBlock);
+                SearchStatement(code, callInst, ifNode.ElseBlock);
                 break;
             case RepeatLoopNode repeat:
-                SearchStatement(code, callInst, ref cursor, repeat.Body);
+                SearchStatement(code, callInst, repeat.Body);
                 break;
             case ReturnNode ret:
-                SearchExpression(code, callInst, ref cursor, ret.Value);
+                SearchExpression(code, callInst, ret.Value);
                 break;
             case SwitchCaseNode switchCase:
-                SearchExpression(code, callInst, ref cursor, switchCase.Expression);
+                SearchExpression(code, callInst, switchCase.Expression);
                 break;
             case SwitchNode switchNode:
-                SearchExpression(code, callInst, ref cursor, switchNode.Expression);
-                SearchStatement(code, callInst, ref cursor, switchNode.Body);
+                SearchExpression(code, callInst, switchNode.Expression);
+                SearchStatement(code, callInst, switchNode.Body);
                 break;
             case TryCatchNode tryCatch:
-                SearchStatement(code, callInst, ref cursor, tryCatch.Try);
-                SearchStatement(code, callInst, ref cursor, tryCatch.Catch);
+                SearchStatement(code, callInst, tryCatch.Try);
+                SearchStatement(code, callInst, tryCatch.Catch);
                 break;
             case WhileLoopNode whileLoop:
-                SearchExpression(code, callInst, ref cursor, whileLoop.Condition);
-                SearchStatement(code, callInst, ref cursor, whileLoop.Body);
+                SearchExpression(code, callInst, whileLoop.Condition);
+                SearchStatement(code, callInst, whileLoop.Body);
                 break;
             case WithLoopNode with:
-                SearchStatement(code, callInst, ref cursor, with.Body);
+                SearchStatement(code, callInst, with.Body);
                 break;
         }
     }
 
-    void SearchExpressions(UndertaleCode code, List<int> callInst, ref int cursor, List<IExpressionNode> exprs)
+    void SearchExpressions(UndertaleCode code, List<int> callInst, List<IExpressionNode> exprs)
     {
         foreach (var x in exprs)
-            SearchExpression(code, callInst, ref cursor, x);
+            SearchExpression(code, callInst, x);
     }
 
-    void SearchStatements(UndertaleCode code, List<int> callInst, ref int cursor, List<IStatementNode> stmts)
+    void SearchStatements(UndertaleCode code, List<int> callInst, List<IStatementNode> stmts)
     {
         foreach (var x in stmts)
-            SearchStatement(code, callInst, ref cursor, x);
+            SearchStatement(code, callInst, x);
     }
 }

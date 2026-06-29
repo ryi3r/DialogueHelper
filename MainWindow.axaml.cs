@@ -25,6 +25,7 @@ using DialogueHelper.FileFormat;
 using DialogueHelper.Options;
 using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
+using SkiaSharp;
 using Views;
 using FileInfo = DialogueHelper.Views.FileInfo;
 
@@ -40,8 +41,7 @@ public partial class MainWindow : Window
     public StyleParser? StyleData;
     public List<ICustomProperty> CustomProperties = [];
     public List<CustomTool> CustomTools = [];
-    public readonly Dictionary<string, Bitmap> LoadedImages = [];
-    public readonly List<string> LoadedImagesOrder = [];
+    public readonly Dictionary<string, SKBitmap> LoadedImages = [];
     public bool ScriptNeedsInitialization;
     public string AuthorName = "";
     public string AuthorGroup = "";
@@ -60,10 +60,12 @@ public partial class MainWindow : Window
     public string? LastSavePath;
     readonly DispatcherTimer _timer = new() { Interval = TimeSpan.FromSeconds(0.02) };
     readonly DispatcherTimer _backupTimer = new() { Interval = TimeSpan.FromMinutes(3) };
+    readonly DispatcherTimer _redrawTimer = new() { Interval = TimeSpan.FromSeconds(1d / 30d) };
     public string BgndPath = "Backgrounds/Default";
     public BackgroundConfig BgndConf = new() { Name = "Default", Author = "ryi3r" };
     public List<Image> BgndImages = [];
     internal string _lastBgndPath = "";
+    public bool RedrawRenderer;
 
     public MainWindow()
     {
@@ -161,6 +163,38 @@ public partial class MainWindow : Window
             f.Close();
         };
         _backupTimer.Start();
+        _redrawTimer.Tick += (_, _) =>
+        {
+            if (!RedrawRenderer)
+                return;
+            // editable
+            PreviewRenderer.CreateRender(
+                StyleData!,
+                BoxComboBox.SelectedIndex,
+                FontComboBox.SelectedIndex,
+                ((float?)BoxScale.Value) ?? 0,
+                ((float?)FontScale.Value) ?? 0,
+                ((float?)PreviewScale.Value) ?? 0,
+                new() { Argb = InitialTextColor.Color.ToUInt32() },
+                new() { Argb = BoxColor.Color.ToUInt32() },
+                EditableText.Text ?? "",
+                DisplayEditableCanvas
+            );
+            // original
+            PreviewRenderer.CreateRender(
+                StyleData!,
+                BoxComboBox.SelectedIndex,
+                FontComboBox.SelectedIndex,
+                ((float?)BoxScale.Value) ?? 0,
+                ((float?)FontScale.Value) ?? 0,
+                ((float?)PreviewScale.Value) ?? 0,
+                new() { Argb = InitialTextColor.Color.ToUInt32() },
+                new() { Argb = BoxColor.Color.ToUInt32() },
+                OriginalText.Text ?? "",
+                DisplayOriginalCanvas
+            );
+        };
+        _redrawTimer.Start();
         SizeChanged += (_, _) => LoadBackground();
         var dictPath = Path.Combine(AppContext.BaseDirectory, "SpellCheckDictionaries");
         var conf = new SpellCheckerConfig
@@ -567,13 +601,13 @@ public partial class MainWindow : Window
         var f = File.ReadAllLines(file);
 
         GitOptions.IsEnabled = f[0] == "1";
-        GitOptions.RepoUrl = f[1];
-        GitOptions.Branch = f[2];
+        GitOptions.RepoUrl = WebUtility.UrlDecode(f[1]);
+        GitOptions.Branch = WebUtility.UrlDecode(f[2]);
 
-        AuthorGroup = f[3];
-        AuthorName = f[4];
+        AuthorGroup = WebUtility.UrlDecode(f[3]);
+        AuthorName = WebUtility.UrlDecode(f[4]);
 
-        SelectedStyle = f[5].Length <= 0 ? null : f[5];
+        SelectedStyle = f[5].Length <= 0 ? null : WebUtility.UrlDecode(f[5]);
 
         BgndPath = WebUtility.UrlDecode(f[6]);
         if (!Path.Exists(BgndPath))
@@ -619,11 +653,11 @@ public partial class MainWindow : Window
         }
         var l = new List<string>() {
             GitOptions.IsEnabled ? "1" : "0",
-            GitOptions.RepoUrl,
-            GitOptions.Branch,
-            AuthorGroup,
-            AuthorName,
-            SelectedStyle ?? "",
+            WebUtility.UrlEncode(GitOptions.RepoUrl),
+            WebUtility.UrlEncode(GitOptions.Branch),
+            WebUtility.UrlEncode(AuthorGroup),
+            WebUtility.UrlEncode(AuthorName),
+            WebUtility.UrlEncode(SelectedStyle ?? ""),
             WebUtility.UrlEncode(BgndPath),
         };
         foreach (var ss in StyleSettings)
@@ -2005,7 +2039,7 @@ public partial class MainWindow : Window
         if (split == 0)
             return;
         var folders = await StorageProvider.OpenFolderPickerAsync(new());
-        if (folders is null)
+        if (folders is null || folders.Count == 0)
             return;
         var folder = folders[0].Path.LocalPath;
         var max = FileData!.GetAllCountString();
@@ -2031,7 +2065,7 @@ public partial class MainWindow : Window
             {
                 foreach (var sc in v)
                 {
-                    if ((cur % splitProg) == 0)
+                    if ((cur % splitProg) == 0 && arr.Count < split)
                         arr.Add([]);
 
                     var a = arr[^1];

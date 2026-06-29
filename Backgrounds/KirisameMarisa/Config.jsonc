@@ -12,7 +12,7 @@
             "H": 0.6,
             "StretchMode": "Uniform", // None, Fill, Uniform, UniformToFill
             "BlendMode": "Unspecified", // Unspecified (SourceOver), Plus, Scren, Overlay, Darken, Lighten, ColorDodge, ColorBurn, HardLight, SoftLight, Difference, Exclusion, Multiply, Hue, Saturation, Color, Luminosity
-            "Interpolation": "HighQuality" // None, LowQuality, MediumQuality, HighQuality, Default
+            "Interpolation": "MediumQuality" // None, LowQuality, MediumQuality, HighQuality, Default
         }
     ]
 }

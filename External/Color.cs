@@ -1,9 +1,9 @@
-public struct Color
+public struct Color()
 {
     public byte R;
     public byte G;
     public byte B;
-    public byte A;
+    public byte A = 255;
     public bool IsAlphaEnabled;
     public bool IsAlphaVisible;
 
