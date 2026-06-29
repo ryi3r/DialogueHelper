@@ -86,6 +86,9 @@ void SearchInCode(UndertaleCode code, int scriptIndex)
             case ArrayInitNode arrInit:
                 SearchExpressions(arrInit.Elements);
                 break;
+            case StructNode stct:
+                SearchStatements(stct.Body.Children);
+                break;
             case AssignNode assign:
                 SearchExpression(assign.Value);
                 break;
