@@ -311,11 +311,23 @@ public class Deltarune : StyleScript
                 sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
                 foreach (var (key, cont, warn) in warnedKeys)
                 {
-                    sb.AppendLine($"- {(warn == WarningKind.DuplicatedKey ? "Duplicate key found" : "Key not found")} `{key}` (ID `{cont!.Id}`)");
-                    sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
-                    if (cont.Text is not null)
-                        sb.AppendLine($"  - Translated Text: `{cont.Text}`");
+                    sb.Append($"- {warn switch
+                    {
+                        WarningKind.NotFoundKey => "Target key not found",
+                        WarningKind.DuplicatedKey => "Duplicate key found",
+                        WarningKind.MissingKey => "Entry not found",
+                        _ => throw new("unsupported warn kind"),
+                    }} `{key}`");
+                    if (cont is not null)
+                        sb.Append($" (ID `{cont.Id}`)");
                     sb.AppendLine();
+                    if (cont is not null)
+                    {
+                        sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
+                        if (cont.Text is not null)
+                            sb.AppendLine($"  - Translated Text: `{cont.Text}`");
+                        sb.AppendLine();
+                    }
                 }
                 sb.AppendLine($"Found {warnedKeys.Count} warning(s).");
                 await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warnedKeys.Count == 1 ? "was" : "were")} {warnedKeys.Count} warned {(warnedKeys.Count == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = ["*.md"] }]));
@@ -445,11 +457,23 @@ public class Deltarune : StyleScript
                 sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
                 foreach (var (key, cont, warn) in warnedKeys)
                 {
-                    sb.AppendLine($"- {(warn == WarningKind.DuplicatedKey ? "Duplicate key found" : "Key not found")} `{key}` (ID `{cont!.Id}`)");
-                    sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
-                    if (cont.Text is not null)
-                        sb.AppendLine($"  - Translated Text: `{cont.Text}`");
+                    sb.Append($"- {warn switch
+                    {
+                        WarningKind.NotFoundKey => "Target key not found",
+                        WarningKind.DuplicatedKey => "Duplicate key found",
+                        WarningKind.MissingKey => "Entry not found",
+                        _ => throw new("unsupported warn kind"),
+                    }} `{key}`");
+                    if (cont is not null)
+                        sb.Append($" (ID `{cont.Id}`)");
                     sb.AppendLine();
+                    if (cont is not null)
+                    {
+                        sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
+                        if (cont.Text is not null)
+                            sb.AppendLine($"  - Translated Text: `{cont.Text}`");
+                        sb.AppendLine();
+                    }
                 }
                 sb.AppendLine($"Found {warnedKeys.Count} warning(s).");
                 await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warnedKeys.Count == 1 ? "was" : "were")} {warnedKeys.Count} warned {(warnedKeys.Count == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = [new("*.md")] }]));

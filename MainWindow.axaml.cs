@@ -145,9 +145,9 @@ public partial class MainWindow : Window
                     }
                     if (SelectedString?.EqStrings == sc.EqStrings)
                         ReloadEqStringsField();
-                    if (EtvReverseIndexes.TryGetValue(sc, out var item) && !EtvKeys.ContainsKey(item))
+                    if (EtvReverseIndexes.TryGetValue(sc, out var item) && !EtvKeys.ContainsKey(item) && EtvParents.TryGetValue(item, out var p))
                     {
-                        UpdateEtvItem(EtvParents[item]);
+                        UpdateEtvItem(p);
                         UpdateModifySimilarStrings(sc, item, false, n.Value.ModifySimilarStrings);
                     }
                 }
@@ -444,6 +444,7 @@ public partial class MainWindow : Window
         EtvReverseIndexes.Clear();
         EtvTargetChildren.Clear();
         EtvReverseKeys.Clear();
+        EtvParents.Clear();
         if (!await EnsureFileOpen())
             return;
         foreach (var (key, strs) in FileData!.GetStringKeysValues().ToList())
@@ -481,21 +482,33 @@ public partial class MainWindow : Window
 
     public async void UpdateEtvItem(TreeViewItem item)
     {
-        if (!await EnsureFileOpen())
+        if (!await EnsureFileOpen() || !EtvKeys.ContainsKey(item) || !EtvTargetChildren.ContainsKey(item))
             return;
         var strs = FileData!.GetString(EtvKeys[item])!;
 
         var i = 0;
         var modified = 0;
         var list = EtvTargetChildren[item];
+        if (strs.Count != list.Count)
+        {
+            Console.WriteLine("etv mismatch, repopulating...");
+            PopulateEntryTreeView();
+            return;
+        }
         foreach (var str in strs)
         {
-            ColorTreeItem(list[str], str.Text, str.OriginalText, str.MarkAsModified);
+            if (!list.TryGetValue(str, out var tvi))
+            {
+                Console.WriteLine("etv inst mismatch, repopulating...");
+                PopulateEntryTreeView();
+                return;
+            }
+            ColorTreeItem(tvi, str.Text, str.OriginalText, str.MarkAsModified);
             if (str.MarkAsModified)
                 modified++;
             if (str.Text is not null)
             {
-                list[str].Header = str.Text;
+                tvi.Header = str.Text;
                 if (str.Text != str.OriginalText && !str.MarkAsModified)
                     modified++;
             }
@@ -1571,13 +1584,14 @@ public partial class MainWindow : Window
         sc ??= SelectedString;
         if (sc is null || FileData is null)
             return;
-        if ((si ?? EntryTreeView.SelectedItem) is TreeViewItem tvi)
         {
-            lock (EtvTargetUpdates)
+            if ((si ?? EntryTreeView.SelectedItem) is TreeViewItem tvi && EtvParents.TryGetValue(tvi, out var target))
             {
-                var target = EtvParents[tvi];
-                if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == target))
-                    EtvTargetUpdates.Add(new(target));
+                lock (EtvTargetUpdates)
+                {
+                    if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == target))
+                        EtvTargetUpdates.Add(new(target));
+                }
             }
         }
         if (ModifySimilarStrings.IsChecked ?? false)
@@ -1596,11 +1610,13 @@ public partial class MainWindow : Window
                 if (updateOgText)
                     s.OriginalText = sc.OriginalText;
 
-                lock (EtvTargetUpdates)
+                if (EtvReverseIndexes.TryGetValue(s, out var ri) && EtvParents.TryGetValue(ri, out var target))
                 {
-                    var target = EtvParents[EtvReverseIndexes[s]];
-                    if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == target))
-                        EtvTargetUpdates.Add(new(target));
+                    lock (EtvTargetUpdates)
+                    {
+                        if (!EtvTargetUpdates.Any(x => x.TryGetTarget(out var t) && t == target))
+                            EtvTargetUpdates.Add(new(target));
+                    }
                 }
             }
             if (SelectedString == sc)
@@ -2231,6 +2247,7 @@ public partial class MainWindow : Window
                 (k, var nb) = FileData.GetAtStringKeyValue(idx - 1)!.Value;
                 parent = EtvReverseKeys[k];
                 EtvParents[tvi] = parent;
+                EtvTargetChildren[parent].Add(sc, tvi);
                 nb.Add(sc);
                 parent.Items.Add(tvi);
             }
@@ -2292,6 +2309,7 @@ public partial class MainWindow : Window
                 (k, var nb) = FileData.GetAtStringKeyValue(idx + 1)!.Value;
                 parent = EtvReverseKeys[k];
                 EtvParents[tvi] = parent;
+                EtvTargetChildren[parent].Add(sc, tvi);
                 if (nb.Count > 0)
                 {
                     nb.Insert(0, sc);
