@@ -43,8 +43,9 @@ public class Deltarune : StyleScript
 
     public enum WarningKind
     {
-        MissingKey,
+        NotFoundKey,
         DuplicatedKey,
+        MissingKey,
     }
 
     public static CustomProperty<bool> EnablePortrait = new("Enable Portrait", "enablePortrait", false);
@@ -85,7 +86,7 @@ public class Deltarune : StyleScript
     {
         return Task.FromResult<IEnumerable<CustomTool>>([
             new("Import from data.win", ImportFromDataWin, "Ctrl+Shift+I"),
-            new("Export to data.win (vanilla only)", ExportToDataWin, "Ctrl+Shift+E"),
+            new("Export to data.win", ExportToDataWin, "Ctrl+Shift+E"),
             new("Import from json file", ImportFromJson, "Ctrl+Alt+I"),
             new("Export to json file", ExportToJson, "Ctrl+Alt+E"),
             new("Verify dialogues integrity", VerifyFileDialogueIntegrity, "Ctrl+Shift+P"),
@@ -221,13 +222,14 @@ public class Deltarune : StyleScript
             var output = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream))!;
             await stream.DisposeAsync();
             LoadJson(output, wh);
+            lw.Hide();
+            await wh.ShowDialog(new InfoWindow($"Imported data successfully."));
         }
         finally
         {
             File.Delete($"{wh.GetStylePath()}/output.json");
             lw.Close();
         }
-        await wh.ShowDialog(new InfoWindow($"Imported data successfully."));
     }
 
     public async Task ExportToDataWin(CustomToolWindowHandler wh)
@@ -319,13 +321,14 @@ public class Deltarune : StyleScript
                 await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warnedKeys.Count == 1 ? "was" : "were")} {warnedKeys.Count} warned {(warnedKeys.Count == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = ["*.md"] }]));
                 lw.Show();
             }
+            lw.Hide();
+            await wh.ShowDialog(new InfoWindow($"Exported data successfully."));
         }
         finally
         {
             File.Delete($"{wh.GetStylePath()}/input.json");
             lw.Close();
         }
-        await wh.ShowDialog(new InfoWindow($"Exported data successfully."));
     }
 
     public async Task ImportFromJson(CustomToolWindowHandler wh)
@@ -452,13 +455,14 @@ public class Deltarune : StyleScript
                 await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warnedKeys.Count == 1 ? "was" : "were")} {warnedKeys.Count} warned {(warnedKeys.Count == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = [new("*.md")] }]));
                 lw.Show();
             }
+            lw.Hide();
+            await wh.ShowDialog(new InfoWindow($"Exported data successfully."));
         }
         finally
         {
             File.Delete($"{wh.GetStylePath()}/output.json");
             lw.Close();
         }
-        await wh.ShowDialog(new InfoWindow($"Exported data successfully."));
     }
 
     public async Task VerifyFileDialogueIntegrity(CustomToolWindowHandler wh)
@@ -601,11 +605,23 @@ public class Deltarune : StyleScript
                 sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
                 foreach (var (key, cont, warn) in warnedKeys)
                 {
-                    sb.AppendLine($"- {(warn == WarningKind.DuplicatedKey ? "Duplicate key found" : "Key not found")} `{key}` (ID `{cont!.Id}`)");
-                    sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
-                    if (cont.Text is not null)
-                        sb.AppendLine($"  - Translated Text: `{cont.Text}`");
+                    sb.Append($"- {warn switch
+                    {
+                        WarningKind.NotFoundKey => "Target key not found",
+                        WarningKind.DuplicatedKey => "Duplicate key found",
+                        WarningKind.MissingKey => "Entry not found",
+                        _ => throw new("unsupported warn kind"),
+                    }} `{key}`");
+                    if (cont is not null)
+                        sb.Append($" (ID `{cont.Id}`)");
                     sb.AppendLine();
+                    if (cont is not null)
+                    {
+                        sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
+                        if (cont.Text is not null)
+                            sb.AppendLine($"  - Translated Text: `{cont.Text}`");
+                        sb.AppendLine();
+                    }
                 }
                 warns += warnedKeys.Count;
             }
@@ -714,11 +730,17 @@ public class Deltarune : StyleScript
                 }
                 else
                 {
-                    warnedKeys.Add((key, cont, WarningKind.MissingKey));
+                    warnedKeys.Add((key, cont, WarningKind.NotFoundKey));
                     Console.WriteLine($"no key found for {cont.Id} ({key}) with text \"{cont.OriginalText}\" (edited: \"{cont.Text}\")!");
                 }
                 lWin.ProgressBar.Value++;
             }
+        }
+        foreach (var k in json.Keys.SkipWhile(x => x == "date"))
+        {
+            if (scUns.Keys.Any(x => x.jsonKey == k))
+                continue;
+            warnedKeys.Add((k, null, WarningKind.MissingKey));
         }
         var keys = scUns.Keys.ToArray();
         Array.Sort(keys, (a, b) =>
