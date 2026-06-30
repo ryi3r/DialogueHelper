@@ -11,8 +11,8 @@
         <Copyright>ryi3r 2025-2026</Copyright>
         <PackageId>Dialogue Helper</PackageId>
         <Product>Dialogue Helper</Product>
-        <AssemblyVersion>2.2.1.3</AssemblyVersion>
-        <FileVersion>2.2.1.3</FileVersion>
+        <AssemblyVersion>2.2.1.4</AssemblyVersion>
+        <FileVersion>2.2.1.4</FileVersion>
         <ApplicationIcon>Icon.ico</ApplicationIcon>
         <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
     </PropertyGroup>

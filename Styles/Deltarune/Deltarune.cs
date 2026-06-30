@@ -249,60 +249,114 @@ public class Deltarune : StyleScript
         wh.Show(lw);
         try
         {
-            var stream = new MemoryStream(await File.ReadAllBytesAsync(Path.Combine(f[0].Path.LocalPath, "../lang/lang_ja.json")));
-            var baseJson = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(stream))!;
-            await stream.DisposeAsync();
+            var targetPath = $"\"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\"";
+            var utmtPath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
+            OrderedDictionary<string, string> baseJson;
+            {
+                using var proc = new Process
+                {
+                    StartInfo =
+                    {
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        FileName = utmtPath,
+                        Arguments = $"load {targetPath} -s ../ExportStringsJson.csx",
+                        WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                    },
+                };
+                proc.Start();
+
+                var stdout = new StringBuilder();
+                while (!proc.HasExited)
+                {
+                    var line = await proc.StandardOutput.ReadLineAsync();
+                    if (line is null)
+                        continue;
+                    stdout.Append(line);
+                    stdout.Append('\n');
+                    line = line.Trim();
+                    if (line.EndsWith(')'))
+                    {
+                        var idx = line.LastIndexOf('(');
+                        if (idx != -1)
+                        {
+                            var sep = line.IndexOf('/', idx + 1);
+                            if (sep != -1 && sep < line.Length - 1)
+                            {
+                                lw.ProgressBar.IsIndeterminate = false;
+                                lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
+                                lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
+                            }
+                        }
+                    }
+                    lw.Text.Text = line;
+                }
+                var stderr = await proc.StandardError.ReadToEndAsync();
+                Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
+                if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
+                {
+                    lw.Close();
+                    await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
+                    return;
+                }
+                var outputStream = File.OpenRead($"{wh.GetStylePath()}/output.json");
+                baseJson = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(outputStream))!;
+                await outputStream.DisposeAsync();
+            }
             var file = File.Create($"{wh.GetStylePath()}/input.json");
             var (data, sc, warnedKeys) = ExportJson(baseJson, wh, lw);
             await JsonSerializer.SerializeAsync(file, data, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             await file.DisposeAsync();
-            var targetPath = $"\"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\"";
-            using var proc = new Process
             {
-                StartInfo =
+                using var proc = new Process
                 {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
-                    Arguments = $"load {targetPath} -s ../ImportStringsJson.csx -o {targetPath}",
-                    WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
-                    RedirectStandardError = true,
-                    RedirectStandardOutput = true,
-                },
-            };
-            proc.Start();
-            var stdout = new StringBuilder();
-            while (!proc.HasExited)
-            {
-                var line = await proc.StandardOutput.ReadLineAsync();
-                if (line is null)
-                    continue;
-                stdout.AppendLine(line);
-                line = line.Trim();
-                if (line.EndsWith(')'))
-                {
-                    var idx = line.LastIndexOf('(');
-                    if (idx != -1)
+                    StartInfo =
                     {
-                        var sep = line.IndexOf('/', idx + 1);
-                        if (sep != -1 && sep < line.Length - 1)
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                        FileName = utmtPath,
+                        Arguments = $"load {targetPath} -s ../ImportStringsJson.csx -o {targetPath}",
+                        WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
+                    },
+                };
+                proc.Start();
+                var stdout = new StringBuilder();
+                while (!proc.HasExited)
+                {
+                    var line = await proc.StandardOutput.ReadLineAsync();
+                    if (line is null)
+                        continue;
+                    stdout.AppendLine(line);
+                    line = line.Trim();
+                    if (line.EndsWith(')'))
+                    {
+                        var idx = line.LastIndexOf('(');
+                        if (idx != -1)
                         {
-                            lw.ProgressBar.IsIndeterminate = false;
-                            lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
-                            lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
+                            var sep = line.IndexOf('/', idx + 1);
+                            if (sep != -1 && sep < line.Length - 1)
+                            {
+                                lw.ProgressBar.IsIndeterminate = false;
+                                lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
+                                lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
+                            }
                         }
                     }
+                    lw.Text.Text = line;
                 }
-                lw.Text.Text = line;
-            }
-            var stderr = await proc.StandardError.ReadToEndAsync();
+                var stderr = await proc.StandardError.ReadToEndAsync();
 
-            Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
-            if (proc.ExitCode != 0 || stderr.Trim().Length > 0)
-            {
-                lw.Close();
-                await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
-                return;
+                Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
+                if (proc.ExitCode != 0 || stderr.Trim().Length > 0)
+                {
+                    lw.Close();
+                    await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
+                    return;
+                }
             }
             if (warnedKeys.Count > 0)
             {
@@ -338,6 +392,7 @@ public class Deltarune : StyleScript
         }
         finally
         {
+            File.Delete($"{wh.GetStylePath()}/output.json");
             File.Delete($"{wh.GetStylePath()}/input.json");
             lw.Close();
         }
@@ -546,7 +601,6 @@ public class Deltarune : StyleScript
                 lw.Text.Text = line;
             }
             var stderr = await proc.StandardError.ReadToEndAsync();
-
             Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
             if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
             {
