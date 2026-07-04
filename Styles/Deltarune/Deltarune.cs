@@ -1298,7 +1298,7 @@ public class ParsedString
                             break;
                         case 'V':
                             {
-                                if (!"ABCDEFGHIJKLMNOPQRSTUVWXYZz".Contains(slice[1]))
+                                if (!"ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
                                     ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid voice-clip selected: {slice[1]}"));
                                 Events.Add(i, new DialogueFloweryVoiceClip(fullSlice));
                             }
