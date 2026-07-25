@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
-using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using DialogueHelper.External;
+using DialogueHelper.FileFormat;
 using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
 
@@ -14,10 +13,12 @@ namespace DialogueHelper.PreviewRenderer;
 public class PreviewRenderer(MainWindow mainWindow)
 {
     public readonly MainWindow MainWindow = mainWindow;
+    public List<TintedImage> BoxImageNodes = [];
 
-    public async void CreateRender(StyleParser style, int selectedBox, int selectedFont, float boxScale, float fontScale, float previewScale, Color textColor, Color boxColor, string str, Canvas canvas)
+    public async void CreateRender(StyleParser style, StringContainer sc, int selectedBox, int selectedFont, float boxScale, float fontScale, float previewScale, Color textColor, Color boxColor, string str, Canvas canvas)
     {
         canvas.Children.Clear();
+        BoxImageNodes.Clear();
         // ensure always that selected box/font is in-bounds
         if (style.FontMetadata.Count == 0 || style.BoxMetadata.Count == 0)
             return;
@@ -35,34 +36,40 @@ public class PreviewRenderer(MainWindow mainWindow)
         canvas.Width = 0;
         canvas.Height = 0;
 
-        var eData = new ExternalData(MainWindow, canvas)
-        {
-            Box = box,
-            Char = new() { Char = '\0', Index = 0, String = str, IsNewline = false, IsIgnore = false, StartPosition = ((int)box.TextOffset[0], (int)box.TextOffset[1]) },
-            Font = font,
-            Glyph = new() { Scale = (fontScale * previewScale, fontScale * previewScale), Color = textColor },
-            Style = style,
-        };
         foreach (var bImg in box.Images)
         {
             var imgAsset = style.ImageAssets[bImg.Path];
+            var scale = boxScale * previewScale;
             var avImg = new TintedImage
             {
                 Source = imgAsset,
                 Tint = boxColor,
                 TintEnabled = true,
-                Width = imgAsset.Width * boxScale * previewScale,
-                Height = imgAsset.Height * boxScale * previewScale,
+                Width = imgAsset.Width * scale,
+                Height = imgAsset.Height * scale,
             };
-            avImg.SetValue(Canvas.LeftProperty, bImg.Position[0]);
-            avImg.SetValue(Canvas.TopProperty, bImg.Position[1]);
+            var x = bImg.Position.ElementAtOrDefault(0);
+            var y = bImg.Position.ElementAtOrDefault(1);
+            avImg.SetValue(Canvas.LeftProperty, x);
+            avImg.SetValue(Canvas.TopProperty, y);
+            BoxImageNodes.Add(avImg);
             canvas.Children.Add(avImg);
 
-            if (bImg.Position[0] + imgAsset.Width > canvas.Width)
-                canvas.Width = bImg.Position[0] + imgAsset.Width;
-            if (bImg.Position[1] + imgAsset.Height > canvas.Height)
-                canvas.Height = bImg.Position[1] + imgAsset.Height;
+            if (x + (imgAsset.Width * scale) > canvas.Width)
+                canvas.Width = x + (imgAsset.Width * scale);
+            if (y + (imgAsset.Height * scale) > canvas.Height)
+                canvas.Height = y + (imgAsset.Height * scale);
         }
+        var eData = new ExternalData(MainWindow, canvas)
+        {
+            StringContainer = sc,
+            Box = box,
+            BoxImages = BoxImageNodes,
+            Char = new() { Char = '\0', Index = 0, String = str, IsNewline = false, IsIgnore = false, StartPosition = ((int)box.TextOffset.ElementAtOrDefault(0), (int)box.TextOffset.ElementAtOrDefault(1)) },
+            Font = font,
+            Glyph = new() { Scale = (font.Scale * fontScale * previewScale, font.Scale * fontScale * previewScale), Color = textColor },
+            Style = style,
+        };
         if (!style.InitializedScript)
             return;
         try
@@ -77,7 +84,7 @@ public class PreviewRenderer(MainWindow mainWindow)
                     eData.Char.Index = i;
                     eData.Char.IsNewline = style.Metadata.NewLines.Contains(chr);
                     eData.Char.IsIgnore = style.Metadata.Ignore.Contains(chr);
-                    eData.Glyph.Scale = (fontScale * previewScale, fontScale * previewScale);
+                    eData.Glyph.Scale = (font.Scale * fontScale * previewScale, font.Scale * fontScale * previewScale);
                     eData.QueueRedraw = false;
 
                     try

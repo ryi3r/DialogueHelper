@@ -1,0 +1,8 @@
+{
+    "Name": "CMenu Description",
+    "Images": [{
+        "Path": "Assets/BoxCMenuDesc.png"
+    }],
+    "TextOffset": [23, 12],
+    "Index": 4
+}

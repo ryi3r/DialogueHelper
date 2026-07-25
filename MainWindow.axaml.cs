@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -47,7 +46,7 @@ public partial class MainWindow : Window
     public string AuthorGroup = "";
     public bool ShowOnlyGroupEntries;
     public readonly Dictionary<string, List<ICustomProperty>> StyleSettings = [];
-    public StringContainer? SelectedString;
+    public StringContainer SelectedString = new();
     public bool UpdatingEntry;
     public readonly Dictionary<TreeViewItem, string> EtvKeys = [];
     public readonly Dictionary<string, TreeViewItem> EtvReverseKeys = [];
@@ -170,6 +169,7 @@ public partial class MainWindow : Window
             // editable
             PreviewRenderer.CreateRender(
                 StyleData!,
+                SelectedString,
                 BoxComboBox.SelectedIndex,
                 FontComboBox.SelectedIndex,
                 ((float?)BoxScale.Value) ?? 0,
@@ -183,6 +183,7 @@ public partial class MainWindow : Window
             // original
             PreviewRenderer.CreateRender(
                 StyleData!,
+                SelectedString,
                 BoxComboBox.SelectedIndex,
                 FontComboBox.SelectedIndex,
                 ((float?)BoxScale.Value) ?? 0,
@@ -552,14 +553,7 @@ public partial class MainWindow : Window
             StringKey.Text = SelectedString.Key;
             StringKey.IsUndoEnabled = true;
 
-            foreach (var prop in CustomProperties)
-            {
-                if (SelectedString.CustomProperties.TryGetValue(prop.Name, out var value))
-                    prop.StringToValue(value);
-                else
-                    prop.Value = prop.DefaultValue;
-            }
-
+            PopulateCustomPropertiesValues();
             if (lastSel is null || lastSel.EqStrings != SelectedString.EqStrings)
                 ReloadEqStringsField();
 
@@ -570,7 +564,23 @@ public partial class MainWindow : Window
             OriginalText_OnTextChanging(null, null);
         }
         else
-            SelectedString = null;
+            SelectedString = new();
+    }
+
+    public void PopulateCustomPropertiesValues()
+    {
+        if (SelectedString is null)
+            return;
+        // todo: catch any errors that may arise from doing this
+        foreach (var prop in CustomProperties)
+        {
+            if (SelectedString.CustomProperties.TryGetValue(prop.Name, out var value))
+                prop.StringToValue(value);
+            else if (prop is ICustomPropertyList pl)
+                pl.SelectedIndex = pl.DefaultIndex;
+            else
+                prop.Value = prop.DefaultValue;
+        }
     }
 
     public void ReloadEqStringsField()
@@ -603,7 +613,14 @@ public partial class MainWindow : Window
         var settings = new Settings(this);
         await settings.ShowDialog(this);
         if (ScriptNeedsInitialization)
+        {
             InitializeCustomScript();
+
+            UpdatingEntry = true;
+            EditableText_OnTextChanging(null, null);
+            OriginalText_OnTextChanging(null, null);
+            UpdatingEntry = false;
+        }
     }
 
     public void LoadSettings()
@@ -642,11 +659,10 @@ public partial class MainWindow : Window
                     case "StyleSettings":
                         {
                             var folder = WebUtility.UrlDecode(entryType[(idx + 2)..]);
-                            if (!StyleSettings.ContainsKey(folder))
-                                StyleSettings.Add(folder, []);
+                            StyleSettings.TryAdd(folder, []);
                             var spl = f[i].Split("@@");
                             // the visual name & type value will get overwritten once the style loads
-                            StyleSettings[folder].Add(new CustomProperty<string>("<null>", WebUtility.UrlDecode(spl[0]), WebUtility.UrlDecode(spl[1])));
+                            StyleSettings[folder].Add(new CustomProperty<string>("<null>", null, WebUtility.UrlDecode(spl[0]), WebUtility.UrlDecode(spl[1])));
                         }
                         break;
                 }
@@ -715,8 +731,7 @@ public partial class MainWindow : Window
             {
                 StyleData = new StyleParser(SelectedStyle);
                 await Task.Run(() => StyleData.CompileCode());
-                if (!StyleSettings.ContainsKey(SelectedStyle))
-                    StyleSettings.Add(SelectedStyle, []);
+                StyleSettings.TryAdd(SelectedStyle, []);
                 if (StyleData.Script is not null)
                 {
                     var res = await StyleData.Script.RegisterCustomSettings();
@@ -868,12 +883,13 @@ public partial class MainWindow : Window
         {
             var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new(5) };
             item.Children.Add(new TextBlock { Margin = new(7), Text = tool.VisualName });
+            // todo: probably could remove most of these cases and compact them into 1
             switch (tool.Type)
             {
                 case not null when tool.Type == typeof(bool):
                     {
                         item.Children.Clear();
-                        var node = new CheckBox()
+                        var node = new CheckBox
                         {
                             IsChecked = (tool.Value as bool?) ?? false,
                             IsThreeState = false,
@@ -885,7 +901,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.IsChecked ?? false) ? "true" : "false");
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -910,7 +926,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -934,7 +950,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -958,7 +974,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -982,7 +998,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -1007,7 +1023,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -1031,7 +1047,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -1055,7 +1071,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -1079,7 +1095,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -1102,7 +1118,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -1124,7 +1140,7 @@ public partial class MainWindow : Window
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -1145,7 +1161,7 @@ public partial class MainWindow : Window
                             tool.StringToValue(node.Text ?? "");
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -1169,7 +1185,36 @@ public partial class MainWindow : Window
                             tool.StringToValue(new Color { Argb = node.Color.ToUInt32() }.Rgba.ToString() ?? "");
                             if (isString)
                             {
-                                EditableText_OnTextChanging(null, null);
+                                EditableText_OnTextChanging(0, null);
+                                OriginalText_OnTextChanging(null, null);
+                            }
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
+                    break;
+
+                case not null when tool.Type == typeof(ICustomPropertyList):
+                    {
+                        var pl = (ICustomPropertyList)tool;
+                        var d = new ComboBoxItem[pl.Data?.Count ?? 0];
+                        for (var i = 0; i < (pl.Data?.Count ?? 0); i++)
+                        {
+                            d[i] = new() { Content = pl.Data?[i]?.ToString() ?? "<null>" };
+                            ToolTip.SetTip(d[i], i < (pl.ItemTooltips?.Count ?? 0) ? pl.ItemTooltips?[i] : null);
+                        }
+                        var node = new ComboBox
+                        {
+                            IsEnabled = !tool.ReadOnly,
+                            ItemsSource = d,
+                            SelectedIndex = pl.SelectedIndex,
+                        };
+                        node.SelectionChanged += (_, _) =>
+                        {
+                            tool.StringToValue(node.SelectedIndex.ToString());
+                            if (isString)
+                            {
+                                EditableText_OnTextChanging(0, null);
                                 OriginalText_OnTextChanging(null, null);
                             }
                         };
@@ -1178,6 +1223,8 @@ public partial class MainWindow : Window
                     }
                     break;
             }
+            if (tool.Node is not null)
+                ToolTip.SetTip(tool.Node, tool.Tooltip);
             panel.Children.Add(item);
         }
     }
@@ -1186,20 +1233,30 @@ public partial class MainWindow : Window
     {
         if (PreviewRenderer is null)
             return;
-        if (SelectedString is not null && !UpdatingEntry && FileData is not null && e is not null)
+        if (!UpdatingEntry && (e is not null || (sender is int s && s == 0)))
         {
-            IsFileModified = true;
-            Title = "Dialogue Helper*";
+            if (FileData is not null)
+            {
+                IsFileModified = true;
+                Title = "Dialogue Helper*";
+            }
             SelectedString.Text = EditableText.Text ?? "<null>";
             foreach (var prop in CustomProperties)
             {
-                if (prop.Value != prop.DefaultValue)
+                if (prop is ICustomPropertyList pl)
+                {
+                    if (pl.SelectedIndex != pl.DefaultIndex)
+                        SelectedString.CustomProperties[prop.Name] = prop.ValueToString();
+                    else
+                        SelectedString.CustomProperties.Remove(prop.Name);
+                }
+                else if (!Equals(prop.Value, prop.DefaultValue))
                     SelectedString.CustomProperties[prop.Name] = prop.ValueToString();
                 else
                     SelectedString.CustomProperties.Remove(prop.Name);
             }
 
-            if (SelectedString.Text != SelectedString.OriginalText)
+            if (FileData is not null && SelectedString.Text != SelectedString.OriginalText)
             {
                 if (!FileData.AuthorList.Contains(AuthorName))
                     FileData.AuthorList.Add(AuthorName);
@@ -1210,6 +1267,7 @@ public partial class MainWindow : Window
         }
         PreviewRenderer.CreateRender(
             StyleData!,
+            SelectedString,
             BoxComboBox.SelectedIndex,
             FontComboBox.SelectedIndex,
             ((float?)BoxScale.Value) ?? 0,
@@ -1227,7 +1285,7 @@ public partial class MainWindow : Window
     {
         if (PreviewRenderer is null)
             return;
-        if (!OriginalText.IsReadOnly && SelectedString is not null && FileData is not null)
+        if (!UpdatingEntry && !OriginalText.IsReadOnly && FileData is not null)
         {
             if (!FileData.AuthorList.Contains(AuthorName))
                 FileData.AuthorList.Add(AuthorName);
@@ -1246,6 +1304,7 @@ public partial class MainWindow : Window
         }
         PreviewRenderer.CreateRender(
             StyleData!,
+            SelectedString,
             BoxComboBox.SelectedIndex,
             FontComboBox.SelectedIndex,
             ((float?)BoxScale.Value) ?? 0,
@@ -1261,6 +1320,15 @@ public partial class MainWindow : Window
 
     async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
     {
+        var lWin = new LoadingWindow { Title = "Reloading style...", CanResize = false, ProgressBar = { IsIndeterminate = true } };
+        lWin.Closing += (_, ev) =>
+        {
+            if (!ev.IsProgrammatic)
+                ev.Cancel = true;
+        };
+        lWin.Show(this);
+        lWin.Text.Text = "Reloading style...";
+
         try
         {
             StyleData = new StyleParser(StyleData!.Folder);
@@ -1273,10 +1341,14 @@ public partial class MainWindow : Window
             sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", SelectedStyle);
             await sErr.ShowDialog(this);
         }
+        PopulateCustomPropertiesValues();
+        UpdateCustomScriptFields();
         UpdatingEntry = true;
         EditableText_OnTextChanging(null, null);
         OriginalText_OnTextChanging(null, null);
         UpdatingEntry = false;
+
+        lWin.Close();
     }
 
     void OnScaleValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
@@ -1367,14 +1439,16 @@ public partial class MainWindow : Window
 
     void BoxComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        SelectedString?.BoxStyle = BoxComboBox.SelectedIndex;
+        if (BoxComboBox is not null)
+            SelectedString?.BoxStyle = BoxComboBox.SelectedIndex;
         EditableText_OnTextChanging(null, null);
         OriginalText_OnTextChanging(null, null);
     }
 
     void FontComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        SelectedString?.FontStyle = FontComboBox.SelectedIndex;
+        if (FontComboBox is not null)
+            SelectedString?.FontStyle = FontComboBox.SelectedIndex;
         EditableText_OnTextChanging(null, null);
         OriginalText_OnTextChanging(null, null);
     }
@@ -1645,7 +1719,7 @@ public partial class MainWindow : Window
             EqStringUpdates.Clear();
         lock (EtvTargetUpdates)
             EtvTargetUpdates.Clear();
-        SelectedString = null;
+        SelectedString = new();
         FileData = null;
         EntryTreeView.Items.Clear();
         EtvKeys.Clear();
@@ -1667,7 +1741,7 @@ public partial class MainWindow : Window
         lock (EtvTargetUpdates)
             EtvTargetUpdates.Clear();
         FileData = new();
-        SelectedString = null;
+        SelectedString = new();
         EntryTreeView.Items.Clear();
         EtvKeys.Clear();
         EtvTargetChildren.Clear();
@@ -1896,7 +1970,7 @@ public partial class MainWindow : Window
                     index.EqStrings.Remove(index);
                     str.Remove(index);
                     parent.Items.Remove(item);
-                    SelectedString = null;
+                    SelectedString = new();
                     var idx = EtvIndexes[item];
                     EtvTargetChildren[parent].Remove(idx);
                     EtvIndexes.Remove(item);
@@ -2391,5 +2465,12 @@ public partial class MainWindow : Window
             IsFileModified = true;
             Title = "Dialogue Helper*";
         }
+    }
+
+    async void SelectSearch_OnClick(object? sender, RoutedEventArgs e)
+    {
+        EntryTextBox.Focus();
+        EntryTextBox.SelectionStart = EntryTextBox.Text?.Length ?? 0;
+        EntryTextBox.SelectionEnd = EntryTextBox.SelectionStart;
     }
 }

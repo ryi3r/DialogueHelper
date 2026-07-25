@@ -1,0 +1,2923 @@
+{
+    "Name": "Comic Sans MS",
+    "ImagePath": "Assets/fnt_comicsans.png",
+    "Index": 2,
+    "Size": 10,
+    "Scale": 1,
+    "Ascender": 0,
+    "AscenderOffset": 0,
+    "Glyphs": [
+        {
+            "Char": " ",
+            "Position": [
+                188,
+                43
+            ],
+            "Size": [
+                6,
+                19
+            ],
+            "Shift": 6,
+            "Offset": 0
+        },
+        {
+            "Char": "!",
+            "Position": [
+                146,
+                142
+            ],
+            "Size": [
+                2,
+                15
+            ],
+            "Shift": 3,
+            "Offset": 1
+        },
+        {
+            "Char": "\"",
+            "Position": [
+                76,
+                142
+            ],
+            "Size": [
+                5,
+                9
+            ],
+            "Shift": 6,
+            "Offset": 1
+        },
+        {
+            "Char": "#",
+            "Position": [
+                65,
+                22
+            ],
+            "Size": [
+                9,
+                15
+            ],
+            "Shift": 11,
+            "Offset": 1
+        },
+        {
+            "Char": "$",
+            "Position": [
+                2,
+                22
+            ],
+            "Size": [
+                8,
+                17
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "%",
+            "Position": [
+                85,
+                2
+            ],
+            "Size": [
+                11,
+                15
+            ],
+            "Shift": 11,
+            "Offset": 0
+        },
+        {
+            "Char": "&",
+            "Position": [
+                87,
+                22
+            ],
+            "Size": [
+                9,
+                15
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "'",
+            "Position": [
+                180,
+                142
+            ],
+            "Size": [
+                2,
+                9
+            ],
+            "Shift": 6,
+            "Offset": 2
+        },
+        {
+            "Char": "(",
+            "Position": [
+                206,
+                121
+            ],
+            "Size": [
+                4,
+                19
+            ],
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": ")",
+            "Position": [
+                218,
+                121
+            ],
+            "Size": [
+                4,
+                19
+            ],
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "*",
+            "Position": [
+                39,
+                142
+            ],
+            "Size": [
+                6,
+                10
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "+",
+            "Position": [
+                171,
+                121
+            ],
+            "Size": [
+                6,
+                14
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": ",",
+            "Position": [
+                124,
+                142
+            ],
+            "Size": [
+                2,
+                17
+            ],
+            "Shift": 6,
+            "Offset": 1
+        },
+        {
+            "Char": "-",
+            "Position": [
+                25,
+                142
+            ],
+            "Size": [
+                5,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": ".",
+            "Position": [
+                150,
+                142
+            ],
+            "Size": [
+                2,
+                15
+            ],
+            "Shift": 6,
+            "Offset": 2
+        },
+        {
+            "Char": "/",
+            "Position": [
+                199,
+                64
+            ],
+            "Size": [
+                6,
+                16
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "0",
+            "Position": [
+                242,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "1",
+            "Position": [
+                98,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "2",
+            "Position": [
+                47,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "3",
+            "Position": [
+                50,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "4",
+            "Position": [
+                83,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "5",
+            "Position": [
+                34,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "6",
+            "Position": [
+                82,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "7",
+            "Position": [
+                238,
+                43
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "8",
+            "Position": [
+                74,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "9",
+            "Position": [
+                66,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": ":",
+            "Position": [
+                162,
+                142
+            ],
+            "Size": [
+                2,
+                14
+            ],
+            "Shift": 6,
+            "Offset": 2
+        },
+        {
+            "Char": ";",
+            "Position": [
+                66,
+                142
+            ],
+            "Size": [
+                3,
+                16
+            ],
+            "Shift": 6,
+            "Offset": 1
+        },
+        {
+            "Char": "<",
+            "Position": [
+                47,
+                142
+            ],
+            "Size": [
+                4,
+                14
+            ],
+            "Shift": 8,
+            "Offset": 2
+        },
+        {
+            "Char": "=",
+            "Position": [
+                2,
+                142
+            ],
+            "Size": [
+                5,
+                14
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": ">",
+            "Position": [
+                53,
+                142
+            ],
+            "Size": [
+                4,
+                14
+            ],
+            "Shift": 8,
+            "Offset": 3
+        },
+        {
+            "Char": "?",
+            "Position": [
+                137,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "@",
+            "Position": [
+                45,
+                2
+            ],
+            "Size": [
+                12,
+                16
+            ],
+            "Shift": 12,
+            "Offset": 0
+        },
+        {
+            "Char": "A",
+            "Position": [
+                162,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "B",
+            "Position": [
+                101,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "C",
+            "Position": [
+                52,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "D",
+            "Position": [
+                119,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 9,
+            "Offset": 1
+        },
+        {
+            "Char": "E",
+            "Position": [
+                74,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "F",
+            "Position": [
+                122,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "G",
+            "Position": [
+                54,
+                22
+            ],
+            "Size": [
+                9,
+                15
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "H",
+            "Position": [
+                102,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "I",
+            "Position": [
+                114,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "J",
+            "Position": [
+                136,
+                22
+            ],
+            "Size": [
+                8,
+                16
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "K",
+            "Position": [
+                65,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "L",
+            "Position": [
+                130,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 1
+        },
+        {
+            "Char": "M",
+            "Position": [
+                205,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 11,
+            "Offset": 0
+        },
+        {
+            "Char": "N",
+            "Position": [
+                98,
+                22
+            ],
+            "Size": [
+                9,
+                15
+            ],
+            "Shift": 11,
+            "Offset": 1
+        },
+        {
+            "Char": "O",
+            "Position": [
+                169,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "P",
+            "Position": [
+                230,
+                121
+            ],
+            "Size": [
+                5,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 1
+        },
+        {
+            "Char": "Q",
+            "Position": [
+                2,
+                2
+            ],
+            "Size": [
+                11,
+                18
+            ],
+            "Shift": 11,
+            "Offset": 0
+        },
+        {
+            "Char": "R",
+            "Position": [
+                26,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "S",
+            "Position": [
+                32,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "T",
+            "Position": [
+                82,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "U",
+            "Position": [
+                12,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "V",
+            "Position": [
+                43,
+                22
+            ],
+            "Size": [
+                9,
+                15
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "W",
+            "Position": [
+                30,
+                2
+            ],
+            "Size": [
+                13,
+                15
+            ],
+            "Shift": 14,
+            "Offset": 1
+        },
+        {
+            "Char": "X",
+            "Position": [
+                32,
+                22
+            ],
+            "Size": [
+                9,
+                15
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "Y",
+            "Position": [
+                244,
+                22
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "Z",
+            "Position": [
+                62,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "[",
+            "Position": [
+                212,
+                121
+            ],
+            "Size": [
+                4,
+                19
+            ],
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "\\",
+            "Position": [
+                215,
+                64
+            ],
+            "Size": [
+                6,
+                16
+            ],
+            "Shift": 7,
+            "Offset": 1
+        },
+        {
+            "Char": "]",
+            "Position": [
+                224,
+                121
+            ],
+            "Size": [
+                4,
+                19
+            ],
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "^",
+            "Position": [
+                88,
+                142
+            ],
+            "Size": [
+                6,
+                7
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "_",
+            "Position": [
+                110,
+                2
+            ],
+            "Size": [
+                9,
+                17
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "`",
+            "Position": [
+                175,
+                142
+            ],
+            "Size": [
+                3,
+                7
+            ],
+            "Shift": 7,
+            "Offset": 1
+        },
+        {
+            "Char": "a",
+            "Position": [
+                226,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "b",
+            "Position": [
+                66,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "c",
+            "Position": [
+                162,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "d",
+            "Position": [
+                38,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "e",
+            "Position": [
+                58,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "f",
+            "Position": [
+                207,
+                64
+            ],
+            "Size": [
+                6,
+                16
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "g",
+            "Position": [
+                196,
+                43
+            ],
+            "Size": [
+                6,
+                19
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "h",
+            "Position": [
+                26,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "i",
+            "Position": [
+                158,
+                142
+            ],
+            "Size": [
+                2,
+                15
+            ],
+            "Shift": 4,
+            "Offset": 1
+        },
+        {
+            "Char": "j",
+            "Position": [
+                231,
+                64
+            ],
+            "Size": [
+                5,
+                19
+            ],
+            "Shift": 5,
+            "Offset": -1
+        },
+        {
+            "Char": "k",
+            "Position": [
+                58,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "l",
+            "Position": [
+                137,
+                142
+            ],
+            "Size": [
+                2,
+                15
+            ],
+            "Shift": 4,
+            "Offset": 1
+        },
+        {
+            "Char": "m",
+            "Position": [
+                112,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "n",
+            "Position": [
+                10,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "o",
+            "Position": [
+                18,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "p",
+            "Position": [
+                172,
+                43
+            ],
+            "Size": [
+                6,
+                19
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "q",
+            "Position": [
+                204,
+                43
+            ],
+            "Size": [
+                6,
+                19
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "r",
+            "Position": [
+                42,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 6,
+            "Offset": 0
+        },
+        {
+            "Char": "s",
+            "Position": [
+                244,
+                121
+            ],
+            "Size": [
+                5,
+                15
+            ],
+            "Shift": 6,
+            "Offset": 0
+        },
+        {
+            "Char": "t",
+            "Position": [
+                42,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 6,
+            "Offset": 0
+        },
+        {
+            "Char": "u",
+            "Position": [
+                202,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "v",
+            "Position": [
+                106,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 6,
+            "Offset": 0
+        },
+        {
+            "Char": "w",
+            "Position": [
+                142,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 9,
+            "Offset": 0
+        },
+        {
+            "Char": "x",
+            "Position": [
+                110,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "y",
+            "Position": [
+                118,
+                22
+            ],
+            "Size": [
+                7,
+                19
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "z",
+            "Position": [
+                194,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "{",
+            "Position": [
+                238,
+                64
+            ],
+            "Size": [
+                5,
+                19
+            ],
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "|",
+            "Position": [
+                102,
+                142
+            ],
+            "Size": [
+                2,
+                19
+            ],
+            "Shift": 5,
+            "Offset": 1
+        },
+        {
+            "Char": "}",
+            "Position": [
+                245,
+                64
+            ],
+            "Size": [
+                5,
+                19
+            ],
+            "Shift": 5,
+            "Offset": 0
+        },
+        {
+            "Char": "~",
+            "Position": [
+                228,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                11,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                47,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                109,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                162,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                174,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                29,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                129,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                147,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                156,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                197,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                153,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                100,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                246,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                127,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                165,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                56,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                192,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                118,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                65,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                2,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                201,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                179,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                82,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                210,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                219,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                91,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                20,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                38,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                138,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                237,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                188,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                144,
+                121
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "",
+            "Position": [
+                183,
+                102
+            ],
+            "Size": [
+                7,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": " ",
+            "Position": [
+                184,
+                142
+            ],
+            "Size": [
+                0,
+                0
+            ],
+            "Shift": 0,
+            "Offset": 0
+        },
+        {
+            "Char": "¡",
+            "Position": [
+                154,
+                142
+            ],
+            "Size": [
+                2,
+                15
+            ],
+            "Shift": 3,
+            "Offset": 1
+        },
+        {
+            "Char": "¢",
+            "Position": [
+                42,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "£",
+            "Position": [
+                98,
+                2
+            ],
+            "Size": [
+                10,
+                16
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "¤",
+            "Position": [
+                164,
+                22
+            ],
+            "Size": [
+                9,
+                14
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "¥",
+            "Position": [
+                22,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "¦",
+            "Position": [
+                128,
+                142
+            ],
+            "Size": [
+                2,
+                17
+            ],
+            "Shift": 5,
+            "Offset": 2
+        },
+        {
+            "Char": "§",
+            "Position": [
+                98,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "¨",
+            "Position": [
+                117,
+                142
+            ],
+            "Size": [
+                5,
+                7
+            ],
+            "Shift": 7,
+            "Offset": 1
+        },
+        {
+            "Char": "©",
+            "Position": [
+                59,
+                2
+            ],
+            "Size": [
+                11,
+                16
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "ª",
+            "Position": [
+                9,
+                142
+            ],
+            "Size": [
+                6,
+                11
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "«",
+            "Position": [
+                181,
+                64
+            ],
+            "Size": [
+                7,
+                14
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "¬",
+            "Position": [
+                136,
+                121
+            ],
+            "Size": [
+                6,
+                14
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "­",
+            "Position": [
+                32,
+                142
+            ],
+            "Size": [
+                5,
+                12
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "®",
+            "Position": [
+                217,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "¯",
+            "Position": [
+                106,
+                142
+            ],
+            "Size": [
+                9,
+                4
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "°",
+            "Position": [
+                59,
+                142
+            ],
+            "Size": [
+                5,
+                10
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "±",
+            "Position": [
+                173,
+                64
+            ],
+            "Size": [
+                6,
+                17
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "²",
+            "Position": [
+                96,
+                142
+            ],
+            "Size": [
+                4,
+                10
+            ],
+            "Shift": 8,
+            "Offset": 2
+        },
+        {
+            "Char": "³",
+            "Position": [
+                132,
+                142
+            ],
+            "Size": [
+                3,
+                10
+            ],
+            "Shift": 8,
+            "Offset": 3
+        },
+        {
+            "Char": "´",
+            "Position": [
+                170,
+                142
+            ],
+            "Size": [
+                3,
+                7
+            ],
+            "Shift": 7,
+            "Offset": 1
+        },
+        {
+            "Char": "µ",
+            "Position": [
+                22,
+                22
+            ],
+            "Size": [
+                8,
+                17
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "¶",
+            "Position": [
+                241,
+                2
+            ],
+            "Size": [
+                9,
+                16
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "·",
+            "Position": [
+                166,
+                142
+            ],
+            "Size": [
+                2,
+                11
+            ],
+            "Shift": 8,
+            "Offset": 3
+        },
+        {
+            "Char": "¸",
+            "Position": [
+                122,
+                102
+            ],
+            "Size": [
+                5,
+                17
+            ],
+            "Shift": 7,
+            "Offset": 1
+        },
+        {
+            "Char": "¹",
+            "Position": [
+                141,
+                142
+            ],
+            "Size": [
+                3,
+                10
+            ],
+            "Shift": 8,
+            "Offset": 2
+        },
+        {
+            "Char": "º",
+            "Position": [
+                17,
+                142
+            ],
+            "Size": [
+                6,
+                11
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "»",
+            "Position": [
+                190,
+                64
+            ],
+            "Size": [
+                7,
+                14
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "¼",
+            "Position": [
+                155,
+                22
+            ],
+            "Size": [
+                7,
+                18
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "½",
+            "Position": [
+                146,
+                22
+            ],
+            "Size": [
+                7,
+                18
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "¾",
+            "Position": [
+                175,
+                22
+            ],
+            "Size": [
+                7,
+                18
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "¿",
+            "Position": [
+                2,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "À",
+            "Position": [
+                184,
+                22
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Á",
+            "Position": [
+                2,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Â",
+            "Position": [
+                214,
+                22
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Ã",
+            "Position": [
+                92,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Ä",
+            "Position": [
+                72,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Å",
+            "Position": [
+                204,
+                22
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Æ",
+            "Position": [
+                15,
+                2
+            ],
+            "Size": [
+                13,
+                15
+            ],
+            "Shift": 14,
+            "Offset": 0
+        },
+        {
+            "Char": "Ç",
+            "Position": [
+                12,
+                22
+            ],
+            "Size": [
+                8,
+                17
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "È",
+            "Position": [
+                229,
+                43
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "É",
+            "Position": [
+                164,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "Ê",
+            "Position": [
+                132,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "Ë",
+            "Position": [
+                11,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "Ì",
+            "Position": [
+                234,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "Í",
+            "Position": [
+                106,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "Î",
+            "Position": [
+                155,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "Ï",
+            "Position": [
+                170,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "Ð",
+            "Position": [
+                193,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 9,
+            "Offset": -1
+        },
+        {
+            "Char": "Ñ",
+            "Position": [
+                76,
+                22
+            ],
+            "Size": [
+                9,
+                15
+            ],
+            "Shift": 11,
+            "Offset": 1
+        },
+        {
+            "Char": "Ò",
+            "Position": [
+                229,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "Ó",
+            "Position": [
+                121,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "Ô",
+            "Position": [
+                181,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "Õ",
+            "Position": [
+                145,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "Ö",
+            "Position": [
+                133,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "×",
+            "Position": [
+                74,
+                121
+            ],
+            "Size": [
+                6,
+                14
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "Ø",
+            "Position": [
+                157,
+                2
+            ],
+            "Size": [
+                10,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 0
+        },
+        {
+            "Char": "Ù",
+            "Position": [
+                224,
+                22
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Ú",
+            "Position": [
+                152,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Û",
+            "Position": [
+                122,
+                43
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Ü",
+            "Position": [
+                234,
+                22
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 10,
+            "Offset": 1
+        },
+        {
+            "Char": "Ý",
+            "Position": [
+                194,
+                22
+            ],
+            "Size": [
+                8,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 0
+        },
+        {
+            "Char": "Þ",
+            "Position": [
+                20,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ß",
+            "Position": [
+                223,
+                64
+            ],
+            "Size": [
+                6,
+                16
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "à",
+            "Position": [
+                10,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "á",
+            "Position": [
+                90,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "â",
+            "Position": [
+                2,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ã",
+            "Position": [
+                29,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ä",
+            "Position": [
+                210,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "å",
+            "Position": [
+                18,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "æ",
+            "Position": [
+                72,
+                2
+            ],
+            "Size": [
+                11,
+                15
+            ],
+            "Shift": 12,
+            "Offset": 0
+        },
+        {
+            "Char": "ç",
+            "Position": [
+                212,
+                43
+            ],
+            "Size": [
+                6,
+                18
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "è",
+            "Position": [
+                146,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "é",
+            "Position": [
+                90,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ê",
+            "Position": [
+                146,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ë",
+            "Position": [
+                154,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ì",
+            "Position": [
+                71,
+                142
+            ],
+            "Size": [
+                3,
+                15
+            ],
+            "Shift": 4,
+            "Offset": 0
+        },
+        {
+            "Char": "í",
+            "Position": [
+                83,
+                142
+            ],
+            "Size": [
+                3,
+                15
+            ],
+            "Shift": 4,
+            "Offset": 1
+        },
+        {
+            "Char": "î",
+            "Position": [
+                138,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 4,
+            "Offset": -1
+        },
+        {
+            "Char": "ï",
+            "Position": [
+                237,
+                121
+            ],
+            "Size": [
+                5,
+                15
+            ],
+            "Shift": 4,
+            "Offset": -1
+        },
+        {
+            "Char": "ð",
+            "Position": [
+                34,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 1
+        },
+        {
+            "Char": "ñ",
+            "Position": [
+                220,
+                43
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ò",
+            "Position": [
+                186,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ó",
+            "Position": [
+                218,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ô",
+            "Position": [
+                56,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "õ",
+            "Position": [
+                92,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ö",
+            "Position": [
+                178,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "÷",
+            "Position": [
+                114,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 8,
+            "Offset": 1
+        },
+        {
+            "Char": "ø",
+            "Position": [
+                50,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ù",
+            "Position": [
+                2,
+                85
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ú",
+            "Position": [
+                74,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "û",
+            "Position": [
+                128,
+                64
+            ],
+            "Size": [
+                7,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ü",
+            "Position": [
+                82,
+                102
+            ],
+            "Size": [
+                6,
+                15
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "ý",
+            "Position": [
+                127,
+                22
+            ],
+            "Size": [
+                7,
+                19
+            ],
+            "Shift": 7,
+            "Offset": 0
+        },
+        {
+            "Char": "þ",
+            "Position": [
+                180,
+                43
+            ],
+            "Size": [
+                6,
+                19
+            ],
+            "Shift": 7,
+            "Offset": 1
+        },
+        {
+            "Char": "ÿ",
+            "Position": [
+                109,
+                22
+            ],
+            "Size": [
+                7,
+                19
+            ],
+            "Shift": 7,
+            "Offset": 0
+        }
+    ]
+}

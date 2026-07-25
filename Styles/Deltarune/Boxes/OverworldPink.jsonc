@@ -1,0 +1,8 @@
+{
+    "Name": "Overworld Pink",
+    "Images": [{
+        "Path": "Assets/BoxPink.png"
+    }],
+    "TextOffset": [34, 87],
+    "Index": 6
+}

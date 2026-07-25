@@ -1,0 +1,8 @@
+{
+    "Name": "Tenna's Board Dialogue",
+    "Images": [{
+        "Path": "Assets/BoxBoardDiag.png"
+    }],
+    "TextOffset": [36, 28],
+    "Index": 12
+}

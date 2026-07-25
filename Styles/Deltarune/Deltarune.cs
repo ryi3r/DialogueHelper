@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -27,18 +28,53 @@ public class Deltarune : StyleScript
     public enum Fonts
     {
         Main,
-        MainBig,
         Small,
         ComicSans,
         Dotumche,
         TinyNoelle,
+        TennaBoard,
         JaMain,
-        JaMainBig,
         JaSmall,
         JaComicSans,
         JaDotumche,
         JaKakugo,
         JaTinyNoelle,
+    }
+    public enum Boxes
+    {
+        Overworld,
+        BattleIdle,
+        BattleItemInfo,
+        BattleDialogue,
+        CMenuDescription, // no linewrap
+        CMenuCharacterDescription, // no linewrap
+        OverworldPink,
+        PlatformerDiaglogue,
+        ShopTalk,
+        ShopTalkIdle, // wrong linewrap (33 in the code but should be much lower)
+        ShopItemDescription, // no linewrap
+        RecruitDescription,
+        TennaBoard,
+    }
+    public enum DialogueKinds
+    {
+        Default,
+        BattleIdle,
+        Platformer,
+        PlatformerAct, // no linewrap
+        Pink,
+        ShopSellEquippable,
+        TennaBoard,
+        DynamicWordwarp,
+        None,
+    }
+    public enum PortraitKinds
+    {
+        None,
+        ForceNone,
+        Basic,
+        SmallFlowers,
+        SmallOther,
     }
 
     public enum WarningKind
@@ -48,23 +84,28 @@ public class Deltarune : StyleScript
         MissingKey,
     }
 
-    public static CustomProperty<bool> EnablePortrait = new("Enable Portrait", "enablePortrait", false);
-    public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", "darkZone", false);
+    public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait stype, sets the text offset as each specify", "portraitKind", ["None", "Force None", "Basic", "Small (Flowers)", "Small (Other)"], [], null, 0);
+    public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", null, "darkZone", false);
+    public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "Battle Idle", "Platformer", "Platformer ACT", "Pink", "Shop Sell Equippable", "Tenna's Board", "Dynamic Wordwrap", "None"], [null, null, null, null, null, "This one doesn't actually change the line-wrapping style, but it'll change the box (if it's set correctly) to let you see the limit of that", null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes."], null, 0);
 
     public static bool EnvLastNewline;
     public static bool EnvStartedAsterisk;
     public static double EnvX;
     public static double EnvY;
+    public static double EnvDynLimitWrap;
     public static int EnvSkip;
     public static bool EnvFirstDrawnChar;
     public static int EnvCheckedIndex;
     public static Stopwatch Stopwatch = Stopwatch.StartNew();
     public static bool IsRainbow;
     public static bool IsLastNewline;
-    public ParsedString Parsed = new("");
+    public ParsedString Parsed = new("", Boxes.Overworld);
 
     public static (double X, double Y) EnvPortraitOffset;
+    public static (double X, double Y) EnvSmallFlowerPortraitOffset;
+    public static (double X, double Y) EnvSmallOtherPortraitOffset;
 
+    public static char[] Newlines = ['\n', '&', '#'];
 
     public override Task Init(CustomToolWindowHandler wh)
     {
@@ -77,8 +118,9 @@ public class Deltarune : StyleScript
     {
         // Store these somewhere if you're going to use them
         return Task.FromResult<IEnumerable<ICustomProperty>>([
-            EnablePortrait,
+            PortraitKind,
             DarkZone,
+            DialogueType,
         ]);
     }
 
@@ -619,8 +661,8 @@ public class Deltarune : StyleScript
             {
                 if (!output.TryGetValue(key, out var og))
                     continue;
-                var ogParsed = new ParsedString(og);
-                var parsed = new ParsedString(value);
+                var ogParsed = new ParsedString(og, Boxes.Overworld);
+                var parsed = new ParsedString(value, Boxes.Overworld);
                 if (ogParsed.ParseWarns.Count != parsed.ParseWarns.Count)
                 {
                     sb.AppendLine($"Parse warnings for {key} (ID `{sc[key].Id}`) wasn't the same for the original ({ogParsed.ParseWarns.Count}) to the translated ({parsed.ParseWarns.Count}) text.\n");
@@ -849,6 +891,57 @@ public class Deltarune : StyleScript
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
+        if (data.GetCurrentBox() != int.Parse(data.StringContainer.CustomProperties.GetValueOrDefault("lastBox", "0")))
+        {
+            var lastBox = (Boxes)data.GetCurrentBox();
+            data.StringContainer.CustomProperties["lastBox"] = ((int)lastBox).ToString(CultureInfo.InvariantCulture);
+            DialogueKinds? targetBox = null;
+            switch (lastBox)
+            {
+                case Boxes.BattleIdle:
+                    targetBox = DialogueKinds.BattleIdle;
+                    break;
+                case Boxes.PlatformerDiaglogue:
+                    targetBox = DialogueKinds.Platformer;
+                    break;
+                case Boxes.OverworldPink:
+                    targetBox = DialogueKinds.Pink;
+                    break;
+                case Boxes.RecruitDescription:
+                    targetBox = DialogueKinds.DynamicWordwarp;
+                    break;
+                case Boxes.TennaBoard:
+                    targetBox = DialogueKinds.TennaBoard;
+                    break;
+            }
+            if (targetBox is not null && DialogueType.SelectedIndex != (int)targetBox)
+            {
+                DialogueType.SelectedIndex = (int)targetBox;
+                DialogueType.UpdateUiValue();
+                return true;
+            }
+        }
+        switch ((Boxes)data.GetCurrentBox())
+        {
+            case Boxes.PlatformerDiaglogue:
+                data.BoxImages[0].IsVisible = false;
+                data.BoxImages[1].IsVisible = true;
+                if (PortraitKind.SelectedIndex == (int)PortraitKinds.Basic)
+                {
+                    data.BoxImages[0].IsVisible = true;
+                    data.BoxImages[1].IsVisible = false;
+                }
+                break;
+            case Boxes.ShopItemDescription:
+                data.BoxImages[0].IsVisible = true;
+                data.BoxImages[1].IsVisible = false;
+                if (DialogueType.SelectedIndex == (int)DialogueKinds.ShopSellEquippable)
+                {
+                    data.BoxImages[0].IsVisible = false;
+                    data.BoxImages[1].IsVisible = true;
+                }
+                break;
+        }
         EnvLastNewline = false;
         EnvStartedAsterisk = false;
         EnvX = -1;
@@ -858,28 +951,59 @@ public class Deltarune : StyleScript
         EnvCheckedIndex = -1;
         IsRainbow = false;
         IsLastNewline = true;
-        var lro = EnablePortrait.ReadOnly;
-        EnablePortrait.ReadOnly = !data.Box.CustomProperties.TryGetValue("SupportsPortrait", out var val) || ((JsonElement)val).ToString().ToLowerInvariant() != "true";
-        if (lro != EnablePortrait.ReadOnly)
-            EnablePortrait.UpdateUiValue();
-        var (x, y) = (0d, 0d);
-        if (data.Box.CustomProperties.TryGetValue("PortraitOffset", out var bpo) && bpo is JsonElement po)
+        EnvDynLimitWrap = data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale();
         {
-            po[0].TryGetDouble(out x);
-            po[1].TryGetDouble(out y);
+            var (x, y) = (0d, 0d);
+            if (data.Box.CustomProperties.TryGetValue("PortraitOffset", out var bpo) && bpo is JsonElement po)
+            {
+                po[0].TryGetDouble(out x);
+                po[1].TryGetDouble(out y);
+            }
+            EnvPortraitOffset = (x, y);
         }
-        EnvPortraitOffset = (x, y);
-        if (EnablePortrait is { Value: true, ReadOnly: false })
-            data.Char.StartPosition = EnvPortraitOffset;
-        if (Parsed.Text != data.Char.String)
-            Parsed = new(data.Char.String);
+        {
+            var (x, y) = (0d, 0d);
+            if (data.Box.CustomProperties.TryGetValue("SmallFlowerPortraitOffset", out var bpo) && bpo is JsonElement po)
+            {
+                po[0].TryGetDouble(out x);
+                po[1].TryGetDouble(out y);
+            }
+            EnvSmallFlowerPortraitOffset = (x, y);
+        }
+        {
+            var (x, y) = (0d, 0d);
+            if (data.Box.CustomProperties.TryGetValue("SmallOtherPortraitOffset", out var bpo) && bpo is JsonElement po)
+            {
+                po[0].TryGetDouble(out x);
+                po[1].TryGetDouble(out y);
+            }
+            EnvSmallOtherPortraitOffset = (x, y);
+        }
+        {
+            if (data.Box.CustomProperties.TryGetValue("DynamicLimitWrap", out var bpo) && bpo is JsonElement po)
+                po.TryGetDouble(out EnvDynLimitWrap);
+        }
+        var pk = (PortraitKinds)PortraitKind.SelectedIndex;
+        if (pk > PortraitKinds.ForceNone)
+        {
+            data.Char.StartPosition = pk switch
+            {
+                PortraitKinds.Basic => EnvPortraitOffset,
+                PortraitKinds.SmallFlowers => EnvSmallFlowerPortraitOffset,
+                PortraitKinds.SmallOther => EnvSmallOtherPortraitOffset,
+                _ => (0, 0),
+            };
+        }
+        Parsed = new(data.Char.String, (Boxes)data.GetCurrentBox());
         return await base.PrepareDraw(wh, data);
     }
 
-    public bool IsNewlineSafe(int idx, string str, ExternalData data) => data.Style.Metadata.NewLines.Contains(str[idx]) && str[int.Max(0, idx - 1)] != '`';
+    public static bool IsNewlineSafe(int idx, string str) => Newlines.Contains(str[idx]) && str[int.Max(0, idx - 1)] != '`';
 
     public override async Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
     {
+        if (Newlines.Contains(data.Char.Char))
+            data.Char.IsNewline = true;
         if (data.Char.IsIgnore || (!data.Font.GlyphDictionary.ContainsKey(data.Char.Char) && !data.Char.IsNewline))
             return false;
         if (EnvSkip > 0)
@@ -887,6 +1011,9 @@ public class Deltarune : StyleScript
             EnvSkip--;
             return false;
         }
+
+        var font = (Fonts)data.GetCurrentFont();
+        var box = (Boxes)data.GetCurrentBox();
 
         if (Parsed.Events.TryGetValue(data.Char.Index, out var ev))
         {
@@ -900,10 +1027,10 @@ public class Deltarune : StyleScript
                 case DialogueIndexPortrait or DialogueCharPortrait:
                     if (!Parsed.ParseWarns.ContainsKey(data.Char.Index))
                     {
-                        if (EnablePortrait is { ReadOnly: false, Value: false })
+                        if (PortraitKind.SelectedIndex == (int)PortraitKinds.None)
                         {
-                            EnablePortrait.Value = true;
-                            EnablePortrait.UpdateUiValue();
+                            PortraitKind.SelectedIndex = (int)PortraitKinds.Basic;
+                            PortraitKind.UpdateUiValue();
                             return true;
                         }
                         EnvSkip = ev.Argument.Length - 1;
@@ -949,15 +1076,30 @@ public class Deltarune : StyleScript
                 Stopwatch.Restart();
             data.Glyph.Color = new() { R = rgb.R, B = rgb.B, G = rgb.G };
         }
-        switch ((Fonts)data.Style.FontMetadata.Index().First(x => x.Item == data.Font).Index)
+        switch ((Fonts)data.GetCurrentFont())
         {
             case Fonts.Main:
                 EnvX = 8;
                 EnvY = 18;
-                break;
-            case Fonts.MainBig:
-                EnvX = 16;
-                EnvY = 36;
+                switch (box)
+                {
+                    case Boxes.BattleIdle:
+                        EnvY = 14;
+                        break;
+                    case Boxes.BattleItemInfo:
+                        EnvX = 7;
+                        EnvY = 16;
+                        break;
+                    case Boxes.CMenuDescription or Boxes.CMenuCharacterDescription or Boxes.ShopItemDescription:
+                        EnvX = -1; // drawn by gamemaker
+                        EnvY = -1;
+                        break;
+                }
+                if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.PlatformerAct)
+                {
+                    EnvX = -1; // drawn by gamemaker
+                    EnvY = -1;
+                }
                 break;
             case Fonts.ComicSans:
                 EnvX = 8;
@@ -971,39 +1113,53 @@ public class Deltarune : StyleScript
                 EnvX = 9;
                 EnvY = 20;
                 break;
+            case Fonts.TennaBoard:
+                EnvX = 16;
+                EnvY = 20;
+                break;
             default:
-                EnvX = data.Font.GlyphDictionary[data.Char.Char].Shift;
+                { EnvX = data.Font.GlyphDictionary.TryGetValue(data.Char.Char, out var glyph) ? glyph.Shift : -1; }
                 break;
         }
-        if ((Enum.GetName((Fonts)data.GetCurrentFont()) ?? "").Contains("jp", StringComparison.InvariantCultureIgnoreCase) && data.Char.Char <= 0xff || (data.Char.Char >= 65377 && data.Char.Char <= 65439))
+        var visualY = 0;
+        if ((Enum.GetName(font) ?? "").Contains("jp", StringComparison.InvariantCultureIgnoreCase) && data.Char.Char <= 0xff || (data.Char.Char >= 65377 && data.Char.Char <= 65439))
         {
             EnvX /= 2;
             EnvX += DarkZone.Value ? 16 : 8;
         }
-        else if ((Fonts)data.GetCurrentFont() == Fonts.ComicSans)
+        else
         {
-            switch (data.Char.Char)
+            switch (font)
             {
-                case 'w': EnvX += 2; break;
-                case 'm': EnvX += 3; break;
-                case 'i' or 'l': EnvX -= 2; break;
-                case 's' or 'j': EnvX--; break;
+                case Fonts.ComicSans:
+                    switch (data.Char.Char)
+                    {
+                        case 'w': EnvX += 2; break;
+                        case 'm': EnvX += 3; break;
+                        case 'i' or 'l': EnvX -= 2; break;
+                        case 's' or 'j': EnvX--; break;
+                    }
+                    break;
+                case Fonts.TennaBoard:
+                    if (data.Char.Char == '$')
+                        visualY -= 4;
+                    break;
             }
         }
-        var actAsNewline = IsNewlineSafe(data.Char.Index, data.Char.String, data);
+        var actAsNewline = IsNewlineSafe(data.Char.Index, data.Char.String) || Parsed.ActAsNewline.Contains(data.Char.Index);
         var addSpaceXNewline = 0;
-        if (data.Char.Index > EnvCheckedIndex)
+        if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.DynamicWordwarp && data.Char.Index > EnvCheckedIndex)
         {
             if (EnvCheckedIndex == -1)
                 EnvCheckedIndex = 0;
             var i = 0;
             var fs = "";
-            while (data.Char.Index + i < Parsed.TextTrimLength && (data.Char.String[data.Char.Index + i] == ' ' || IsNewlineSafe(data.Char.Index + i, data.Char.String, data)))
+            while (data.Char.Index + i < Parsed.TextTrimLength && (data.Char.String[data.Char.Index + i] == ' ' || IsNewlineSafe(data.Char.Index + i, data.Char.String)))
             {
                 fs += data.Char.String[data.Char.Index + i];
                 i++;
             }
-            while (data.Char.Index + i < Parsed.TextTrimLength && data.Char.String[data.Char.Index + i] != ' ' && !IsNewlineSafe(data.Char.Index + i, data.Char.String, data))
+            while (data.Char.Index + i < Parsed.TextTrimLength && data.Char.String[data.Char.Index + i] != ' ' && !IsNewlineSafe(data.Char.Index + i, data.Char.String))
             {
                 var c = data.Char.String[data.Char.Index + i];
                 switch (c)
@@ -1045,7 +1201,8 @@ public class Deltarune : StyleScript
                     continue;
                 charPos += ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2;
             }
-            if (!IsLastNewline && charPos + 18 >= (data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale() / data.GetCurrentFontScale()) - (EnablePortrait.Value && !EnablePortrait.ReadOnly ? EnvPortraitOffset.X : 0) && !EnvFirstDrawnChar)
+            var wrapSize = data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale();
+            if (!IsLastNewline && charPos + 18 >= (EnvDynLimitWrap / data.GetCurrentFontScale()) - data.Char.StartPosition.X && !EnvFirstDrawnChar)
             {
                 actAsNewline = true;
                 if (EnvStartedAsterisk)
@@ -1057,34 +1214,45 @@ public class Deltarune : StyleScript
         if (actAsNewline)
         {
             EnvLastNewline = true;
-            if (addSpaceXNewline <= 0 && EnvStartedAsterisk && Parsed.TextTrimLength - data.Char.Index >= 2 && data.Char.String[data.Char.Index + 1] != '*')
-                addSpaceXNewline = 1;
+            if (addSpaceXNewline <= 0 && EnvStartedAsterisk && (Parsed.TextTrimLength - data.Char.Index < 2 || (Parsed.TextTrimLength - data.Char.Index >= 2 && data.Char.String[data.Char.Index + 1] != '*')))
+                addSpaceXNewline = 2;
             data.Char.PositionOffset.X = 0;
             if (addSpaceXNewline > 0)
             {
-                var glyph = data.Font.GlyphDictionary[' '];
+                var glyph = data.Font.GlyphDictionary['|'];
                 data.Char.PositionOffset.X = ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2 * addSpaceXNewline;
             }
 
             if (EnvY == -1)
             {
                 var size = data.Font.GlyphDictionary['A'].Size.Y;
-                data.Char.PositionOffset.Y += (size + (size % 2) + (data.Font.Size % 2)) * 2;
+                data.Char.PositionOffset.Y += (size + (size % 11) + (data.Font.Size % 2)) * 2;
             }
             else
                 data.Char.PositionOffset.Y += EnvY * 2;
         }
-        if (!IsNewlineSafe(data.Char.Index, data.Char.String, data) && !data.Char.IsIgnore)
+        if (!IsNewlineSafe(data.Char.Index, data.Char.String) && !data.Char.IsIgnore)
         {
             var glyph = data.Font.GlyphDictionary[data.Char.Char];
+            if (EnvX == -1 && data.Char.Index > 0)
+            {
+                var last = data.Char.String[data.Char.Index - 1];
+                foreach (var k in glyph.Kerning)
+                {
+                    if (k.PrecedingChar != last)
+                        continue;
+                    data.Char.PositionOffset.X += k.ShiftModifier;
+                    break;
+                }
+            }
             data.Glyph.Position.X = data.Char.StartPosition.X + data.Char.PositionOffset.X + (glyph.Offset * 2);
-            data.Glyph.Position.Y = data.Char.StartPosition.Y + data.Char.PositionOffset.Y;
+            data.Glyph.Position.Y = data.Char.StartPosition.Y + data.Char.PositionOffset.Y + visualY;
             data.Glyph.Size.X = glyph.Size.X * 2;
             data.Glyph.Size.Y = glyph.Size.Y * 2;
             data.DrawGlyph();
             if ((EnvLastNewline || EnvFirstDrawnChar) && data.Char.Char == '*')
                 EnvStartedAsterisk = true;
-            data.Char.PositionOffset.X += (int)Math.Ceiling(((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2);
+            data.Char.PositionOffset.X += (int)double.Ceiling(EnvX != -1 ? EnvX : (glyph.Shift + glyph.Offset)) * 2;
             EnvLastNewline = false;
             EnvFirstDrawnChar = false;
         }
@@ -1187,13 +1355,16 @@ public class ParsedString
     public int TextTrimLength;
     public Dictionary<int, ParsedEvent> Events = [];
     public Dictionary<int, ParseWarn> ParseWarns = [];
+    public HashSet<int> ActAsNewline = [];
 
-    public ParsedString(string text)
+    public ParsedString(string text, Deltarune.Boxes box)
     {
         Text = text;
         var trimLen = text.TrimEnd().Length;
         TextTrimLength = trimLen;
         var sb = new StringBuilder();
+        var tSpace = -1;
+        var cPos = 0;
         for (var i = 0; i < trimLen; i++)
         {
             if (trimLen - i >= 3)
@@ -1330,7 +1501,7 @@ public class ParsedString
                                             Events.Add(i, new DialogueFlag20(fullSlice));
                                             break;
                                         case 'S':
-                                            Events.Add(i, new DialogueFlag20(fullSlice));
+                                            Events.Add(i, new DialogueSound(fullSlice));
                                             break;
                                         case 'I':
                                             Events.Add(i, new DialogueSprite(fullSlice));
@@ -1357,6 +1528,38 @@ public class ParsedString
                 {
                     i += 2;
                     continue;
+                }
+            }
+            var dk = (Deltarune.DialogueKinds)Deltarune.DialogueType.SelectedIndex;
+            if (box is not Deltarune.Boxes.CMenuDescription and not Deltarune.Boxes.CMenuCharacterDescription and not Deltarune.Boxes.ShopItemDescription && dk is not Deltarune.DialogueKinds.PlatformerAct and not Deltarune.DialogueKinds.DynamicWordwarp and not Deltarune.DialogueKinds.None)
+            {
+                if (@char == ' ')
+                    tSpace = i + 1;
+                else if (Deltarune.IsNewlineSafe(i, text))
+                {
+                    tSpace = -1;
+                    cPos = 0;
+                }
+                var pt = (Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex;
+                var limit = dk switch
+                {
+                    Deltarune.DialogueKinds.BattleIdle => (pt > Deltarune.PortraitKinds.ForceNone) ? 29 : 37,
+                    Deltarune.DialogueKinds.Platformer => pt == Deltarune.PortraitKinds.SmallFlowers ? 33 : 29,
+                    Deltarune.DialogueKinds.Pink => 23,
+                    Deltarune.DialogueKinds.TennaBoard => 22,
+                    _ => pt switch
+                    {
+                        Deltarune.PortraitKinds.Basic => 26,
+                        Deltarune.PortraitKinds.SmallFlowers or Deltarune.PortraitKinds.SmallOther => 29,
+                        _ => 33,
+                    }
+                };
+                //Console.WriteLine($"cPos:{cPos},i:{i}");
+                if (++cPos >= limit)
+                {
+                    //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}");
+                    ActAsNewline.Add(tSpace > 2 ? tSpace : i);
+                    cPos = tSpace > 2 ? i - tSpace : 1;
                 }
             }
             sb.Append(@char);

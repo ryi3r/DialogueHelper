@@ -1,0 +1,11 @@
+{
+    "Name": "Recruit Description",
+    "Images": [{
+        "Path": "Assets/BoxRecruitDesc.png"
+    }],
+    "CustomProperties": {
+        "DynamicLimitWrap": 560
+    },
+    "TextOffset": [540, 154],
+    "Index": 11
+}

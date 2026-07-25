@@ -1,4 +1,7 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Globalization;
 using Avalonia.Controls;
 
 namespace DialogueHelper.External;
@@ -7,6 +10,7 @@ public interface ICustomProperty
 {
     public string Name { get; }
     public string VisualName { get; }
+    public string? Tooltip { get; }
     public bool ReadOnly { get; set; }
     public object? Value { get; set; }
     public object? DefaultValue { get; }
@@ -19,11 +23,12 @@ public interface ICustomProperty
     public string ValueToString();
 }
 
-public class CustomProperty<T>(string visualName, string name, T? defaultValue = default, bool readOnly = false) : ICustomProperty
+public class CustomProperty<T>(string visualName, string? tooltip, string name, T? defaultValue = default, bool readOnly = false) : ICustomProperty
     where T : IParsable<T>
 {
     public string Name { get; } = name;
-    public string VisualName { get; } = visualName;
+    public string VisualName { get; set; } = visualName;
+    public string? Tooltip { get; set; } = tooltip;
     public bool ReadOnly { get; set; } = readOnly;
     object? ICustomProperty.Value
     {
@@ -36,7 +41,7 @@ public class CustomProperty<T>(string visualName, string name, T? defaultValue =
     public T? Value = defaultValue;
     public readonly T? DefaultValue = defaultValue;
 
-    public void UpdateUiValue()
+    public virtual void UpdateUiValue()
     {
         if (Node is null)
             return;
@@ -68,7 +73,7 @@ public class CustomProperty<T>(string visualName, string name, T? defaultValue =
         }
     }
 
-    public void StringToValue(string value)
+    public virtual void StringToValue(string value)
     {
         if (value.Length <= 0)
         {
@@ -76,16 +81,78 @@ public class CustomProperty<T>(string visualName, string name, T? defaultValue =
             return;
         }
 
-        Value = T.Parse(value, null);
+        Value = T.Parse(value, CultureInfo.InvariantCulture);
         //throw new NotSupportedException($"unsupported str2val type: {typeof(T)}");
     }
 
-    public string ValueToString()
+    public virtual string ValueToString()
     {
         if (Value is null)
             return "";
         if (Value is Color c)
             return c.Rgba.ToString();
         return Value.ToString() ?? "";
+    }
+}
+
+public interface ICustomPropertyList : ICustomProperty
+{
+    IList? Data { get; }
+    List<string?>? ItemTooltips { get; }
+    int SelectedIndex { get; set; }
+    int DefaultIndex { get; }
+}
+
+public class CustomPropertyList<T>(string visualName, string tooltip, string name, List<T> data, List<string?>? itemTooltips, T? defaultValue = default, int defaultIndexValue = -1, bool readOnly = false) : CustomProperty<int>(visualName, tooltip, name, -1, readOnly), ICustomPropertyList
+    where T : IParsable<T>
+{
+    IList? ICustomPropertyList.Data => Data;
+    List<string?>? ICustomPropertyList.ItemTooltips => itemTooltips;
+    int ICustomPropertyList.DefaultIndex => DefaultValue is null ? -1 : Data.IndexOf(DefaultValue);
+
+    public List<T> Data = data;
+    // todo: custom enabled list (enable/disable certain fields)
+    public new T? DefaultValue { get; } = defaultIndexValue >= 0 && defaultIndexValue < data.Count ? data[defaultIndexValue] : defaultValue;
+    public new T? Value
+    {
+        get => SelectedIndex < 0 || SelectedIndex >= Data.Count ? default : Data[SelectedIndex];
+        set => SelectedIndex = value is null ? -1 : Data.IndexOf(value);
+    }
+    public int SelectedIndex
+    {
+        get;
+        set
+        {
+            field = value;
+            base.Value = field;
+        }
+    } = defaultIndexValue;
+    public new Type Type => typeof(ICustomPropertyList);
+
+    public override void UpdateUiValue()
+    {
+        if (Node is ComboBox cb)
+        {
+            cb.IsEnabled = !ReadOnly;
+            cb.ItemsSource = Data;
+            cb.SelectedItem = Value;
+        }
+        else
+            base.UpdateUiValue();
+    }
+
+    public override void StringToValue(string value)
+    {
+        if (value.Length <= 0)
+        {
+            SelectedIndex = -1;
+            return;
+        }
+        SelectedIndex = int.Parse(value, CultureInfo.InvariantCulture);
+    }
+
+    public override string ValueToString()
+    {
+        return SelectedIndex.ToString(CultureInfo.InvariantCulture);
     }
 }

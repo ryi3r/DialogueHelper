@@ -28,27 +28,33 @@ public class StyleParser
             AllowTrailingCommas = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
         };
-        Metadata = JsonSerializer.Deserialize<StyleMetadata>(File.ReadAllText($"{path}/Metadata.jsonc"), jsonSeri)!;
-        BoxMetadata = JsonSerializer.Deserialize<List<BoxMetadata>>(File.ReadAllText($"{path}/Boxes.jsonc"), jsonSeri)!;
-        var list = JsonSerializer.Deserialize<List<FontMetadataJson>>(File.ReadAllText($"{path}/Fonts.jsonc"), jsonSeri)!;
-        FontMetadata = new(list.Capacity);
-        foreach (var font in list)
-            FontMetadata.Add(new FontMetadata(font));
-        foreach (var box in BoxMetadata)
+        Metadata = JsonSerializer.Deserialize<StyleMetadata>(File.ReadAllText(Path.Combine(path, "Metadata.jsonc")), jsonSeri)!;
+        BoxMetadata = [];
+        foreach (var f in Directory.GetFiles(Path.Combine(path, "Boxes")))
         {
-            foreach (var img in box.Images)
+            if (!f.EndsWith(".jsonc"))
+                continue;
+            BoxMetadata.Add(JsonSerializer.Deserialize<BoxMetadata>(File.ReadAllText(f), jsonSeri)!);
+            foreach (var img in BoxMetadata[^1].Images)
             {
                 if (ImageAssets.ContainsKey(img.Path))
                     continue;
                 ImageAssets.Add(img.Path, SKBitmap.Decode($"{path}/{img.Path}"));
             }
         }
-        foreach (var font in FontMetadata)
+        BoxMetadata.Sort((a, b) => a.Index.CompareTo(b.Index));
+        FontMetadata = [];
+        foreach (var f in Directory.GetFiles(Path.Combine(path, "Fonts")))
         {
-            if (ImageAssets.ContainsKey(font.ImagePath))
+            if (!f.EndsWith(".jsonc"))
                 continue;
-            ImageAssets.Add(font.ImagePath, SKBitmap.Decode($"{path}/{font.ImagePath}"));
+            FontMetadata.Add(new(JsonSerializer.Deserialize<FontMetadataJson>(File.ReadAllText(f), jsonSeri)!));
+            var imgp = FontMetadata[^1].ImagePath;
+            if (ImageAssets.ContainsKey(imgp))
+                continue;
+            ImageAssets.Add(imgp, SKBitmap.Decode($"{path}/{imgp}"));
         }
+        FontMetadata.Sort((a, b) => a.Index.CompareTo(b.Index));
     }
 
     public async Task CompileCode()

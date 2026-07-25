@@ -1,10 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Avalonia.Media.Imaging;
+using DialogueHelper.FileFormat;
 using DialogueHelper.StylesParser;
 using SkiaSharp;
 
@@ -17,6 +15,8 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
     public required BoxMetadata Box;
     public required ExternalChar Char;
     public required ExternalGlyph Glyph;
+    public required StringContainer StringContainer;
+    public required List<TintedImage> BoxImages = [];
 
     public bool QueueRedraw;
 
@@ -49,9 +49,8 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
             SourceRect = new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y),
             TintEnabled = true,
             Tint = Glyph.Color,
-            Width = Glyph.Size.X,
-            Height = Glyph.Size.Y,
-            RenderTransform = new ScaleTransform(Glyph.Scale.X, Glyph.Scale.Y),
+            Width = Glyph.Size.X * Glyph.Scale.X,
+            Height = Glyph.Size.Y * Glyph.Scale.Y,
         };
 
         var x = Glyph.Position.X * Glyph.Scale.X;

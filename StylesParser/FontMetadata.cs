@@ -1,5 +1,5 @@
+using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DialogueHelper.StylesParser;
 
@@ -13,6 +13,7 @@ public class FontMetadata
     public readonly double AscenderOffset;
     public readonly List<GlyphMetadata> Glyphs;
     public readonly Dictionary<char, GlyphMetadata> GlyphDictionary;
+    public readonly float Index = float.MaxValue;
 
     public FontMetadata(FontMetadataJson font)
     {
@@ -22,6 +23,7 @@ public class FontMetadata
         Size = font.Size;
         Ascender = font.Ascender;
         AscenderOffset = font.AscenderOffset;
+        Index = font.Index;
         Glyphs = [];
         foreach (var glyph in font.Glyphs)
         {
@@ -60,6 +62,7 @@ public class FontMetadataJson
     public double Ascender = 10;
     public double AscenderOffset = 0;
     public required List<GlyphMetadataJson> Glyphs;
+    public float Index = float.MaxValue;
 }
 
 public class GlyphMetadataJson

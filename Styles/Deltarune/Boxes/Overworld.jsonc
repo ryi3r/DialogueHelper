@@ -1,0 +1,13 @@
+{
+    "Name": "Overworld",
+    "Images": [{
+        "Path": "Assets/BoxOw.png"
+    }],
+    "CustomProperties": {
+        "PortraitOffset": [145, 28],
+        "SmallFlowerPortraitOffset": [99, 28],
+        "SmallOtherPortraitOffset": [81, 28]
+    },
+    "TextOffset": [34, 28],
+    "Index": 0
+}

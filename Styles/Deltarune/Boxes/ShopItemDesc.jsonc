@@ -1,0 +1,10 @@
+{
+    "Name": "Shop Item Description",
+    "Images": [{
+        "Path": "Assets/BoxShopDesc.png"
+    }, {
+        "Path": "Assets/BoxShopDescEquip.png"
+    }],
+    "TextOffset": [40, 27],
+    "Index": 10
+}

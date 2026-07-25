@@ -98,21 +98,49 @@ public partial class Settings : Window
 
         if (!Design.IsDesignMode)
         {
-            foreach (var f in Directory.EnumerateDirectories(Path.Combine(AppContext.BaseDirectory, "Styles")))
+            var baseDir = AppContext.BaseDirectory;
+            {
+                var curDir = Environment.CurrentDirectory;
+                if (Path.Exists(Path.Combine(curDir, "Styles")) && Path.Exists(Path.Combine(curDir, "Backgrounds")))
+                    baseDir = curDir;
+            }
+            foreach (var f in Directory.EnumerateDirectories(Path.Combine(baseDir, "Styles")))
             {
                 var folder = Path.GetFullPath(f);
                 if (IgnoreStyles.Contains(folder))
                     continue;
                 try
                 {
-                    var style = new StyleParser(folder);
-                    await Task.Run(() => style.CompileCode());
-                    StyleData.Add(style);
+                    StyleData.Add(new StyleParser(folder));
+                }
+                catch (Exception ex)
+                {
+                    var sErr = new StyleError { ErrorBox = { Text = ex.ToString() } };
+                    sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", folder);
+                    await sErr.ShowDialog(this);
+                }
+            }
+            await Task.WhenAll(StyleData.Select(style => Task.Run(async () =>
+            {
+                try
+                {
+                    await style.CompileCode();
+                }
+                catch (Exception ex)
+                {
+                    var sErr = new StyleError { ErrorBox = { Text = ex.ToString() }, Title = "Compilation Error" };
+                    sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", style.Folder);
+                    await sErr.ShowDialog(this);
+                }
+            })));
+            foreach (var style in StyleData)
+            {
+                try
+                {
                     StyleComboBox.Items.Add(new TextBlock { Text = $"{style.Metadata.Name} by {style.Metadata.Author}" });
-                    if (!MainWindow!.StyleSettings.ContainsKey(folder))
-                        MainWindow.StyleSettings.Add(folder, []);
+                    MainWindow!.StyleSettings.TryAdd(style.Folder, []);
                     var res = await (style.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()));
-                    var props = MainWindow.StyleSettings[folder];
+                    var props = MainWindow.StyleSettings[style.Folder];
                     foreach (var prop in res)
                     {
                         var p = props.FirstOrDefault(x => x.Name == prop.Name);
@@ -131,12 +159,12 @@ public partial class Settings : Window
                 }
                 catch (Exception ex)
                 {
-                    var sErr = new StyleError { ErrorBox = { Text = ex.ToString() } };
-                    sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", folder);
+                    var sErr = new StyleError { ErrorBox = { Text = ex.ToString() }, Title = "Compilation Error" };
+                    sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", style.Folder);
                     await sErr.ShowDialog(this);
                 }
             }
-            foreach (var f in Directory.EnumerateDirectories(Path.Combine(AppContext.BaseDirectory, "Backgrounds")))
+            foreach (var f in Directory.EnumerateDirectories(Path.Combine(baseDir, "Backgrounds")))
             {
                 var folder = Path.GetFullPath(f);
                 if (IgnoreStyles.Contains(folder))

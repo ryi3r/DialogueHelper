@@ -1,0 +1,8 @@
+{
+    "Name": "Battle Dialogue",
+    "Images": [{
+        "Path": "Assets/BoxBattleDiag.png"
+    }],
+    "TextOffset": [20, 20],
+    "Index": 3
+}

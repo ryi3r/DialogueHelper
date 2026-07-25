@@ -1,0 +1,14 @@
+{
+    "Name": "Platformer Dialogue",
+    "Images": [{
+        "Path": "Assets/BoxPlatDialogue.png"
+    }, {
+        "Path": "Assets/BoxPlatDialogueNoPortrait.png"
+    }],
+    "CustomProperties": {
+        "SmallFlowerPortraitOffset": [84, 11],
+        "PortraitOffset": [136, 11]
+    },
+    "TextOffset": [22, 11],
+    "Index": 7
+}

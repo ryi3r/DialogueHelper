@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -8,6 +10,8 @@ public partial class App : Application
 {
     public override void Initialize()
     {
+        Thread.CurrentThread.CurrentCulture = CultureInfo.InvariantCulture;
+        Thread.CurrentThread.CurrentUICulture = CultureInfo.InvariantCulture;
         AvaloniaXamlLoader.Load(this);
 #if DEBUG
         this.AttachDeveloperTools();

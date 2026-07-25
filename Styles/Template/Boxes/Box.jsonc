@@ -1,0 +1,11 @@
+{
+    "Name": "Overworld",
+    "Images": [{
+        "Path": "Assets/MainBox.png",
+        "Position": [0, 0],
+        "Scale": [1, 1]
+    }],
+    "Scale": 1,
+    "TextOffset": [20, 20],
+    "Index": 0 // optional, but is used to sort where this box'll appear on the list
+}

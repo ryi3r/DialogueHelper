@@ -1,0 +1,8 @@
+{
+    "Name": "Battle Act/Item Info",
+    "Images": [{
+        "Path": "Assets/BoxBattleInfo.png"
+    }],
+    "TextOffset": [64, 14],
+    "Index": 2
+}

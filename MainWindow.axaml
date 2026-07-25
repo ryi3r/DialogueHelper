@@ -3,6 +3,7 @@
         <Canvas Name="BgndCanvas" />
         <DockPanel>
             <Menu DockPanel.Dock="Top" Height="25">
+                <MenuItem Header="Select Search" IsVisible="False" IsTabStop="False" Click="SelectSearch_OnClick" HotKey="Ctrl+F" InputGesture="Ctrl+F" />
                 <MenuItem Header="File">
                     <MenuItem Header="New File" Click="CreateFile_OnClick" HotKey="Ctrl+N" InputGesture="Ctrl+N" />
                     <MenuItem Header="Open File" Click="OpenFile_OnClick" HotKey="Ctrl+O" InputGesture="Ctrl+O" />

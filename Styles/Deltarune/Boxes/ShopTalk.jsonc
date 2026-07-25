@@ -1,0 +1,8 @@
+{
+    "Name": "Shop Talk",
+    "Images": [{
+        "Path": "Assets/BoxShopTalk.png"
+    }],
+    "TextOffset": [30, 29],
+    "Index": 8
+}

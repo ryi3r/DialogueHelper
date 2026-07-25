@@ -3,11 +3,8 @@
 	"Author": "ryi3r",
 	"ScriptPath": "Deltarune.cs",
 	"Class": "Deltarune",
-	"NewLines": [
-		"\n",
-		"&",
-		"#"
-	],
+	// this is directly done in the code
+	"NewLines": [],
 	// this is directly done in the code instead
 	"Ignore": []
 }

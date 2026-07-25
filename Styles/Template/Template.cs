@@ -19,9 +19,9 @@ public class Template : StyleScript
         // This may be called before Init, so be careful!
         // Store these somewhere if you're going to use them
         return Task.FromResult<IEnumerable<ICustomProperty>>([
-            new CustomProperty<bool>("D" , "bool"),
-            new CustomProperty<int>("E", "int"),
-            new CustomProperty<string>("F", "string"),
+            new CustomProperty<bool>("D", "Tooltip", "bool"),
+            new CustomProperty<int>("E", null, "int"),
+            new CustomProperty<string>("F", null, "string"),
         ]);
     }
 
@@ -29,9 +29,9 @@ public class Template : StyleScript
     {
         // Store these somewhere if you're going to use them
         return Task.FromResult<IEnumerable<ICustomProperty>>([
-            new CustomProperty<bool>("A", "bool"),
-            new CustomProperty<int>("B", "int"),
-            new CustomProperty<string>("C", "string"),
+            new CustomProperty<bool>("A", null, "bool"),
+            new CustomProperty<int>("B", null, "int"),
+            new CustomProperty<string>("C", null, "string"),
         ]);
     }
 
@@ -72,7 +72,7 @@ public class Template : StyleScript
         {
             data.Char.PositionOffset.X = 0;
             var size = data.Font.GlyphDictionary['A'].Size.Y;
-            data.Char.PositionOffset.Y += (int)((size + (size % 2.0f) + (data.Font.Size % 2.0f)) * data.Glyph.Scale.Y);
+            data.Char.PositionOffset.Y += (int)((size + (size % 2) + (data.Font.Size % 2)) * data.Glyph.Scale.Y);
         }
         else
         {
@@ -82,7 +82,7 @@ public class Template : StyleScript
             data.Glyph.Position.Y = data.Char.StartPosition.Y + data.Char.PositionOffset.Y;
             data.Glyph.Size = glyph.Size;
             data.DrawGlyph();
-            data.Char.PositionOffset.X += (int)double.Ceiling((glyph.Shift + glyph.Offset) * data.Glyph.Scale.X);
+            data.Char.PositionOffset.X += double.Ceiling(glyph.Shift + glyph.Offset) * 2;
         }
         return await base.PrepareDraw(wh, data);
     }
