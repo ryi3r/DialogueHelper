@@ -108,57 +108,62 @@
                 </Grid>
                 <GridSplitter Grid.Column="3" Margin="5" ResizeDirection="Columns" Background="Gray" />
                 <DockPanel Grid.Column="4" Margin="5">
-                    <StackPanel DockPanel.Dock="Top">
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <TextBlock Margin="7">String Key</TextBlock>
-                            <TextBox Name="StringKey" TextChanging="StringKey_OnTextChanging" UndoLimit="-1" MinWidth="175" />
+                    <ScrollViewer>
+                        <StackPanel>
+                            <StackPanel DockPanel.Dock="Top">
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Margin="7">String Key</TextBlock>
+                                    <TextBox Name="StringKey" TextChanging="StringKey_OnTextChanging" UndoLimit="-1" MinWidth="175" />
+                                </StackPanel>
+                                <CheckBox Click="ModifySimilarStrings_OnClick" Name="ModifySimilarStrings" Margin="8 0 0 0" IsChecked="True">Modify similar strings</CheckBox>
+                                <CheckBox Click="MarkAsModified_OnClick" Name="MarkAsModified" Margin="8 0 0 0" IsChecked="False">Mark as modified</CheckBox>
+                                <CheckBox Click="AllowEditingOriginal_OnClick" Name="AllowEditingOriginal" Margin="8 0 0 0" IsChecked="False">Allow Editing Original</CheckBox>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Margin="7">Box</TextBlock>
+                                    <ComboBox SelectionChanged="BoxComboBox_OnSelectionChanged" Name="BoxComboBox" SelectedIndex="0">
+                                        <ComboBoxItem>Box Name</ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Margin="7">Font</TextBlock>
+                                    <ComboBox SelectionChanged="FontComboBox_OnSelectionChanged" Name="FontComboBox" SelectedIndex="0">
+                                        <ComboBoxItem>Font Name</ComboBoxItem>
+                                    </ComboBox>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Margin="7">Box Scale</TextBlock>
+                                    <NumericUpDown Name="BoxScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Margin="7">Font Scale</TextBlock>
+                                    <NumericUpDown Name="FontScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Margin="7">Preview Scale</TextBlock>
+                                    <NumericUpDown Name="PreviewScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Margin="7">Initial Text Color</TextBlock>
+                                    <ColorPicker Name="InitialTextColor" ColorChanged="InitialTextColor_OnColorChanged" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="5">
+                                    <TextBlock Margin="7">Box Color</TextBlock>
+                                    <ColorPicker Name="BoxColor" ColorChanged="InitialTextColor_OnColorChanged" />
+                                </StackPanel>
+                                <CheckBox Name="CopyViewingStrings" Margin="8 0 0 0" IsChecked="False">Copy viewing options to other Strings</CheckBox>
+                            </StackPanel>
+                            <StackPanel DockPanel.Dock="Top" Margin="10">
+                                <TextBlock Text="Custom properties" />
+                                <StackPanel Name="CustomPropertiesPanel" Margin="0 15 0 0" />
+                                <TextBlock Name="CustomPropertiesNone" Foreground="Gray" Text="None" />
+                            </StackPanel>
+                            <StackPanel Name="SimilarStringsBase" SizeChanged="SimilarStringsPanel_OnSizeChanged" DockPanel.Dock="Bottom" Margin="10">
+                                <TextBlock Name="SimilarStringsTitle" Text="Similar strings" />
+                                <TextBlock Name="SimilarStringsNone" Foreground="Gray" Text="None" Margin="0 15 0 0" />
+                                <ListBox SelectionChanged="SimilarStringsPanel_OnSelectionChanged" Name="SimilarStringsPanel" Margin="0 7 0 0" />
+                            </StackPanel>
                         </StackPanel>
-                        <CheckBox Click="ModifySimilarStrings_OnClick" Name="ModifySimilarStrings" Margin="8 0 0 0" IsChecked="True">Modify similar strings</CheckBox>
-                        <CheckBox Click="MarkAsModified_OnClick" Name="MarkAsModified" Margin="8 0 0 0" IsChecked="False">Mark as modified</CheckBox>
-                        <CheckBox Click="AllowEditingOriginal_OnClick" Name="AllowEditingOriginal" Margin="8 0 0 0" IsChecked="False">Allow Editing Original</CheckBox>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <TextBlock Margin="7">Box</TextBlock>
-                            <ComboBox SelectionChanged="BoxComboBox_OnSelectionChanged" Name="BoxComboBox" SelectedIndex="0">
-                                <ComboBoxItem>Box Name</ComboBoxItem>
-                            </ComboBox>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <TextBlock Margin="7">Font</TextBlock>
-                            <ComboBox SelectionChanged="FontComboBox_OnSelectionChanged" Name="FontComboBox" SelectedIndex="0">
-                                <ComboBoxItem>Font Name</ComboBoxItem>
-                            </ComboBox>
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <TextBlock Margin="7">Box Scale</TextBlock>
-                            <NumericUpDown Name="BoxScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <TextBlock Margin="7">Font Scale</TextBlock>
-                            <NumericUpDown Name="FontScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <TextBlock Margin="7">Preview Scale</TextBlock>
-                            <NumericUpDown Name="PreviewScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <TextBlock Margin="7">Initial Text Color</TextBlock>
-                            <ColorPicker Name="InitialTextColor" ColorChanged="InitialTextColor_OnColorChanged" />
-                        </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="5">
-                            <TextBlock Margin="7">Box Color</TextBlock>
-                            <ColorPicker Name="BoxColor" ColorChanged="InitialTextColor_OnColorChanged" />
-                        </StackPanel>
-                    </StackPanel>
-                    <StackPanel DockPanel.Dock="Top" Margin="10">
-                        <TextBlock Text="Custom properties" />
-                        <StackPanel Name="CustomPropertiesPanel" Margin="0 15 0 0" />
-                        <TextBlock Name="CustomPropertiesNone" Foreground="Gray" Text="None" />
-                    </StackPanel>
-                    <StackPanel Name="SimilarStringsBase" SizeChanged="SimilarStringsPanel_OnSizeChanged" DockPanel.Dock="Bottom" Margin="10">
-                        <TextBlock Name="SimilarStringsTitle" Text="Similar strings" />
-                        <TextBlock Name="SimilarStringsNone" Foreground="Gray" Text="None" Margin="0 15 0 0" />
-                        <ListBox SelectionChanged="SimilarStringsPanel_OnSelectionChanged" Name="SimilarStringsPanel" Margin="0 7 0 0" />
-                    </StackPanel>
+                    </ScrollViewer>
                 </DockPanel>
             </Grid>
         </DockPanel>

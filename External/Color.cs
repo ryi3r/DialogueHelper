@@ -9,7 +9,7 @@ public struct Color()
 
     public uint Rgba
     {
-        get => (((uint)R) << 24) | (((uint)G) << 16) | (((uint)B) << 8) | A;
+        readonly get => (((uint)R) << 24) | (((uint)G) << 16) | (((uint)B) << 8) | A;
         set
         {
             R = (byte)((value >> 24) & 0xff);
@@ -21,7 +21,7 @@ public struct Color()
 
     public uint Argb
     {
-        get => (((uint)A) << 24) | (((uint)R) << 16) | (((uint)G) << 8) | B;
+        readonly get => (((uint)A) << 24) | (((uint)R) << 16) | (((uint)G) << 8) | B;
         set
         {
             A = (byte)((value >> 24) & 0xff);

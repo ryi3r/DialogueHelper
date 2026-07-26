@@ -1,22 +1,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
-using Avalonia.Media;
 using DialogueHelper.FileFormat;
 using DialogueHelper.StylesParser;
 using SkiaSharp;
 
 namespace DialogueHelper.PreviewRenderer;
 
-public class ExternalData(MainWindow mainWindow, Canvas canvas)
+public class ExternalData(MainWindow mainWindow, StringContainer stringContainer, Canvas canvas)
 {
     public required StyleParser Style;
     public required FontMetadata Font;
     public required BoxMetadata Box;
     public required ExternalChar Char;
     public required ExternalGlyph Glyph;
-    public required StringContainer StringContainer;
+    StringContainer _stringContainer = stringContainer;
     public required List<TintedImage> BoxImages = [];
+    public required PreviewRenderer.UpdateKind UpdateKind;
 
     public bool QueueRedraw;
 
@@ -75,11 +75,11 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
             Source = img,
             TintEnabled = true,
             Tint = color ?? new() { R = 255, G = 255, B = 255 },
-            Width = img.Width * GetCurrentScale(),
-            Height = img.Height * GetCurrentScale(),
+            Width = img.Width * GetCurrentPreviewScale(),
+            Height = img.Height * GetCurrentPreviewScale(),
         };
 
-        position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        position = (position.X * GetCurrentPreviewScale(), position.Y * GetCurrentPreviewScale());
         node.SetValue(Canvas.LeftProperty, position.X);
         node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
@@ -99,11 +99,11 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
             Source = img,
             TintEnabled = true,
             Tint = color ?? new() { R = 255, G = 255, B = 255 },
-            Width = img.Width * GetCurrentScale() * scale.X,
-            Height = img.Height * GetCurrentScale() * scale.Y,
+            Width = img.Width * GetCurrentPreviewScale() * scale.X,
+            Height = img.Height * GetCurrentPreviewScale() * scale.Y,
         };
 
-        position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        position = (position.X * GetCurrentPreviewScale(), position.Y * GetCurrentPreviewScale());
         node.SetValue(Canvas.LeftProperty, position.X);
         node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
@@ -123,11 +123,11 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
             Source = img,
             TintEnabled = true,
             Tint = color ?? new() { R = 255, G = 255, B = 255 },
-            Width = size.X * GetCurrentScale(),
-            Height = size.Y * GetCurrentScale(),
+            Width = size.X * GetCurrentPreviewScale(),
+            Height = size.Y * GetCurrentPreviewScale(),
         };
 
-        position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        position = (position.X * GetCurrentPreviewScale(), position.Y * GetCurrentPreviewScale());
         node.SetValue(Canvas.LeftProperty, position.X);
         node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
@@ -148,11 +148,11 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
             TintEnabled = true,
             Tint = color ?? new() { R = 255, G = 255, B = 255 },
             SourceRect = new(srcPosition.X, srcPosition.Y, srcSize.X, srcSize.Y),
-            Width = size.X * GetCurrentScale(),
-            Height = size.Y * GetCurrentScale(),
+            Width = size.X * GetCurrentPreviewScale(),
+            Height = size.Y * GetCurrentPreviewScale(),
         };
 
-        position = (position.X * GetCurrentScale(), position.Y * GetCurrentScale());
+        position = (position.X * GetCurrentPreviewScale(), position.Y * GetCurrentPreviewScale());
         node.SetValue(Canvas.LeftProperty, position.X);
         node.SetValue(Canvas.TopProperty, position.Y);
         canvas.Children.Add(node);
@@ -165,27 +165,49 @@ public class ExternalData(MainWindow mainWindow, Canvas canvas)
         return node;
     }
 
-    public void SetCurrentBox(int boxId) => mainWindow.BoxComboBox.SelectedIndex = boxId;
+    public void SetCurrentBox(int boxId)
+    {
+        _stringContainer.BoxStyle = boxId;
+        mainWindow.BoxComboBox.SelectedIndex = boxId;
+    }
 
-    public void SetCurrentFont(int fontId) => mainWindow.FontComboBox.SelectedIndex = fontId;
+    public void SetCurrentFont(int fontId)
+    {
+        _stringContainer.FontStyle = fontId;
+        mainWindow.FontComboBox.SelectedIndex = fontId;
+    }
 
-    public void SetCurrentScale(float scale) => mainWindow.PreviewScale.Value = (decimal)scale;
+    public void SetCurrentPreviewScale(float scale)
+    {
+        _stringContainer.PreviewScale = scale;
+        mainWindow.PreviewScale.Value = (decimal)scale;
+    }
 
-    public void SetCurrentBoxScale(float scale) => mainWindow.BoxScale.Value = (decimal)scale;
+    public void SetCurrentBoxScale(float scale)
+    {
+        _stringContainer.BoxScale = scale;
+        mainWindow.BoxScale.Value = (decimal)scale;
+    }
 
-    public void SetCurrentFontScale(float scale) => mainWindow.FontScale.Value = (decimal)scale;
+    public void SetCurrentFontScale(float scale)
+    {
+        _stringContainer.FontScale = scale;
+        mainWindow.FontScale.Value = (decimal)scale;
+    }
 
-    public int GetCurrentBox() => mainWindow.BoxComboBox.SelectedIndex;
+    public int GetCurrentBox() => _stringContainer.BoxStyle;
 
-    public int GetCurrentFont() => mainWindow.FontComboBox.SelectedIndex;
+    public int GetCurrentFont() => _stringContainer.FontStyle;
 
-    public float GetCurrentScale() => (float?)mainWindow.PreviewScale.Value ?? 0;
+    public float GetCurrentPreviewScale() => _stringContainer.PreviewScale;
 
-    public float GetCurrentBoxScale() => (float?)mainWindow.BoxScale.Value ?? 0;
+    public float GetCurrentBoxScale() => _stringContainer.BoxScale;
 
-    public float GetCurrentFontScale() => (float?)mainWindow.FontScale.Value ?? 0;
+    public float GetCurrentFontScale() => _stringContainer.FontScale;
 
     public void SetChangeableBox(bool changeable) => mainWindow.BoxComboBox.IsEnabled = changeable;
 
     public void SetChangeableFont(bool changeable) => mainWindow.FontComboBox.IsEnabled = changeable;
+
+    public StringContainer GetStringContainer() => new(_stringContainer.OutputFormatEntry());
 }

@@ -40,7 +40,7 @@ public partial class Settings : Window
         BackgroundComboBox.Items.Clear();
     }
 
-    void Ok_OnClick(object? sender, RoutedEventArgs e)
+    async void Ok_OnClick(object? sender, RoutedEventArgs e)
     {
         if (StyleComboBox.SelectedItem is null)
             return;
@@ -74,7 +74,7 @@ public partial class Settings : Window
             MainWindow._lastBgndPath = "";
             MainWindow.BgndPath = BackgroundData[BackgroundComboBox.SelectedIndex];
             MainWindow.SaveSettings();
-            MainWindow.LoadBackground();
+            await MainWindow.LoadBackground();
         }
         Close();
     }

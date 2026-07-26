@@ -43,14 +43,14 @@ foreach (var script in scriptCode.Select((code, i) => (Code: code, Index: i)))
     SearchInCode(script.Code, script.Index);
     ScriptMessage($"Extracting text ({++idx}/{scriptCode.Count})");
 }
-var output = new OrderedDictionary { ["date"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString() };
+var output = new OrderedDictionary<string, string> { ["date"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString() };
 foreach (var k in jp_order)
 {
     if (lang.TryGetValue(k, out var v))
-        output[k] = v.Item2;
+        output.Add(k, v.Item2);
 }
-foreach (var k in order.Where(x => !output.Contains(x)))
-    output[k] = lang[k].Item2; // add missing keys last
+foreach (var k in order.Where(x => !output.ContainsKey(x)))
+    output.Add(k, lang[k].Item2); // add missing keys last
 File.WriteAllText("../output.json", JsonSerializer.Serialize(output, new JsonSerializerOptions
 {
     WriteIndented = true,

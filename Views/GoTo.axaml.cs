@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DialogueHelper.FileFormat;
@@ -13,7 +14,7 @@ public partial class GoTo : Window
 
     public GoTo(MainWindow mainWindow) : this() => MainWindow = mainWindow;
 
-    void GoToEntry_OnClick(object? sender, RoutedEventArgs e)
+    async void GoToEntry_OnClick(object? sender, RoutedEventArgs e)
     {
         var num = SubentryIndex.Text ?? "";
         if (num.Length <= 0)

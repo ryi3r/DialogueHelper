@@ -127,11 +127,13 @@ public class Deltarune : StyleScript
     public override Task<IEnumerable<CustomTool>> RegisterCustomTools()
     {
         return Task.FromResult<IEnumerable<CustomTool>>([
-            new("Import from data.win", ImportFromDataWin, "Ctrl+Shift+I"),
-            new("Export to data.win", ExportToDataWin, "Ctrl+Shift+E"),
-            new("Import from json file", ImportFromJson, "Ctrl+Alt+I"),
-            new("Export to json file", ExportToJson, "Ctrl+Alt+E"),
-            new("Verify dialogues integrity", VerifyFileDialogueIntegrity, "Ctrl+Shift+P"),
+            new("Import from data.win", null, ImportFromDataWin, "Ctrl+Shift+I"),
+            new("Export to data.win", null, ExportToDataWin, "Ctrl+Shift+E"),
+            new("Import from json file", null, ImportFromJson, "Ctrl+Alt+I"),
+            new("Export to json file", null, ExportToJson, "Ctrl+Alt+E"),
+            new("Verify dialogues integrity", null, VerifyFileDialogueIntegrity, "Ctrl+Shift+P"),
+            new("Assign String Keys to all Entries", null, AssignStringKeyToAll),
+            new("Update Dialogues", "Update your old .dh file to contain changes from newer game versions.", UpdateDialogues)
         ]);
     }
 
@@ -198,80 +200,11 @@ public class Deltarune : StyleScript
     {
         if (!await wh.EnsureFileClosed())
             return;
-        if (!await DownloadUndertaleModToolCli(wh))
+        var output = await DataWinToJsonPrompt(wh);
+        if (output is null)
             return;
-        var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
-        {
-            Title = "Select the game data file",
-            FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["data.win"] }, new("All files") { Patterns = ["*"] }],
-        });
-        if (f.Count <= 0)
-            return;
-        File.Delete($"{wh.GetStylePath()}/output.json");
-        using var proc = new Process
-        {
-            StartInfo =
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
-                Arguments = $"load \"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
-                WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-            },
-        };
-        proc.Start();
-        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
-        wh.Show(lw);
-        try
-        {
-            var stdout = new StringBuilder();
-            while (!proc.HasExited)
-            {
-                var line = await proc.StandardOutput.ReadLineAsync();
-                if (line is null)
-                    continue;
-                stdout.Append(line);
-                stdout.Append('\n');
-                line = line.Trim();
-                if (line.EndsWith(')'))
-                {
-                    var idx = line.LastIndexOf('(');
-                    if (idx != -1)
-                    {
-                        var sep = line.IndexOf('/', idx + 1);
-                        if (sep != -1 && sep < line.Length - 1)
-                        {
-                            lw.ProgressBar.IsIndeterminate = false;
-                            lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
-                            lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
-                        }
-                    }
-                }
-                lw.Text.Text = line;
-            }
-            var stderr = await proc.StandardError.ReadToEndAsync();
-
-            Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
-            if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
-            {
-                lw.Close();
-                await wh.ShowDialog(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Text file") { Patterns = ["*.txt"] }]));
-                return;
-            }
-            var stream = new MemoryStream(await File.ReadAllBytesAsync($"{wh.GetStylePath()}/output.json"));
-            var output = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream))!;
-            await stream.DisposeAsync();
-            LoadJson(output, wh);
-            lw.Hide();
-            await wh.ShowDialog(new InfoWindow($"Imported data successfully."));
-        }
-        finally
-        {
-            File.Delete($"{wh.GetStylePath()}/output.json");
-            lw.Close();
-        }
+        await LoadJson(output.ToDictionary(), wh);
+        await wh.ShowDialog(new InfoWindow($"Imported data successfully."));
     }
 
     public async Task ExportToDataWin(CustomToolWindowHandler wh)
@@ -292,114 +225,16 @@ public class Deltarune : StyleScript
         try
         {
             var targetPath = $"\"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\"";
-            var utmtPath = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
-            OrderedDictionary<string, string> baseJson;
-            {
-                using var proc = new Process
-                {
-                    StartInfo =
-                    {
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        FileName = utmtPath,
-                        Arguments = $"load {targetPath} -s ../ExportStringsJson.csx",
-                        WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
-                        RedirectStandardError = true,
-                        RedirectStandardOutput = true,
-                    },
-                };
-                proc.Start();
+            var baseJson = await DataWinToJsonPrompt(wh, lw, targetPath);
+            if (baseJson is null)
+                return;
 
-                var stdout = new StringBuilder();
-                while (!proc.HasExited)
-                {
-                    var line = await proc.StandardOutput.ReadLineAsync();
-                    if (line is null)
-                        continue;
-                    stdout.Append(line);
-                    stdout.Append('\n');
-                    line = line.Trim();
-                    if (line.EndsWith(')'))
-                    {
-                        var idx = line.LastIndexOf('(');
-                        if (idx != -1)
-                        {
-                            var sep = line.IndexOf('/', idx + 1);
-                            if (sep != -1 && sep < line.Length - 1)
-                            {
-                                lw.ProgressBar.IsIndeterminate = false;
-                                lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
-                                lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
-                            }
-                        }
-                    }
-                    lw.Text.Text = line;
-                }
-                var stderr = await proc.StandardError.ReadToEndAsync();
-                Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
-                if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
-                {
-                    lw.Close();
-                    await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
-                    return;
-                }
-                var outputStream = File.OpenRead($"{wh.GetStylePath()}/output.json");
-                baseJson = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(outputStream))!;
-                await outputStream.DisposeAsync();
-            }
             var file = File.Create($"{wh.GetStylePath()}/input.json");
             var (data, sc, warnedKeys) = ExportJson(baseJson, wh, lw);
             await JsonSerializer.SerializeAsync(file, data, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             await file.DisposeAsync();
-            {
-                using var proc = new Process
-                {
-                    StartInfo =
-                    {
-                        UseShellExecute = false,
-                        CreateNoWindow = true,
-                        FileName = utmtPath,
-                        Arguments = $"load {targetPath} -s ../ImportStringsJson.csx -o {targetPath}",
-                        WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
-                        RedirectStandardError = true,
-                        RedirectStandardOutput = true,
-                    },
-                };
-                proc.Start();
-                var stdout = new StringBuilder();
-                while (!proc.HasExited)
-                {
-                    var line = await proc.StandardOutput.ReadLineAsync();
-                    if (line is null)
-                        continue;
-                    stdout.AppendLine(line);
-                    line = line.Trim();
-                    if (line.EndsWith(')'))
-                    {
-                        var idx = line.LastIndexOf('(');
-                        if (idx != -1)
-                        {
-                            var sep = line.IndexOf('/', idx + 1);
-                            if (sep != -1 && sep < line.Length - 1)
-                            {
-                                lw.ProgressBar.IsIndeterminate = false;
-                                lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
-                                lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
-                            }
-                        }
-                    }
-                    lw.Text.Text = line;
-                }
-                var stderr = await proc.StandardError.ReadToEndAsync();
-
-                Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
-                if (proc.ExitCode != 0 || stderr.Trim().Length > 0)
-                {
-                    lw.Close();
-                    await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
-                    return;
-                }
-            }
+            if (await DataWinToJsonPrompt(wh, lw, targetPath, true) is null)
+                return;
             if (warnedKeys.Count > 0)
             {
                 lw.Hide();
@@ -458,7 +293,7 @@ public class Deltarune : StyleScript
             var stream = await f[0].OpenReadAsync();
             var output = (await JsonSerializer.DeserializeAsync<Dictionary<string, string>>(stream))!;
             await stream.DisposeAsync();
-            LoadJson(output, wh);
+            await LoadJson(output, wh);
         }
         finally
         {
@@ -471,15 +306,6 @@ public class Deltarune : StyleScript
     {
         if (!await wh.EnsureFileOpen())
             return;
-        if (!await DownloadUndertaleModToolCli(wh))
-            return;
-        var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
-        {
-            Title = "Select the game data file",
-            FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["data.win"] }, new("All files") { Patterns = ["*"] }],
-        });
-        if (f.Count <= 0)
-            return;
         var fSave = await wh.GetStorageProvider().SaveFilePickerAsync(new()
         {
             Title = "Select a file to save to",
@@ -487,64 +313,15 @@ public class Deltarune : StyleScript
         });
         if (fSave is null)
             return;
-        File.Delete($"{wh.GetStylePath()}/output.json");
-        using var proc = new Process
-        {
-            StartInfo =
-            {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
-                Arguments = $"load \"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
-                WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-            },
-        };
-        proc.Start();
         var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
         wh.Show(lw);
+        var output = await DataWinToJsonPrompt(wh, lw);
+        if (output is null)
+            return;
         try
         {
-            var stdout = new StringBuilder();
-            while (!proc.HasExited)
-            {
-                var line = await proc.StandardOutput.ReadLineAsync();
-                if (line is null)
-                    continue;
-                stdout.Append(line);
-                stdout.Append('\n');
-                line = line.Trim();
-                if (line.EndsWith(')'))
-                {
-                    var idx = line.LastIndexOf('(');
-                    if (idx != -1)
-                    {
-                        var sep = line.IndexOf('/', idx + 1);
-                        if (sep != -1 && sep < line.Length - 1)
-                        {
-                            lw.ProgressBar.IsIndeterminate = false;
-                            lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
-                            lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
-                        }
-                    }
-                }
-                lw.Text.Text = line;
-            }
-            var stderr = await proc.StandardError.ReadToEndAsync();
-
-            Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
-            if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
-            {
-                lw.Close();
-                await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
-                return;
-            }
-            var outputStream = File.OpenRead($"{wh.GetStylePath()}/output.json");
-            var output = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(outputStream))!;
-            await outputStream.DisposeAsync();
-            var stream = await fSave.OpenWriteAsync();
             var (data, sc, warnedKeys) = ExportJson(output, wh, lw);
+            var stream = await fSave.OpenWriteAsync();
             await JsonSerializer.SerializeAsync(stream, data, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             await stream.DisposeAsync();
             if (warnedKeys.Count > 0)
@@ -577,11 +354,10 @@ public class Deltarune : StyleScript
                 lw.Show();
             }
             lw.Hide();
-            await wh.ShowDialog(new InfoWindow($"Exported data successfully."));
+            await wh.ShowDialog(new InfoWindow("Exported data successfully."));
         }
         finally
         {
-            File.Delete($"{wh.GetStylePath()}/output.json");
             lw.Close();
         }
     }
@@ -590,15 +366,192 @@ public class Deltarune : StyleScript
     {
         if (!await wh.EnsureFileOpen())
             return;
-        if (!await DownloadUndertaleModToolCli(wh))
-            return;
-        var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
+        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
+        wh.Show(lw);
+        var output = await DataWinToJsonPrompt(wh);
+        if (output is null)
         {
-            Title = "Select the game data file",
-            FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["data.win"] }, new("All files") { Patterns = ["*"] }],
-        });
-        if (f.Count <= 0)
+            lw.Close();
             return;
+        }
+        var (data, sc, warnedKeys) = ExportJson(output, wh, lw);
+        var sb = new StringBuilder();
+        sb.AppendLine("# Warnings\n");
+        var warns = 0;
+        foreach (var (key, value) in data)
+        {
+            if (!output.TryGetValue(key, out var og))
+                continue;
+            var ogParsed = new ParsedString(og, Boxes.Overworld);
+            var parsed = new ParsedString(value, Boxes.Overworld);
+            if (ogParsed.ParseWarns.Count != parsed.ParseWarns.Count)
+            {
+                sb.AppendLine($"Parse warnings for {key} (ID `{sc[key].Id}`) wasn't the same for the original ({ogParsed.ParseWarns.Count}) to the translated ({parsed.ParseWarns.Count}) text.\n");
+
+                sb.AppendLine("|Old|New|\n|---|---|");
+                var ogParseWarns = ogParsed.ParseWarns.Select(x => (x.Key, x.Value)).ToArray();
+                var parseWarns = parsed.ParseWarns.Select(x => (x.Key, x.Value)).ToArray();
+                for (var i = 0; i < int.Max(parseWarns.Length, ogParseWarns.Length); i++)
+                {
+                    sb.Append("|");
+                    if (i < ogParseWarns.Length)
+                        sb.Append($"{ogParseWarns[i].Key + 1}: {ogParseWarns[i].Value.Message}");
+                    sb.Append("|");
+                    if (i < parseWarns.Length)
+                    {
+                        var bold = i >= ogParseWarns.Length || parseWarns[i].Value.Argument != ogParseWarns[i].Value.Argument;
+                        sb.Append($"{parseWarns[i].Key + 1}: {(bold ? "**" : "")}{parseWarns[i].Value.Message}{(bold ? "**" : "")}");
+                    }
+                    sb.AppendLine("|");
+                }
+                sb.AppendLine();
+                warns++;
+            }
+            var ogParse = ogParsed.Events.Where(x => x.Value is not DialogueTimeSkip and not DialogueIgnore).Select(x => (x.Key, x.Value)).ToArray();
+            var parse = parsed.Events.Where(x => x.Value is not DialogueTimeSkip and not DialogueIgnore).Select(x => (x.Key, x.Value)).ToArray();
+            var valid = true;
+            if (parse.Length != ogParse.Length)
+                valid = false;
+            else
+            {
+                for (var i = 0; i < parse.Length; i++)
+                {
+                    if (parse[i].Value.Argument != ogParse[i].Value.Argument)
+                        valid = false;
+                }
+            }
+            if (!valid)
+            {
+                sb.AppendLine($"Invalid events found for `{key}` (ID `{sc[key].Id}`) that weren't the same for the original ({ogParse.Length}) to the translated ({parse.Length}) text:\n");
+                sb.AppendLine("|Old|New|\n|---|---|");
+                for (var i = 0; i < int.Max(parse.Length, ogParse.Length); i++)
+                {
+                    sb.Append("|");
+                    if (i < ogParse.Length)
+                        sb.Append($"{ogParse[i].Key + 1}: {ogParse[i].Value.Argument}");
+                    sb.Append("|");
+                    if (i < parse.Length)
+                    {
+                        var bold = i >= ogParse.Length || parse[i].Value.Argument != ogParse[i].Value.Argument;
+                        sb.Append($"{parse[i].Key + 1}: {(bold ? "**" : "")}{parse[i].Value.Argument}{(bold ? "**" : "")}");
+                    }
+                    sb.AppendLine("|");
+                }
+                sb.AppendLine();
+                warns++;
+            }
+        }
+        if (warnedKeys.Count > 0)
+        {
+            sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
+            foreach (var (key, cont, warn) in warnedKeys)
+            {
+                sb.Append($"- {warn switch
+                {
+                    WarningKind.NotFoundKey => "Target key not found",
+                    WarningKind.DuplicatedKey => "Duplicate key found",
+                    WarningKind.MissingKey => "Entry not found",
+                    _ => throw new("unsupported warn kind"),
+                }} `{key}`");
+                if (cont is not null)
+                    sb.Append($" (ID `{cont.Id}`)");
+                sb.AppendLine();
+                if (cont is not null)
+                {
+                    sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
+                    if (cont.Text is not null)
+                        sb.AppendLine($"  - Translated Text: `{cont.Text}`");
+                    sb.AppendLine();
+                }
+            }
+            warns += warnedKeys.Count;
+        }
+        if (warns > 0)
+        {
+            sb.AppendLine($"Found {warns} warning(s).");
+            lw.Hide();
+            await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warns == 1 ? "was" : "were")} {warns} warned {(warns == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = [new("*.md")] }]));
+            lw.Show();
+        }
+        else
+        {
+            lw.Hide();
+            await wh.ShowDialog(new InfoWindow("No warnings were found."));
+        }
+    }
+
+    public async Task AssignStringKeyToAll(CustomToolWindowHandler wh)
+    {
+        if (!await wh.EnsureFileOpen())
+            return;
+        var output = await DataWinToJsonPrompt(wh);
+        if (output is null)
+            return;
+        var fd = wh.GetLoadedFileData()!;
+        var entryCount = 0;
+        var entriesUpdated = 0;
+        foreach (var (header, entries) in CalculateHeaders(output.Keys))
+        {
+            var s = fd.GetString(header);
+            if (s is not null)
+            {
+                var unusedKeys = new List<(string Text, string Key)>();
+                foreach (var key in entries)
+                    unusedKeys.Add((output[key], key));
+                foreach (var sc in s)
+                {
+                    if ((sc.Key ?? "").Length > 0)
+                    {
+                        var kf = unusedKeys.Index().FirstOrDefault(x => x.Item.Key == sc.Key, (Index: -1, Item: (null!, null!)));
+                        if (kf.Index != -1)
+                            unusedKeys.RemoveAt(kf.Index);
+                    }
+                    else if ((sc.Key ?? "").Length == 0)
+                    {
+                        var kf = unusedKeys.Index().FirstOrDefault(x => x.Item.Text == sc.OriginalText, (Index: -1, Item: (null!, null!)));
+                        if (kf.Index != -1)
+                        {
+                            sc.Key = kf.Item.Key;
+                            unusedKeys.RemoveAt(kf.Index);
+                            entriesUpdated++;
+                        }
+                    }
+                    entryCount++;
+                }
+            }
+        }
+        await wh.LoadRaw(fd);
+        await wh.ShowDialog(new InfoWindow($"Updated data successfully.\n({entriesUpdated}/{entryCount} keys updated.)"));
+    }
+
+    public async Task UpdateDialogues(CustomToolWindowHandler wh)
+    {
+        // todo: do this (i'm eepy)
+    }
+
+    public async Task<OrderedDictionary<string, string>?> DataWinToJsonPrompt(CustomToolWindowHandler wh, LoadingWindow? lw = null, string? path = null, bool import = false)
+    {
+        if (!await DownloadUndertaleModToolCli(wh))
+            return null;
+        if (path is null)
+        {
+            var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
+            {
+                Title = "Select the game data file",
+                FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["data.win"] }, new("All files") { Patterns = ["*"] }],
+            });
+            if (f.Count <= 0)
+                return null;
+            path = f[0].Path.LocalPath.Replace("\"", "\\\"");
+        }
+        var args = $"load \"{path}\" -s ../";
+        if (!import)
+        {
+            File.Delete($"{wh.GetStylePath()}/output.json");
+            args += "ExportStringsJson.csx";
+        }
+        else
+            args += $"ImportStringsJson.csx -o \"{path}\"";
         using var proc = new Process
         {
             StartInfo =
@@ -606,15 +559,19 @@ public class Deltarune : StyleScript
                 UseShellExecute = false,
                 CreateNoWindow = true,
                 FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
-                Arguments = $"load \"{f[0].Path.LocalPath.Replace("\"", "\\\"")}\" -s ../ExportStringsJson.csx",
+                Arguments = args,
                 WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             },
         };
         proc.Start();
-        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
-        wh.Show(lw);
+        var autohide = lw is null;
+        if (lw is null)
+        {
+            lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
+            wh.Show(lw);
+        }
         try
         {
             var stdout = new StringBuilder();
@@ -643,125 +600,30 @@ public class Deltarune : StyleScript
                 lw.Text.Text = line;
             }
             var stderr = await proc.StandardError.ReadToEndAsync();
+
             Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
-            if (proc.ExitCode != 0 || !File.Exists($"{wh.GetStylePath()}/output.json"))
+            if (proc.ExitCode != 0 || stderr.Trim().Length > 0 || (!import && !File.Exists($"{wh.GetStylePath()}/output.json")))
             {
                 lw.Close();
-                await wh.ShowDialog<bool>(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Markdown file") { Patterns = [new("*.md")] }]));
-                return;
+                await wh.ShowDialog(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Text file") { Patterns = ["*.txt"] }]));
+                return null;
             }
-            var outputStream = File.OpenRead($"{wh.GetStylePath()}/output.json");
-            var output = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(outputStream))!;
-            await outputStream.DisposeAsync();
-            var (data, sc, warnedKeys) = ExportJson(output, wh, lw);
-            var sb = new StringBuilder();
-            sb.AppendLine("# Warnings\n");
-            var warns = 0;
-            foreach (var (key, value) in data)
-            {
-                if (!output.TryGetValue(key, out var og))
-                    continue;
-                var ogParsed = new ParsedString(og, Boxes.Overworld);
-                var parsed = new ParsedString(value, Boxes.Overworld);
-                if (ogParsed.ParseWarns.Count != parsed.ParseWarns.Count)
-                {
-                    sb.AppendLine($"Parse warnings for {key} (ID `{sc[key].Id}`) wasn't the same for the original ({ogParsed.ParseWarns.Count}) to the translated ({parsed.ParseWarns.Count}) text.\n");
-
-                    sb.AppendLine("|Old|New|\n|---|---|");
-                    var ogParseWarns = ogParsed.ParseWarns.Select(x => (x.Key, x.Value)).ToArray();
-                    var parseWarns = parsed.ParseWarns.Select(x => (x.Key, x.Value)).ToArray();
-                    for (var i = 0; i < int.Max(parseWarns.Length, ogParseWarns.Length); i++)
-                    {
-                        sb.Append("|");
-                        if (i < ogParseWarns.Length)
-                            sb.Append($"{ogParseWarns[i].Key + 1}: {ogParseWarns[i].Value.Message}");
-                        sb.Append("|");
-                        if (i < parseWarns.Length)
-                        {
-                            var bold = i >= ogParseWarns.Length || parseWarns[i].Value.Argument != ogParseWarns[i].Value.Argument;
-                            sb.Append($"{parseWarns[i].Key + 1}: {(bold ? "**" : "")}{parseWarns[i].Value.Message}{(bold ? "**" : "")}");
-                        }
-                        sb.AppendLine("|");
-                    }
-                    sb.AppendLine();
-                    warns++;
-                }
-                var ogParse = ogParsed.Events.Where(x => x.Value is not DialogueTimeSkip and not DialogueIgnore).Select(x => (x.Key, x.Value)).ToArray();
-                var parse = parsed.Events.Where(x => x.Value is not DialogueTimeSkip and not DialogueIgnore).Select(x => (x.Key, x.Value)).ToArray();
-                var valid = true;
-                if (parse.Length != ogParse.Length)
-                    valid = false;
-                else
-                {
-                    for (var i = 0; i < parse.Length; i++)
-                    {
-                        if (parse[i].Value.Argument != ogParse[i].Value.Argument)
-                            valid = false;
-                    }
-                }
-                if (!valid)
-                {
-                    sb.AppendLine($"Invalid events found for `{key}` (ID `{sc[key].Id}`) that weren't the same for the original ({ogParse.Length}) to the translated ({parse.Length}) text:\n");
-                    sb.AppendLine("|Old|New|\n|---|---|");
-                    for (var i = 0; i < int.Max(parse.Length, ogParse.Length); i++)
-                    {
-                        sb.Append("|");
-                        if (i < ogParse.Length)
-                            sb.Append($"{ogParse[i].Key + 1}: {ogParse[i].Value.Argument}");
-                        sb.Append("|");
-                        if (i < parse.Length)
-                        {
-                            var bold = i >= ogParse.Length || parse[i].Value.Argument != ogParse[i].Value.Argument;
-                            sb.Append($"{parse[i].Key + 1}: {(bold ? "**" : "")}{parse[i].Value.Argument}{(bold ? "**" : "")}");
-                        }
-                        sb.AppendLine("|");
-                    }
-                    sb.AppendLine();
-                    warns++;
-                }
-            }
-            if (warnedKeys.Count > 0)
-            {
-                sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
-                foreach (var (key, cont, warn) in warnedKeys)
-                {
-                    sb.Append($"- {warn switch
-                    {
-                        WarningKind.NotFoundKey => "Target key not found",
-                        WarningKind.DuplicatedKey => "Duplicate key found",
-                        WarningKind.MissingKey => "Entry not found",
-                        _ => throw new("unsupported warn kind"),
-                    }} `{key}`");
-                    if (cont is not null)
-                        sb.Append($" (ID `{cont.Id}`)");
-                    sb.AppendLine();
-                    if (cont is not null)
-                    {
-                        sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
-                        if (cont.Text is not null)
-                            sb.AppendLine($"  - Translated Text: `{cont.Text}`");
-                        sb.AppendLine();
-                    }
-                }
-                warns += warnedKeys.Count;
-            }
-            if (warns > 0)
-            {
-                sb.AppendLine($"Found {warns} warning(s).");
-                lw.Hide();
-                await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warns == 1 ? "was" : "were")} {warns} warned {(warns == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = [new("*.md")] }]));
-                lw.Show();
-            }
+            if (import)
+                return [];
             else
             {
-                lw.Hide();
-                await wh.ShowDialog(new InfoWindow("No warnings were found."));
+                var stream = new MemoryStream(await File.ReadAllBytesAsync($"{wh.GetStylePath()}/output.json"));
+                var output = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(stream))!;
+                await stream.DisposeAsync();
+
+                return output;
             }
         }
         finally
         {
-            File.Delete($"{wh.GetStylePath()}/output.json");
-            lw.Close();
+            File.Delete($"{wh.GetStylePath()}/{(!import ? "output" : "input")}.json");
+            if (autohide)
+                lw.Close();
         }
     }
 
@@ -784,7 +646,7 @@ public class Deltarune : StyleScript
         return headers;
     }
 
-    public void LoadJson(Dictionary<string, string> json, CustomToolWindowHandler wh)
+    public async Task LoadJson(Dictionary<string, string> json, CustomToolWindowHandler wh)
     {
         var fd = new FileData();
         foreach (var (header, entries) in CalculateHeaders(json.Keys))
@@ -800,7 +662,7 @@ public class Deltarune : StyleScript
             }
             fd.AddString(header, l);
         }
-        wh.LoadString(fd.OutputString());
+        await wh.LoadRaw(fd);
     }
 
     public record ExportedJson(OrderedDictionary<string, string> Data, OrderedDictionary<string, StringContainer> Container, List<(string key, StringContainer? cont, WarningKind warnKind)> WarnedKeys);
@@ -833,6 +695,7 @@ public class Deltarune : StyleScript
                 targetKey = keys.FirstOrDefault(x => x is not null && !data.ContainsKey(x) && json[x] == cont.OriginalText, null);
             return targetKey;
         }
+        // todo: fix ordering (i'm eepy)
         foreach (var (key, conts) in file.GetStringKeysValues())
         {
             foreach (var cont in conts)
@@ -891,12 +754,10 @@ public class Deltarune : StyleScript
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
-        if (data.GetCurrentBox() != int.Parse(data.StringContainer.CustomProperties.GetValueOrDefault("lastBox", "0")))
+        if (data.UpdateKind is PreviewRenderer.UpdateKind.SelectedBoxChanged)
         {
-            var lastBox = (Boxes)data.GetCurrentBox();
-            data.StringContainer.CustomProperties["lastBox"] = ((int)lastBox).ToString(CultureInfo.InvariantCulture);
             DialogueKinds? targetBox = null;
-            switch (lastBox)
+            switch ((Boxes)data.GetCurrentBox())
             {
                 case Boxes.BattleIdle:
                     targetBox = DialogueKinds.BattleIdle;
@@ -1367,6 +1228,13 @@ public class ParsedString
         var cPos = 0;
         for (var i = 0; i < trimLen; i++)
         {
+            var @char = text[i];
+            if (@char is '`')
+            {
+                Events.Add(i, new DialogueIgnore(@char.ToString()));
+                i++;
+                continue;
+            }
             if (trimLen - i >= 3)
             {
                 var sStr = text[i..(i + 3)];
@@ -1387,15 +1255,9 @@ public class ParsedString
                     continue;
                 }
             }
-            var @char = text[i];
             if (((trimLen - i == 1 || i == 0) && @char == '/') || (trimLen - i == 1 && @char == '%'))
             {
                 Events.Add(i, new DialogueEnd(@char.ToString()));
-                continue;
-            }
-            if (@char is '`')
-            {
-                Events.Add(i, new DialogueIgnore(@char.ToString()));
                 continue;
             }
             if (@char == '\\')
@@ -1530,6 +1392,7 @@ public class ParsedString
                     continue;
                 }
             }
+            // todo: parse events like ~1, ~2, ..., ~N and a way to test it out (presets/editor?)
             var dk = (Deltarune.DialogueKinds)Deltarune.DialogueType.SelectedIndex;
             if (box is not Deltarune.Boxes.CMenuDescription and not Deltarune.Boxes.CMenuCharacterDescription and not Deltarune.Boxes.ShopItemDescription && dk is not Deltarune.DialogueKinds.PlatformerAct and not Deltarune.DialogueKinds.DynamicWordwarp and not Deltarune.DialogueKinds.None)
             {

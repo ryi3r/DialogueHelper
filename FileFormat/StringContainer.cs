@@ -15,28 +15,20 @@ public class StringContainer()
         set => field = value is not null && value.Length == 0 ? null : value;
     }
     public readonly LastEdited LastEdited = new();
+
     public int BoxStyle;
+    public float BoxScale = 1;
     public int FontStyle;
+    public float FontScale = 1;
+    public float PreviewScale = 1;
+    public Color BoxColor = new() { Rgba = 0xffffffff };
+    public Color TextColor = new() { Rgba = 0xffffffff };
+
     public readonly Dictionary<string, string> CustomProperties = [];
     public readonly List<string> AuthorGroups = [];
+
     public bool MarkAsModified;
-
     public List<StringContainer> EqStrings = [];
-
-    public StringContainer(StringContainer toDuplicate) : this()
-    {
-        Id = toDuplicate.Id;
-        Text = toDuplicate.Text;
-        OriginalText = toDuplicate.OriginalText;
-        Key = toDuplicate.Key;
-        LastEdited = new(toDuplicate.LastEdited);
-        BoxStyle = toDuplicate.BoxStyle;
-        FontStyle = toDuplicate.FontStyle;
-        CustomProperties = toDuplicate.CustomProperties.ToDictionary();
-        AuthorGroups = [.. toDuplicate.AuthorGroups];
-        MarkAsModified = toDuplicate.MarkAsModified;
-        EqStrings = [.. EqStrings];
-    }
 
     public StringContainer(FormatEntry fEntry) : this()
     {
@@ -56,8 +48,18 @@ public class StringContainer()
             LastEdited = new(lastEdited);
         if (fEntry.Data.TryGetValue("Box", out var boxStyle))
             BoxStyle = int.Parse(boxStyle);
+        if (fEntry.Data.TryGetValue("BoxScale", out var boxScale))
+            BoxScale = float.Parse(boxScale);
         if (fEntry.Data.TryGetValue("Font", out var fontStyle))
             FontStyle = int.Parse(fontStyle);
+        if (fEntry.Data.TryGetValue("FontScale", out var fontScale))
+            FontScale = float.Parse(fontScale);
+        if (fEntry.Data.TryGetValue("PreviewScale", out var previewScale))
+            FontScale = float.Parse(previewScale);
+        if (fEntry.Data.TryGetValue("BoxColor", out var boxColor))
+            BoxColor = new() { Rgba = uint.Parse(boxColor) };
+        if (fEntry.Data.TryGetValue("TextColor", out var textColor))
+            TextColor = new() { Rgba = uint.Parse(textColor) };
         if (fEntry.Data.TryGetValue("CustomProperties", out var prop))
         {
             foreach (var item in prop.Split("@@@"))
@@ -82,8 +84,18 @@ public class StringContainer()
             fe.Data["LastEdited"] = LastEdited.OutputString();
         if (BoxStyle != 0)
             fe.Data["Box"] = BoxStyle.ToString();
+        if (BoxScale != 1)
+            fe.Data["BoxScale"] = BoxScale.ToString();
         if (FontStyle != 0)
             fe.Data["Font"] = FontStyle.ToString();
+        if (FontScale != 1)
+            fe.Data["FontScale"] = FontScale.ToString();
+        if (PreviewScale != 1)
+            fe.Data["PreviewScale"] = PreviewScale.ToString();
+        if (BoxColor.Rgba != 0xffffffff)
+            fe.Data["BoxColor"] = BoxColor.Rgba.ToString();
+        if (TextColor.Rgba != 0xffffffff)
+            fe.Data["TextColor"] = TextColor.Rgba.ToString();
         if (CustomProperties.Count > 0)
             fe.Data["CustomProperties"] = string.Join(
                 "@@@",

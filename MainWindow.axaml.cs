@@ -26,6 +26,7 @@ using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
 using SkiaSharp;
 using Views;
+using static DialogueHelper.PreviewRenderer.PreviewRenderer;
 using FileInfo = DialogueHelper.Views.FileInfo;
 
 namespace DialogueHelper;
@@ -102,7 +103,7 @@ public partial class MainWindow : Window
                 return;
             LoadFileToProject(f.Path.AbsolutePath);
         });*/
-        _timer.Tick += (_, _) =>
+        _timer.Tick += async (_, _) =>
         {
             {
                 WeakReference<TreeViewItem>? n = null;
@@ -115,7 +116,7 @@ public partial class MainWindow : Window
                     }
                 }
                 if (n is not null && n.TryGetTarget(out var tn))
-                    UpdateEtvItem(tn);
+                    await UpdateEtvItem(tn);
             }
             {
                 (WeakReference<StringContainer> StringContainer, bool ModifySimilarStrings)? n = null;
@@ -146,7 +147,7 @@ public partial class MainWindow : Window
                         ReloadEqStringsField();
                     if (EtvReverseIndexes.TryGetValue(sc, out var item) && !EtvKeys.ContainsKey(item) && EtvParents.TryGetValue(item, out var p))
                     {
-                        UpdateEtvItem(p);
+                        await UpdateEtvItem(p);
                         UpdateModifySimilarStrings(sc, item, false, n.Value.ModifySimilarStrings);
                     }
                 }
@@ -162,41 +163,16 @@ public partial class MainWindow : Window
             f.Close();
         };
         _backupTimer.Start();
-        _redrawTimer.Tick += (_, _) =>
+        _redrawTimer.Tick += async (_, _) =>
         {
             if (!RedrawRenderer)
                 return;
-            // editable
-            PreviewRenderer.CreateRender(
-                StyleData!,
-                SelectedString,
-                BoxComboBox.SelectedIndex,
-                FontComboBox.SelectedIndex,
-                ((float?)BoxScale.Value) ?? 0,
-                ((float?)FontScale.Value) ?? 0,
-                ((float?)PreviewScale.Value) ?? 0,
-                new() { Argb = InitialTextColor.Color.ToUInt32() },
-                new() { Argb = BoxColor.Color.ToUInt32() },
-                EditableText.Text ?? "",
-                DisplayEditableCanvas
-            );
-            // original
-            PreviewRenderer.CreateRender(
-                StyleData!,
-                SelectedString,
-                BoxComboBox.SelectedIndex,
-                FontComboBox.SelectedIndex,
-                ((float?)BoxScale.Value) ?? 0,
-                ((float?)FontScale.Value) ?? 0,
-                ((float?)PreviewScale.Value) ?? 0,
-                new() { Argb = InitialTextColor.Color.ToUInt32() },
-                new() { Argb = BoxColor.Color.ToUInt32() },
-                OriginalText.Text ?? "",
-                DisplayOriginalCanvas
-            );
+            RedrawRenderer = false;
+            await UpdateEditableText(UpdateKind.None);
+            await UpdateOriginalText(UpdateKind.None);
         };
         _redrawTimer.Start();
-        SizeChanged += (_, _) => LoadBackground();
+        SizeChanged += async (_, _) => await LoadBackground();
         var dictPath = Path.Combine(AppContext.BaseDirectory, "SpellCheckDictionaries");
         var conf = new SpellCheckerConfig
         {
@@ -263,7 +239,7 @@ public partial class MainWindow : Window
         });
     }
 
-    public async void LoadBackground()
+    public async Task LoadBackground()
     {
         if (!Path.Exists(BgndPath))
             BgndPath = Path.GetFullPath("Backgrounds/Default");
@@ -355,10 +331,10 @@ public partial class MainWindow : Window
         SimilarStringsPanel.Items.Clear();
         SimilarStringsNone.IsVisible = true;
 
-        LoadFileToProject(file: file);
+        await LoadFileToProject(file: file);
     }
 
-    public async void LoadFileToProject(string? path = null, IStorageFile? file = null, bool markAsModified = false)
+    public async Task LoadFileToProject(string? path = null, IStorageFile? file = null, bool markAsModified = false)
     {
         if (path is null && file is null)
             throw new("path and file cannot be null to load a project from a file");
@@ -373,10 +349,10 @@ public partial class MainWindow : Window
         lWin.Show(this);
         lWin.Text.Text = "Loading the file...";
         using var stream = new StreamReader(file is not null ? await file.OpenReadAsync() : File.OpenRead(path!));
-        LoadStringToProject(await stream.ReadToEndAsync(), lWin, markAsModified);
+        await LoadStringToProject(await stream.ReadToEndAsync(), lWin, markAsModified);
     }
 
-    public async void LoadStringToProject(string str, LoadingWindow? lWin = null, bool markAsModified = true)
+    public async Task LoadStringToProject(string str, LoadingWindow? lWin = null, bool markAsModified = true)
     {
         if (lWin is null)
         {
@@ -394,7 +370,36 @@ public partial class MainWindow : Window
             lWin.Text.Text = "Parsing the file...";
             var fParse = FileParser.ParseString(str);
             lWin.Text.Text = "Loading data...";
-            FileData = FileData.LoadString(fParse, lWin);
+            await LoadRawToProject(FileData.LoadString(fParse, lWin), lWin, markAsModified);
+        }
+        catch (Exception ex)
+        {
+            var se = new StyleError
+            {
+                Title = "Load error",
+                MessageBlock = { Text = "DialogueHelper has encountered an error while loading a file" },
+                ErrorBox = { Text = ex.ToString() },
+            };
+            await se.ShowDialog(this);
+        }
+    }
+
+    public async Task LoadRawToProject(FileData fData, LoadingWindow? lWin = null, bool markAsModified = true)
+    {
+        if (lWin is null)
+        {
+            lWin = new LoadingWindow { CanResize = false };
+            lWin.Closing += (_, ev) =>
+            {
+                if (!ev.IsProgrammatic)
+                    ev.Cancel = true;
+            };
+            lWin.ProgressBar.Value = 0;
+            lWin.Show(this);
+        }
+        try
+        {
+            FileData = fData;
             lWin.Text.Text = "Caching base entries...";
             lWin.ProgressBar.Value = 0.0;
             lWin.ProgressBar.Maximum = FileData.GetCountString();
@@ -419,7 +424,7 @@ public partial class MainWindow : Window
             }
 
             lWin.Text.Text = "Updating view...";
-            PopulateEntryTreeView();
+            await PopulateEntryTreeView();
         }
         catch (Exception ex)
         {
@@ -437,7 +442,7 @@ public partial class MainWindow : Window
         Title = $"Dialogue Helper{(markAsModified ? "*" : "")}";
     }
 
-    public async void PopulateEntryTreeView()
+    public async Task PopulateEntryTreeView()
     {
         EntryTreeView.Items.Clear();
         EtvKeys.Clear();
@@ -481,7 +486,7 @@ public partial class MainWindow : Window
         await UpdateSearchFiltering();
     }
 
-    public async void UpdateEtvItem(TreeViewItem item)
+    public async Task UpdateEtvItem(TreeViewItem item)
     {
         if (!await EnsureFileOpen() || !EtvKeys.ContainsKey(item) || !EtvTargetChildren.ContainsKey(item))
             return;
@@ -493,7 +498,7 @@ public partial class MainWindow : Window
         if (strs.Count != list.Count)
         {
             Console.WriteLine("etv mismatch, repopulating...");
-            PopulateEntryTreeView();
+            await PopulateEntryTreeView();
             return;
         }
         foreach (var str in strs)
@@ -501,7 +506,7 @@ public partial class MainWindow : Window
             if (!list.TryGetValue(str, out var tvi))
             {
                 Console.WriteLine("etv inst mismatch, repopulating...");
-                PopulateEntryTreeView();
+                await PopulateEntryTreeView();
                 return;
             }
             ColorTreeItem(tvi, str.Text, str.OriginalText, str.MarkAsModified);
@@ -537,49 +542,125 @@ public partial class MainWindow : Window
         RenameBlock.IsVisible = EtvKeys.ContainsKey(tvi);
         if (EtvIndexes.TryGetValue(tvi, out var sc))
         {
+            //Console.WriteLine("============================");
+
             UpdatingEntry = true;
             AllowEditingOriginal.IsChecked = false;
             AllowEditingOriginal_OnClick(null, null!);
             var lastSel = SelectedString;
             SelectedString = sc;
-            MarkAsModified.IsChecked = SelectedString.MarkAsModified;
+
+            MarkAsModified.IsChecked = sc.MarkAsModified;
             OriginalText.IsUndoEnabled = false;
-            OriginalText.Text = SelectedString.OriginalText;
+            OriginalText.Text = sc.OriginalText;
             OriginalText.IsUndoEnabled = true;
             EditableText.IsUndoEnabled = false;
-            EditableText.Text = SelectedString.Text ?? SelectedString.OriginalText;
+            EditableText.Text = sc.Text ?? sc.OriginalText;
             EditableText.IsUndoEnabled = true;
             StringKey.IsUndoEnabled = false;
-            StringKey.Text = SelectedString.Key;
+            StringKey.Text = sc.Key;
             StringKey.IsUndoEnabled = true;
 
-            PopulateCustomPropertiesValues();
-            if (lastSel is null || lastSel.EqStrings != SelectedString.EqStrings)
+            await PopulateCustomPropertiesValues();
+            if (lastSel.EqStrings != sc.EqStrings)
                 ReloadEqStringsField();
 
             UpdateCustomScriptFields();
+
+            {
+                var targetSel = sc;
+                //Console.WriteLine("updating");
+                if (CopyViewingStrings.IsChecked ?? false)
+                    targetSel = lastSel;
+                var markAsModified = false;
+
+                if (sc.BoxStyle != targetSel.BoxStyle)
+                    markAsModified = true;
+                //Console.WriteLine($"update box style->{BoxComboBox.SelectedIndex},{targetSel.BoxStyle}");
+                sc.BoxStyle = targetSel.BoxStyle;
+                BoxComboBox.SelectedIndex = targetSel.BoxStyle;
+                if (sc.BoxScale != targetSel.BoxScale)
+                    markAsModified = true;
+                //Console.WriteLine($"update box scale->{BoxScale.Value},{targetSel.BoxScale}");
+                sc.BoxScale = targetSel.BoxScale;
+                BoxScale.Value = (decimal)targetSel.BoxScale;
+
+                if (sc.FontStyle != targetSel.FontStyle)
+                    markAsModified = true;
+                //Console.WriteLine($"update font style->{FontComboBox.SelectedIndex},{targetSel.FontStyle}");
+                sc.FontStyle = targetSel.FontStyle;
+                FontComboBox.SelectedIndex = targetSel.FontStyle;
+                if (sc.FontScale != targetSel.FontScale)
+                    markAsModified = true;
+                //Console.WriteLine($"update font scale->{FontScale.Value},{targetSel.FontScale}");
+                sc.FontScale = targetSel.FontScale;
+                FontScale.Value = (decimal)targetSel.FontScale;
+
+                if (sc.PreviewScale != targetSel.PreviewScale)
+                    markAsModified = true;
+                //Console.WriteLine($"update preview scale->{PreviewScale.Value},{targetSel.PreviewScale}");
+                sc.PreviewScale = targetSel.PreviewScale;
+                PreviewScale.Value = (decimal)targetSel.PreviewScale;
+
+                if (sc.BoxColor.Rgba != targetSel.BoxColor.Rgba)
+                    markAsModified = true;
+                //Console.WriteLine($"update box color->{BoxColor.Color.ToUInt32():X6},{targetSel.BoxColor.Argb:X6}");
+                sc.BoxColor.Rgba = targetSel.BoxColor.Rgba;
+                BoxColor.Color = Avalonia.Media.Color.FromUInt32(targetSel.BoxColor.Argb);
+
+                if (sc.TextColor.Rgba != targetSel.TextColor.Rgba)
+                    markAsModified = true;
+                //Console.WriteLine($"update text color->{InitialTextColor.Color.ToUInt32():X6},{targetSel.TextColor.Argb:X6}");
+                sc.TextColor.Rgba = targetSel.TextColor.Rgba;
+                InitialTextColor.Color = Avalonia.Media.Color.FromUInt32(targetSel.TextColor.Argb);
+
+                if (markAsModified)
+                {
+                    //Console.WriteLine("marked as modified");
+                    if (FileData is not null)
+                    {
+                        IsFileModified = true;
+                        Title = "Dialogue Helper*";
+                    }
+                }
+                //Console.WriteLine("OK");
+            }
+
             UpdatingEntry = false;
 
-            EditableText_OnTextChanging(null, null);
-            OriginalText_OnTextChanging(null, null);
+            await UpdateEditableText(UpdateKind.ChangedEntry);
+            await UpdateOriginalText(UpdateKind.ChangedEntry);
         }
         else
             SelectedString = new();
     }
 
-    public void PopulateCustomPropertiesValues()
+    public async Task PopulateCustomPropertiesValues()
     {
         if (SelectedString is null)
             return;
         // todo: catch any errors that may arise from doing this
-        foreach (var prop in CustomProperties)
+        try
         {
-            if (SelectedString.CustomProperties.TryGetValue(prop.Name, out var value))
-                prop.StringToValue(value);
-            else if (prop is ICustomPropertyList pl)
-                pl.SelectedIndex = pl.DefaultIndex;
-            else
-                prop.Value = prop.DefaultValue;
+            foreach (var prop in CustomProperties)
+            {
+                if (SelectedString.CustomProperties.TryGetValue(prop.Name, out var value))
+                    prop.StringToValue(value);
+                else if (prop is ICustomPropertyList pl)
+                    pl.SelectedIndex = pl.DefaultIndex;
+                else
+                    prop.Value = prop.DefaultValue;
+            }
+        }
+        catch (Exception ex)
+        {
+            var se = new StyleError
+            {
+                Title = "Save error",
+                MessageBlock = { Text = "DialogueHelper has encountered an error while saving a file" },
+                ErrorBox = { Text = ex.ToString() },
+            };
+            await se.ShowDialog(this);
         }
     }
 
@@ -614,16 +695,16 @@ public partial class MainWindow : Window
         await settings.ShowDialog(this);
         if (ScriptNeedsInitialization)
         {
-            InitializeCustomScript();
+            await InitializeCustomScript();
 
             UpdatingEntry = true;
-            EditableText_OnTextChanging(null, null);
-            OriginalText_OnTextChanging(null, null);
+            await UpdateEditableText(UpdateKind.InitializedStyle);
+            await UpdateOriginalText(UpdateKind.InitializedStyle);
             UpdatingEntry = false;
         }
     }
 
-    public void LoadSettings()
+    public async Task LoadSettings()
     {
         var file = $"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt";
         if (!File.Exists(file))
@@ -670,7 +751,7 @@ public partial class MainWindow : Window
             i++;
         }
 
-        LoadBackground();
+        await LoadBackground();
     }
 
     public void SaveSettings()
@@ -717,7 +798,7 @@ public partial class MainWindow : Window
         }
         MiddleStackPanel.RowDefinitions[0].Height = new GridLength(235 * ClientSize.Height / 720);
         MiddleStackPanel.RowDefinitions[2].Height = new GridLength(230 * ClientSize.Height / 720);
-        LoadSettings();
+        await LoadSettings();
         if (SelectedStyle is null)
         {
             w.Hide();
@@ -767,17 +848,17 @@ public partial class MainWindow : Window
             }
         }
 
-        InitializeCustomScript();
-        EditableText_OnTextChanging(null, null);
-        OriginalText_OnTextChanging(null, null);
+        await InitializeCustomScript();
+        await UpdateEditableText(UpdateKind.InitializedStyle);
+        await UpdateOriginalText(UpdateKind.InitializedStyle);
 
         w.Close();
         var lastArg = Environment.GetCommandLineArgs()[^1];
         if (lastArg.EndsWith(".dh"))
-            LoadFileToProject(lastArg);
+            await LoadFileToProject(lastArg);
     }
 
-    public async void InitializeCustomScript()
+    public async Task InitializeCustomScript()
     {
         foreach (var img in LoadedImages.Values)
             img.Dispose();
@@ -836,6 +917,7 @@ public partial class MainWindow : Window
             foreach (var tool in CustomTools)
             {
                 var item = new MenuItem { Header = tool.Name };
+                ToolTip.SetTip(item, tool.Tooltip);
                 if (tool.HotKey is not null)
                 {
                     try
@@ -896,13 +978,13 @@ public partial class MainWindow : Window
                             Content = tool.VisualName,
                             IsEnabled = !tool.ReadOnly,
                         };
-                        node.IsCheckedChanged += (_, _) =>
+                        node.IsCheckedChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.IsChecked ?? false) ? "true" : "false");
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -921,13 +1003,13 @@ public partial class MainWindow : Window
                             Increment = 1,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -945,13 +1027,13 @@ public partial class MainWindow : Window
                             Increment = 1,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -969,13 +1051,13 @@ public partial class MainWindow : Window
                             Increment = 1,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -993,13 +1075,13 @@ public partial class MainWindow : Window
                             Increment = 1,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1018,13 +1100,13 @@ public partial class MainWindow : Window
                             Increment = 1,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1042,13 +1124,13 @@ public partial class MainWindow : Window
                             Increment = 1,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1066,13 +1148,13 @@ public partial class MainWindow : Window
                             Increment = 1,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1090,13 +1172,13 @@ public partial class MainWindow : Window
                             Increment = 1,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1113,13 +1195,13 @@ public partial class MainWindow : Window
                             Increment = (decimal)0.01f,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1135,13 +1217,13 @@ public partial class MainWindow : Window
                             Increment = (decimal)0.01,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.ValueChanged += (_, _) =>
+                        node.ValueChanged += async (_, _) =>
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1156,13 +1238,13 @@ public partial class MainWindow : Window
                             Text = tool.Value as string,
                             IsReadOnly = tool.ReadOnly,
                         };
-                        node.TextChanged += (_, _) =>
+                        node.TextChanged += async (_, _) =>
                         {
                             tool.StringToValue(node.Text ?? "");
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1180,13 +1262,13 @@ public partial class MainWindow : Window
                             IsAlphaEnabled = col.IsAlphaEnabled,
                             IsAlphaVisible = col.IsAlphaVisible,
                         };
-                        node.ColorChanged += (_, _) =>
+                        node.ColorChanged += async (_, _) =>
                         {
                             tool.StringToValue(new Color { Argb = node.Color.ToUInt32() }.Rgba.ToString() ?? "");
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1209,13 +1291,13 @@ public partial class MainWindow : Window
                             ItemsSource = d,
                             SelectedIndex = pl.SelectedIndex,
                         };
-                        node.SelectionChanged += (_, _) =>
+                        node.SelectionChanged += async (_, _) =>
                         {
                             tool.StringToValue(node.SelectedIndex.ToString());
                             if (isString)
                             {
-                                EditableText_OnTextChanging(0, null);
-                                OriginalText_OnTextChanging(null, null);
+                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
                             }
                         };
                         tool.Node = node;
@@ -1229,17 +1311,32 @@ public partial class MainWindow : Window
         }
     }
 
-    void EditableText_OnTextChanging(object? sender, TextChangingEventArgs? e)
+    async void EditableText_OnTextChanging(object? sender, TextChangingEventArgs? e) => await UpdateEditableText(UpdatingEntry ? UpdateKind.None : UpdateKind.EditableTextChanged);
+
+    //System.Diagnostics.Stopwatch _sw = System.Diagnostics.Stopwatch.StartNew();
+
+    async Task UpdateEditableText(UpdateKind updateKind)
     {
         if (PreviewRenderer is null)
             return;
-        if (!UpdatingEntry && (e is not null || (sender is int s && s == 0)))
+        //Console.WriteLine($"{_sw.ElapsedMilliseconds / 1000d:0.00}@redraw ed->{updateKind}");
+        if (!UpdatingEntry && updateKind is UpdateKind.EditableTextChanged or UpdateKind.CustomPropertyChanged or UpdateKind.SelectedBoxChanged or UpdateKind.SelectedFontChanged or UpdateKind.ScaleChanged or UpdateKind.ColorChanged)
         {
+            //Console.WriteLine($"{_sw.ElapsedMilliseconds / 1000d:0.00}@updated ed entry->{updateKind}");
             if (FileData is not null)
             {
                 IsFileModified = true;
                 Title = "Dialogue Helper*";
             }
+
+            SelectedString.BoxStyle = BoxComboBox.SelectedIndex;
+            SelectedString.BoxScale = ((float?)BoxScale.Value) ?? 0;
+            SelectedString.FontStyle = FontComboBox.SelectedIndex;
+            SelectedString.FontScale = ((float?)FontScale.Value) ?? 0;
+            SelectedString.PreviewScale = ((float?)PreviewScale.Value) ?? 0;
+            SelectedString.TextColor = new() { Argb = InitialTextColor.Color.ToUInt32() };
+            SelectedString.BoxColor = new() { Argb = BoxColor.Color.ToUInt32() };
+
             SelectedString.Text = EditableText.Text ?? "<null>";
             foreach (var prop in CustomProperties)
             {
@@ -1266,27 +1363,25 @@ public partial class MainWindow : Window
             UpdateModifySimilarStrings(null, null);
         }
         PreviewRenderer.CreateRender(
+            updateKind,
             StyleData!,
             SelectedString,
-            BoxComboBox.SelectedIndex,
-            FontComboBox.SelectedIndex,
-            ((float?)BoxScale.Value) ?? 0,
-            ((float?)FontScale.Value) ?? 0,
-            ((float?)PreviewScale.Value) ?? 0,
-            new() { Argb = InitialTextColor.Color.ToUInt32() },
-            new() { Argb = BoxColor.Color.ToUInt32() },
             EditableText.Text ?? "",
             DisplayEditableCanvas
         );
         UpdateBoxBounds();
     }
 
-    void OriginalText_OnTextChanging(object? sender, TextChangingEventArgs? e)
+    async void OriginalText_OnTextChanging(object? sender, TextChangingEventArgs? e) => await UpdateOriginalText(UpdatingEntry ? UpdateKind.None : UpdateKind.OriginalTextChanged);
+
+    async Task UpdateOriginalText(UpdateKind updateKind)
     {
         if (PreviewRenderer is null)
             return;
-        if (!UpdatingEntry && !OriginalText.IsReadOnly && FileData is not null)
+        //Console.WriteLine($"{_sw.ElapsedMilliseconds / 1000d:0.00}@redraw og->{updateKind}");
+        if (!UpdatingEntry && FileData is not null && updateKind is UpdateKind.OriginalTextChanged)
         {
+            //Console.WriteLine($"{_sw.ElapsedMilliseconds / 1000d:0.00}@updated og entry->{updateKind}");
             if (!FileData.AuthorList.Contains(AuthorName))
                 FileData.AuthorList.Add(AuthorName);
             SelectedString.LastEdited.AuthorId = FileData.AuthorList.IndexOf(AuthorName);
@@ -1303,15 +1398,9 @@ public partial class MainWindow : Window
             Title = "Dialogue Helper*";
         }
         PreviewRenderer.CreateRender(
+            updateKind,
             StyleData!,
             SelectedString,
-            BoxComboBox.SelectedIndex,
-            FontComboBox.SelectedIndex,
-            ((float?)BoxScale.Value) ?? 0,
-            ((float?)FontScale.Value) ?? 0,
-            ((float?)PreviewScale.Value) ?? 0,
-            new() { Argb = InitialTextColor.Color.ToUInt32() },
-            new() { Argb = BoxColor.Color.ToUInt32() },
             OriginalText.Text ?? "",
             DisplayOriginalCanvas
         );
@@ -1333,7 +1422,7 @@ public partial class MainWindow : Window
         {
             StyleData = new StyleParser(StyleData!.Folder);
             await StyleData.CompileCode();
-            InitializeCustomScript();
+            await InitializeCustomScript();
         }
         catch (Exception ex)
         {
@@ -1341,20 +1430,20 @@ public partial class MainWindow : Window
             sErr.MessageBlock.Text = sErr.MessageBlock.Text!.Replace("StyleName", SelectedStyle);
             await sErr.ShowDialog(this);
         }
-        PopulateCustomPropertiesValues();
+        await PopulateCustomPropertiesValues();
         UpdateCustomScriptFields();
         UpdatingEntry = true;
-        EditableText_OnTextChanging(null, null);
-        OriginalText_OnTextChanging(null, null);
+        await UpdateEditableText(UpdateKind.ReloadedStyle);
+        await UpdateOriginalText(UpdateKind.ReloadedStyle);
         UpdatingEntry = false;
 
         lWin.Close();
     }
 
-    void OnScaleValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
+    async void OnScaleValueChanged(object? sender, NumericUpDownValueChangedEventArgs e)
     {
-        EditableText_OnTextChanging(null, null);
-        OriginalText_OnTextChanging(null, null);
+        await UpdateEditableText(UpdateKind.ScaleChanged);
+        await UpdateOriginalText(UpdateKind.ScaleChanged);
     }
 
     async void SaveFile_OnClick(object? sender, RoutedEventArgs e)
@@ -1437,20 +1526,20 @@ public partial class MainWindow : Window
         lWin.Close();
     }
 
-    void BoxComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    async void BoxComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (BoxComboBox is not null)
             SelectedString?.BoxStyle = BoxComboBox.SelectedIndex;
-        EditableText_OnTextChanging(null, null);
-        OriginalText_OnTextChanging(null, null);
+        await UpdateEditableText(UpdateKind.SelectedBoxChanged);
+        await UpdateOriginalText(UpdateKind.SelectedBoxChanged);
     }
 
-    void FontComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    async void FontComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (FontComboBox is not null)
             SelectedString?.FontStyle = FontComboBox.SelectedIndex;
-        EditableText_OnTextChanging(null, null);
-        OriginalText_OnTextChanging(null, null);
+        await UpdateEditableText(UpdateKind.SelectedFontChanged);
+        await UpdateOriginalText(UpdateKind.SelectedFontChanged);
     }
 
     async void EntryTextBox_OnTextChanged(object? sender, TextChangedEventArgs? e) => await UpdateSearchFiltering();
@@ -1810,7 +1899,7 @@ public partial class MainWindow : Window
             EntryTreeView.SelectedItem = item;
             EntryTreeView.ScrollIntoView(item);
             item.Focus();
-            UpdateEtvItem(item);
+            await UpdateEtvItem(item);
             EntryTreeView_OnSelectionChanged(null, null);
 
             IsFileModified = true;
@@ -1877,7 +1966,7 @@ public partial class MainWindow : Window
             EntryTreeView.SelectedItem = tvi;
             EntryTreeView.ScrollIntoView(tvi);
             tvi.Focus();
-            UpdateEtvItem(parent);
+            await UpdateEtvItem(parent);
             EntryTreeView_OnSelectionChanged(null, null);
 
             IsFileModified = true;
@@ -1897,13 +1986,13 @@ public partial class MainWindow : Window
         if (EtvIndexes.TryGetValue(tvi, out var scS))
         {
             scS.MarkAsModified = true;
-            UpdateEtvItem(EtvParents[tvi]);
+            await UpdateEtvItem(EtvParents[tvi]);
         }
         else
         {
             foreach (var sc in FileData!.GetString(EtvKeys[tvi])!)
                 sc.MarkAsModified = true;
-            UpdateEtvItem(tvi);
+            await UpdateEtvItem(tvi);
         }
         IsFileModified = true;
         Title = "Dialogue Helper*";
@@ -1921,13 +2010,13 @@ public partial class MainWindow : Window
         if (EtvIndexes.TryGetValue(tvi, out var scS))
         {
             scS.MarkAsModified = false;
-            UpdateEtvItem(EtvParents[tvi]);
+            await UpdateEtvItem(EtvParents[tvi]);
         }
         else
         {
             foreach (var sc in FileData!.GetString(EtvKeys[tvi])!)
                 sc.MarkAsModified = false;
-            UpdateEtvItem(tvi);
+            await UpdateEtvItem(tvi);
         }
         IsFileModified = true;
         Title = "Dialogue Helper*";
@@ -1976,7 +2065,7 @@ public partial class MainWindow : Window
                     EtvIndexes.Remove(item);
                     EtvReverseIndexes.Remove(idx);
                     EtvParents.Remove(item);
-                    UpdateEtvItem(parent);
+                    await UpdateEtvItem(parent);
                 }
             }
             IsFileModified = true;
@@ -1991,10 +2080,10 @@ public partial class MainWindow : Window
             await new InfoWindow("You need to select an item before trying to mark it as modified.").ShowDialog(this);
             return;
         }
-        MarkItemAsModified(SelectedString, (TreeViewItem)EntryTreeView.SelectedItem, MarkAsModified.IsChecked ?? false, true);
+        await MarkItemAsModified(SelectedString, (TreeViewItem)EntryTreeView.SelectedItem, MarkAsModified.IsChecked ?? false, true);
     }
 
-    public void MarkItemAsModified(StringContainer sc, TreeViewItem si, bool markAsModified, bool modifySimilar)
+    public async Task MarkItemAsModified(StringContainer sc, TreeViewItem si, bool markAsModified, bool modifySimilar)
     {
         if (EtvKeys.ContainsKey(si))
             return;
@@ -2002,7 +2091,7 @@ public partial class MainWindow : Window
         IsFileModified = true;
         Title = "Dialogue Helper*";
         UpdateModifySimilarStrings(sc, si, modifySimilar);
-        UpdateEtvItem(EtvParents[si]);
+        await UpdateEtvItem(EtvParents[si]);
     }
 
     void AllowEditingOriginal_OnClick(object? sender, RoutedEventArgs e) => OriginalText.IsReadOnly = !AllowEditingOriginal.IsChecked!.Value;
@@ -2086,10 +2175,10 @@ public partial class MainWindow : Window
         return true;
     }
 
-    void InitialTextColor_OnColorChanged(object? sender, ColorChangedEventArgs e)
+    async void InitialTextColor_OnColorChanged(object? sender, ColorChangedEventArgs e)
     {
-        EditableText_OnTextChanging(null, null);
-        OriginalText_OnTextChanging(null, null);
+        await UpdateEditableText(UpdateKind.ColorChanged);
+        await UpdateOriginalText(UpdateKind.ColorChanged);
     }
 
     async void GroupEditorSelect_OnClick(object? sender, RoutedEventArgs e)
@@ -2183,7 +2272,7 @@ public partial class MainWindow : Window
                     f.AddString(k, sca);
                     foreach (var sc in scar)
                     {
-                        var scd = new StringContainer(sc)
+                        var scd = new StringContainer(sc.OutputFormatEntry())
                         {
                             EqStrings = [], // not needed
                             Id = f.LastStringId++,
@@ -2283,7 +2372,7 @@ public partial class MainWindow : Window
             }
         }
         iw.Close();
-        LoadStringToProject(final.OutputString());
+        await LoadStringToProject(final.OutputString());
         await new InfoWindow("Merged all files successfully!").ShowDialog(this);
     }
 
@@ -2467,7 +2556,7 @@ public partial class MainWindow : Window
         }
     }
 
-    async void SelectSearch_OnClick(object? sender, RoutedEventArgs e)
+    void SelectSearch_OnClick(object? sender, RoutedEventArgs e)
     {
         EntryTextBox.Focus();
         EntryTextBox.SelectionStart = EntryTextBox.Text?.Length ?? 0;

@@ -37,7 +37,10 @@ public class Template : StyleScript
 
     public override Task<IEnumerable<CustomTool>> RegisterCustomTools()
     {
-        return Task.FromResult<IEnumerable<CustomTool>>([new("Custom Tool", CustomToolTest), new("File Picker Example", CustomToolFileTest)]);
+        return Task.FromResult<IEnumerable<CustomTool>>([
+            new("Custom Tool", null, CustomToolTest),
+            new("File Picker Example", "Tooltip example!", CustomToolFileTest)
+        ]);
     }
 
     async Task CustomToolFileTest(CustomToolWindowHandler wh)
