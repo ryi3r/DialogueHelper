@@ -103,7 +103,7 @@ public interface ICustomPropertyList : ICustomProperty
     int DefaultIndex { get; }
 }
 
-public class CustomPropertyList<T>(string visualName, string tooltip, string name, List<T> data, List<string?>? itemTooltips, T? defaultValue = default, int defaultIndexValue = -1, bool readOnly = false) : CustomProperty<int>(visualName, tooltip, name, -1, readOnly), ICustomPropertyList
+public class CustomPropertyList<T>(string visualName, string? tooltip, string name, List<T> data, List<string?>? itemTooltips, T? defaultValue = default, int defaultIndexValue = -1, bool readOnly = false) : CustomProperty<int>(visualName, tooltip, name, -1, readOnly), ICustomPropertyList
     where T : IParsable<T>
 {
     IList? ICustomPropertyList.Data => Data;
