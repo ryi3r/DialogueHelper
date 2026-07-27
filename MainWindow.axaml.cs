@@ -401,7 +401,7 @@ public partial class MainWindow : Window
         {
             FileData = fData;
             lWin.Text.Text = "Caching base entries...";
-            lWin.ProgressBar.Value = 0.0;
+            lWin.ProgressBar.Value = 0d;
             lWin.ProgressBar.Maximum = FileData.GetCountString();
 
             var eqStr = new Dictionary<string, List<StringContainer>>();
@@ -2128,8 +2128,6 @@ public partial class MainWindow : Window
         };
         await fi.ShowDialog(this);
     }
-
-    void SimilarStringsPanel_OnSizeChanged(object? sender, SizeChangedEventArgs e) => SimilarStringsPanel.MaxHeight = double.Max(SimilarStringsBase.Bounds.Height - (SimilarStringsTitle.Bounds.Height - 7), 0);
 
     async void SimilarStringsPanel_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {

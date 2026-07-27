@@ -132,8 +132,9 @@ public class Deltarune : StyleScript
             new("Import from json file", null, ImportFromJson, "Ctrl+Alt+I"),
             new("Export to json file", null, ExportToJson, "Ctrl+Alt+E"),
             new("Verify dialogues integrity", null, VerifyFileDialogueIntegrity, "Ctrl+Shift+P"),
-            new("Assign String Keys to all Entries", null, AssignStringKeyToAll),
-            new("Update Dialogues", "Update your old .dh file to contain changes from newer game versions.", UpdateDialogues)
+            new("Update Dialogues", "Update your old .dh file to contain changes from newer game versions.", UpdateDialogues, "Ctrl+Shift+U"),
+            new("Assign String Keys to all Entries", "Update your old .dh translation file to contain all keys.", AssignStringKeyToAll),
+            new("Reorganize Dialogues", "Reorder your old .dh file dialogue order to ensure accuracy with the base json.", ReorderDialogues),
         ]);
     }
 
@@ -230,7 +231,7 @@ public class Deltarune : StyleScript
                 return;
 
             var file = File.Create($"{wh.GetStylePath()}/input.json");
-            var (data, sc, warnedKeys) = ExportJson(baseJson, wh, lw);
+            var (data, _, warnedKeys) = ExportJson(baseJson, wh, lw);
             await JsonSerializer.SerializeAsync(file, data, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             await file.DisposeAsync();
             if (await DataWinToJsonPrompt(wh, lw, targetPath, true) is null)
@@ -320,7 +321,7 @@ public class Deltarune : StyleScript
             return;
         try
         {
-            var (data, sc, warnedKeys) = ExportJson(output, wh, lw);
+            var (data, _, warnedKeys) = ExportJson(output, wh, lw);
             var stream = await fSave.OpenWriteAsync();
             await JsonSerializer.SerializeAsync(stream, data, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             await stream.DisposeAsync();
@@ -386,7 +387,7 @@ public class Deltarune : StyleScript
             var parsed = new ParsedString(value, Boxes.Overworld);
             if (ogParsed.ParseWarns.Count != parsed.ParseWarns.Count)
             {
-                sb.AppendLine($"Parse warnings for {key} (ID `{sc[key].Id}`) wasn't the same for the original ({ogParsed.ParseWarns.Count}) to the translated ({parsed.ParseWarns.Count}) text.\n");
+                sb.AppendLine($"Parse warnings for {key} (ID `{sc[key].Cont.Id}`) wasn't the same for the original ({ogParsed.ParseWarns.Count}) to the translated ({parsed.ParseWarns.Count}) text.\n");
 
                 sb.AppendLine("|Old|New|\n|---|---|");
                 var ogParseWarns = ogParsed.ParseWarns.Select(x => (x.Key, x.Value)).ToArray();
@@ -422,7 +423,7 @@ public class Deltarune : StyleScript
             }
             if (!valid)
             {
-                sb.AppendLine($"Invalid events found for `{key}` (ID `{sc[key].Id}`) that weren't the same for the original ({ogParse.Length}) to the translated ({parse.Length}) text:\n");
+                sb.AppendLine($"Invalid events found for `{key}` (ID `{sc[key].Cont.Id}`) that weren't the same for the original ({ogParse.Length}) to the translated ({parse.Length}) text:\n");
                 sb.AppendLine("|Old|New|\n|---|---|");
                 for (var i = 0; i < int.Max(parse.Length, ogParse.Length); i++)
                 {
@@ -526,10 +527,103 @@ public class Deltarune : StyleScript
 
     public async Task UpdateDialogues(CustomToolWindowHandler wh)
     {
-        // todo: do this (i'm eepy)
+        if (!await wh.EnsureFileOpen())
+            return;
+        var oldOutput = await DataWinToJsonPrompt(wh, title: "Select the old game data file");
+        if (oldOutput is null)
+            return;
+        var newOutput = await DataWinToJsonPrompt(wh, title: "Select the new game data file");
+        if (newOutput is null)
+            return;
+        var resetEdited = await wh.ShowDialog<bool>(new QuestionWindow("Do you want to reset the texts that were changed between the 2 game versions to rectify the translation?"));
+        var fd = wh.GetLoadedFileData()!;
+        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
+        wh.Show(lw);
+        try
+        {
+            var oldHeaders = CalculateHeaders(oldOutput.Keys);
+            var oldEj = ExportJson(oldOutput, wh, lw, fd, oldHeaders);
+            var newHeaders = CalculateHeaders(oldOutput.Keys);
+            var newEj = ExportJson(newOutput, wh, lw, fd, newHeaders);
+            var allKeys = newOutput.Keys.ToList();
+            foreach (var k in oldOutput.Keys)
+            {
+                if (allKeys.Contains(k))
+                    continue;
+                allKeys.Add(k);
+            }
+            foreach (var k in allKeys)
+            {
+                var oldGot = oldOutput.TryGetValue(k, out var oldValue);
+                var newGot = newOutput.TryGetValue(k, out var newValue);
+                if (newGot && !oldGot)
+                {
+                    var secKey = newHeaders.First(x => x.Value.Contains(k)).Key;
+                    if (!fd.ContainsKeyString(secKey))
+                        fd.AddString(secKey, []);
+                    fd.GetString(secKey)!.Add(new()
+                    {
+                        Id = fd.LastStringId++,
+                        OriginalText = newValue!,
+                    });
+                }
+                else if (oldGot && !newGot)
+                {
+                    // todo finish this thing idk
+                }
+            }
+        }
+        finally
+        {
+            lw.Close();
+        }
     }
 
-    public async Task<OrderedDictionary<string, string>?> DataWinToJsonPrompt(CustomToolWindowHandler wh, LoadingWindow? lw = null, string? path = null, bool import = false)
+    public async Task ReorderDialogues(CustomToolWindowHandler wh)
+    {
+        if (!await wh.EnsureFileOpen())
+            return;
+        var output = await DataWinToJsonPrompt(wh);
+        if (output is null)
+            return;
+        var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
+        wh.Show(lw);
+        try
+        {
+            await wh.LoadRaw(ReorderFileData(wh, lw, output), lw);
+        }
+        finally
+        {
+            lw.Close();
+        }
+    }
+
+    public FileData ReorderFileData(CustomToolWindowHandler wh, LoadingWindow lw, OrderedDictionary<string, string> json, FileData? fd = null, Dictionary<string, List<string>>? headers = null)
+    {
+        fd ??= wh.GetLoadedFileData()!;
+        headers ??= CalculateHeaders(json.Keys);
+        var ej = ExportJson(json, wh, lw, fd, headers);
+        var conts = fd.IterAllStrings().ToList();
+        var fdFinal = new FileData();
+        foreach (var (entry, keys) in headers)
+        {
+            if (!fdFinal.ContainsKeyString(entry))
+                fdFinal.AddString(entry, []);
+            foreach (var key in keys)
+            {
+                if (ej.Container.TryGetValue(key, out var sc))
+                {
+                    conts.Remove(sc.Cont);
+                    fdFinal.GetString(entry)!.Add(sc.Cont);
+                }
+            }
+        }
+        if (conts.Count > 0)
+            fdFinal.InsertString(0, "__NO_KEY_FOUND__", conts);
+        return fdFinal;
+    }
+
+    public async Task<OrderedDictionary<string, string>?> DataWinToJsonPrompt(CustomToolWindowHandler wh, LoadingWindow? lw = null, string? path = null, bool importToDataWin = false, string? title = "")
     {
         if (!await DownloadUndertaleModToolCli(wh))
             return null;
@@ -537,7 +631,7 @@ public class Deltarune : StyleScript
         {
             var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
             {
-                Title = "Select the game data file",
+                Title = title ?? "Select the game data file",
                 FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["data.win"] }, new("All files") { Patterns = ["*"] }],
             });
             if (f.Count <= 0)
@@ -545,7 +639,7 @@ public class Deltarune : StyleScript
             path = f[0].Path.LocalPath.Replace("\"", "\\\"");
         }
         var args = $"load \"{path}\" -s ../";
-        if (!import)
+        if (!importToDataWin)
         {
             File.Delete($"{wh.GetStylePath()}/output.json");
             args += "ExportStringsJson.csx";
@@ -602,13 +696,13 @@ public class Deltarune : StyleScript
             var stderr = await proc.StandardError.ReadToEndAsync();
 
             Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
-            if (proc.ExitCode != 0 || stderr.Trim().Length > 0 || (!import && !File.Exists($"{wh.GetStylePath()}/output.json")))
+            if (proc.ExitCode != 0 || stderr.Trim().Length > 0 || (!importToDataWin && !File.Exists($"{wh.GetStylePath()}/output.json")))
             {
                 lw.Close();
                 await wh.ShowDialog(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Text file") { Patterns = ["*.txt"] }]));
                 return null;
             }
-            if (import)
+            if (importToDataWin)
                 return [];
             else
             {
@@ -621,7 +715,7 @@ public class Deltarune : StyleScript
         }
         finally
         {
-            File.Delete($"{wh.GetStylePath()}/{(!import ? "output" : "input")}.json");
+            File.Delete($"{wh.GetStylePath()}/{(!importToDataWin ? "output" : "input")}.json");
             if (autohide)
                 lw.Close();
         }
@@ -630,6 +724,8 @@ public class Deltarune : StyleScript
     public Dictionary<string, List<string>> CalculateHeaders(IEnumerable<string> keys)
     {
         var headers = new Dictionary<string, List<string>>();
+        var lastHeader = "";
+        var targetHeader = "";
         foreach (var key in keys)
         {
             if (key == "date")
@@ -640,8 +736,21 @@ public class Deltarune : StyleScript
             if (pos == -1)
                 throw new InvalidDataException($"Unable to make a string group of {key}");
             var header = key[..pos];
-            headers.TryAdd(header, []);
-            headers[header].Add(key);
+            if (header != lastHeader)
+            {
+                lastHeader = header;
+                if (headers.ContainsKey(header))
+                {
+                    var i = 1;
+                    while (headers.ContainsKey($"{header}+{i}"))
+                        i++;
+                    targetHeader = $"{header}+{i}";
+                }
+                else
+                    targetHeader = header;
+            }
+            headers.TryAdd(targetHeader, []);
+            headers[targetHeader].Add(key);
         }
         return headers;
     }
@@ -665,15 +774,15 @@ public class Deltarune : StyleScript
         await wh.LoadRaw(fd);
     }
 
-    public record ExportedJson(OrderedDictionary<string, string> Data, OrderedDictionary<string, StringContainer> Container, List<(string key, StringContainer? cont, WarningKind warnKind)> WarnedKeys);
+    public record ExportedJson(OrderedDictionary<string, string> Data, Dictionary<string, (string Entry, StringContainer Cont)> Container, List<(string key, StringContainer? cont, WarningKind warnKind)> WarnedKeys);
 
-    public ExportedJson ExportJson(OrderedDictionary<string, string> json, CustomToolWindowHandler wh, LoadingWindow lWin)
+    public ExportedJson ExportJson(OrderedDictionary<string, string> json, CustomToolWindowHandler wh, LoadingWindow lWin, FileData? file = null, Dictionary<string, List<string>>? headers = null)
     {
         var data = new OrderedDictionary<string, string> { ["date"] = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString() };
         var warnedKeys = new List<(string, StringContainer?, WarningKind)>();
-        var scUns = new Dictionary<(string key, string jsonKey), StringContainer>();
-        var file = wh.GetLoadedFileData()!;
-        var headers = CalculateHeaders(json.Keys);
+        var scUns = new Dictionary<string, (string BaseKey, StringContainer Cont)>();
+        file ??= wh.GetLoadedFileData()!;
+        headers ??= CalculateHeaders(json.Keys);
         lWin.Text.Text = "Processing strings...";
         var count = 0;
         foreach (var c in file.GetStringValues())
@@ -688,14 +797,14 @@ public class Deltarune : StyleScript
         lWin.ProgressBar.IsIndeterminate = false;
         string? GetContKey(string key, StringContainer cont)
         {
-            var targetKey = (string?)null;
+            string? targetKey = null;
             if (cont.Key is not null)
                 targetKey = cont.Key;
             else if (headers.TryGetValue(key, out var keys))
                 targetKey = keys.FirstOrDefault(x => x is not null && !data.ContainsKey(x) && json[x] == cont.OriginalText, null);
             return targetKey;
         }
-        // todo: fix ordering (i'm eepy)
+        var preorder = new Dictionary<string, string>();
         foreach (var (key, conts) in file.GetStringKeysValues())
         {
             foreach (var cont in conts)
@@ -703,13 +812,13 @@ public class Deltarune : StyleScript
                 var tk = GetContKey(key, cont);
                 if (tk is not null)
                 {
-                    if (!data.TryAdd(tk, cont.Text ?? cont.OriginalText))
+                    if (!preorder.TryAdd(tk, cont.Text ?? cont.OriginalText))
                     {
                         warnedKeys.Add((key, cont, WarningKind.DuplicatedKey));
                         Console.WriteLine($"duplicate key found for {cont.Id} ({key}) with text \"{cont.OriginalText}\" (edited: \"{cont.Text}\")!");
                     }
                     else
-                        scUns.Add((key, tk), cont);
+                        scUns.Add(tk, (key, cont));
                 }
                 else
                 {
@@ -721,35 +830,22 @@ public class Deltarune : StyleScript
         }
         foreach (var k in json.Keys.SkipWhile(x => x == "date"))
         {
-            if (scUns.Keys.Any(x => x.jsonKey == k))
+            if (scUns.Keys.Contains(k))
                 continue;
             warnedKeys.Add((k, null, WarningKind.MissingKey));
         }
-        var keys = scUns.Keys.ToArray();
-        Array.Sort(keys, (a, b) =>
+        foreach (var k in json.Keys.SkipWhile(x => x == "date"))
         {
-            var valueA = scUns[a];
-            var valueB = scUns[b];
-            var keyA = GetContKey(a.key, valueA);
-            var keyB = GetContKey(b.key, valueB);
-            if (keyA is null && keyB is null)
-                return valueA.Id.CompareTo(valueB.Id);
-            else
-            {
-                if (keyB is null)
-                    return -1;
-                if (keyA is null)
-                    return 1;
-                var r = keyA.CompareTo(keyB);
-                if (r == 0)
-                    return valueA.Id.CompareTo(valueB.Id);
-                return r;
-            }
-        });
-        var sc = new OrderedDictionary<string, StringContainer>();
-        foreach (var e in keys)
-            sc.Add(e.jsonKey, scUns[e]);
-        return new(data, sc, warnedKeys);
+            if (preorder.TryGetValue(k, out var v))
+                data.Add(k, v);
+        }
+        // ensure that nothing is missing
+        foreach (var (k, v) in preorder)
+        {
+            if (!data.ContainsKey(k))
+                data.Add(k, v);
+        }
+        return new(data, scUns, warnedKeys);
     }
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
@@ -1226,6 +1322,8 @@ public class ParsedString
         var sb = new StringBuilder();
         var tSpace = -1;
         var cPos = 0;
+        var asteriskCheck = false;
+        var lastIsNewLine = true;
         for (var i = 0; i < trimLen; i++)
         {
             var @char = text[i];
@@ -1396,12 +1494,16 @@ public class ParsedString
             var dk = (Deltarune.DialogueKinds)Deltarune.DialogueType.SelectedIndex;
             if (box is not Deltarune.Boxes.CMenuDescription and not Deltarune.Boxes.CMenuCharacterDescription and not Deltarune.Boxes.ShopItemDescription && dk is not Deltarune.DialogueKinds.PlatformerAct and not Deltarune.DialogueKinds.DynamicWordwarp and not Deltarune.DialogueKinds.None)
             {
+                if (lastIsNewLine && text[i] == '*')
+                    asteriskCheck = true;
+                lastIsNewLine = false;
                 if (@char == ' ')
                     tSpace = i + 1;
                 else if (Deltarune.IsNewlineSafe(i, text))
                 {
                     tSpace = -1;
                     cPos = 0;
+                    lastIsNewLine = true;
                 }
                 var pt = (Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex;
                 var limit = dk switch
@@ -1417,12 +1519,16 @@ public class ParsedString
                         _ => 33,
                     }
                 };
-                //Console.WriteLine($"cPos:{cPos},i:{i}");
-                if (++cPos >= limit)
+                //Console.WriteLine($"cPos:{cPos},i:{i}->{text[i]}");
+                while (cPos++ >= limit)
                 {
-                    //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}");
+                    //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}->{text[i]},a:{asteriskCheck}");
                     ActAsNewline.Add(tSpace > 2 ? tSpace : i);
-                    cPos = tSpace > 2 ? i - tSpace : 1;
+                    cPos = tSpace > 2 ? i - tSpace : 0;
+                    if (asteriskCheck)
+                        cPos += 2;
+                    tSpace = -1;
+                    //Console.WriteLine($"new cPos:{cPos}");
                 }
             }
             sb.Append(@char);
