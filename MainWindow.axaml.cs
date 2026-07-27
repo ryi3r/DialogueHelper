@@ -1392,6 +1392,24 @@ public partial class MainWindow : Window
                     }
                     break;
 
+                case not null when tool.Type == typeof(ICustomPropertyList):
+                    {
+                        var dropdown = (ICustomPropertyList)tool;
+                        var node = new ComboBox
+                        {
+                            ItemsSource = dropdown.Data,
+                            SelectedIndex = int.Clamp(dropdown.SelectedIndex, 0, dropdown.Data!.Count - 1),
+                            IsEnabled = !tool.ReadOnly,
+                        };
+                        node.SelectionChanged += (_, _) =>
+                        {
+                            tool.StringToValue(node.SelectedIndex.ToString());
+                        };
+                        tool.Node = node;
+                        item.Children.Add(node);
+                    }
+                    break;
+                
                 case not null when tool.Type == typeof(Color):
                     {
                         var col = (Color)tool.Value!;
