@@ -740,7 +740,8 @@ public class Deltarune : StyleScript
             if (pos == -1)
                 pos = key.LastIndexOf('_');
             if (pos == -1)
-                throw new InvalidDataException($"Unable to make a string group of {key}");
+                // throw new InvalidDataException($"Unable to make a string group of {key}");
+                pos = 0;
             var header = key[..pos];
             if (header != lastHeader)
             {

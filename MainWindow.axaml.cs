@@ -274,8 +274,14 @@ public partial class MainWindow : Window
 	        return;
 	    }
 	    
-	    if (!RestrictTabNavigation) {
-	        return;
+	    if (!RestrictTabNavigation) 
+        {
+            if (TryGetFocusedTargetTextBox(out var textBox))
+            {
+                InsertTabCharacter(textBox);
+                e.Handled = true;
+            }
+            return;
 	    }
 
 	    var focused = GetTopLevel(this)?.FocusManager.GetFocusedElement() as Visual;
@@ -298,6 +304,32 @@ public partial class MainWindow : Window
 	        }
 	    });
 	}
+    
+    private bool TryGetFocusedTargetTextBox(out TextBox textBox)
+    {
+        var focused = GetTopLevel(this)?.FocusManager.GetFocusedElement() as Visual;
+        foreach (var candidate in new[] { EditableText, OriginalText, CommentText }) {
+            if (focused is null || (!Equals(focused, candidate) && !candidate.IsVisualAncestorOf(focused)))
+            {
+                continue;
+            }
+            textBox = candidate;
+            return true;
+        }
+        textBox = null!;
+        return false;
+    }
+
+    private static void InsertTabCharacter(TextBox textBox)
+    {
+        if (textBox.IsReadOnly)
+            return;
+        var text = textBox.Text ?? "";
+        var start = Math.Min(textBox.SelectionStart, textBox.SelectionEnd);
+        var end = Math.Max(textBox.SelectionStart, textBox.SelectionEnd);
+        textBox.Text = text[..start] + "\t" + text[end..];
+        textBox.CaretIndex = start + 1;
+    }
 	
 	public void UpdateRestrictTabIndicator() =>
 	    RestrictTabIndicator.Text = RestrictTabNavigation ? "Tab restricted mode (Ctrl+Shift+Tab): ON" : "Tab restricted mode (Ctrl+Shift+Tab): OFF";
