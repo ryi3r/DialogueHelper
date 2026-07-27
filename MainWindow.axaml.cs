@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -8,6 +9,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Input;
@@ -28,6 +30,7 @@ using SkiaSharp;
 using Views;
 using static DialogueHelper.PreviewRenderer.PreviewRenderer;
 using FileInfo = DialogueHelper.Views.FileInfo;
+using Avalonia.VisualTree;  // needed for MainWindow_OnKeyDown
 
 namespace DialogueHelper;
 
@@ -42,6 +45,7 @@ public partial class MainWindow : Window
     public List<ICustomProperty> CustomProperties = [];
     public List<CustomTool> CustomTools = [];
     public readonly Dictionary<string, SKBitmap> LoadedImages = [];
+    public readonly Dictionary<(FontMetadata Font, char Char), SKBitmap> RasterizedGlyphs = [];
     public bool ScriptNeedsInitialization;
     public string AuthorName = "";
     public string AuthorGroup = "";
@@ -66,10 +70,18 @@ public partial class MainWindow : Window
     public List<Image> BgndImages = [];
     internal string _lastBgndPath = "";
     public bool RedrawRenderer;
+    public readonly SpellCheckerConfig? SpellCheckerConfig;
+    public bool RestrictTabNavigation;
+    public string? UiFontFamily;
+    public double UiFontSize = 14;
+    public string DictionaryAffPath = "";
+    public string DictionaryDicPath = "";
+
 
     public MainWindow()
     {
         InitializeComponent();
+        AddHandler(KeyDownEvent, MainWindow_OnKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
         if (Design.IsDesignMode)
             return;
         PreviewRenderer = new(this);
@@ -179,8 +191,11 @@ public partial class MainWindow : Window
             DictionariesFolder = dictPath,
             EnabledLanguages = [.. Directory.EnumerateFiles(dictPath).Where(x => x.EndsWith(".dic")).Select(x => x[(x.Replace('\\', '/').LastIndexOf('/') + 1)..x.LastIndexOf(".dic")])],
         };
+        SpellCheckerConfig = conf;
         new TextBoxSpellChecker(conf).Initialize(EditableText);
         new TextBoxSpellChecker(conf).Initialize(OriginalText);
+        EditableText.PropertyChanged += TextBox_OnSelectionPropertyChanged;
+        OriginalText.PropertyChanged += TextBox_OnSelectionPropertyChanged;
         Task.Run(async () =>
         {
             // todo: should this be a setting?
@@ -238,6 +253,77 @@ public partial class MainWindow : Window
             }
         });
     }
+    
+    private void MainWindow_OnKeyDown(object? sender, KeyEventArgs e) {
+	    if (e.Key != Key.Tab) {
+	        return;
+	    }
+	    
+	    var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+	    var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+	    
+	    if (ctrl && shift) {
+	        RestrictTabNavigation = !RestrictTabNavigation;
+	        SaveSettings();
+	        UpdateRestrictTabIndicator();
+	        e.Handled = true;
+	        return;
+	    }
+	    
+	    if (ctrl || shift) {
+	        return;
+	    }
+	    
+	    if (!RestrictTabNavigation) {
+	        return;
+	    }
+
+	    var focused = GetTopLevel(this)?.FocusManager.GetFocusedElement() as Visual;
+	    var focusInTree = focused is not null && (Equals(focused, EntryTreeView) || EntryTreeView.IsVisualAncestorOf(focused));
+
+	    e.Handled = true;
+
+	    Dispatcher.UIThread.Post(() => {
+	        if (focusInTree) {
+	            EditableText.Focus(NavigationMethod.Tab);
+	            // move the cursor to the beginning, because that makes sense when translating without using the moue
+	            EditableText.CaretIndex = 0;
+	            EditableText.SelectionStart = 0;
+	            EditableText.SelectionEnd = 0;
+	        } else {
+	            var container = EntryTreeView.SelectedItem is not null
+	                ? EntryTreeView.TreeContainerFromItem(EntryTreeView.SelectedItem)
+	                : null;
+	            (container as Control ?? EntryTreeView).Focus(NavigationMethod.Tab);
+	        }
+	    });
+	}
+	
+	public void UpdateRestrictTabIndicator() =>
+	    RestrictTabIndicator.Text = RestrictTabNavigation ? "Tab restricted mode (Ctrl+Shift+Tab): ON" : "Tab restricted mode (Ctrl+Shift+Tab): OFF";
+	
+	public void ApplyEditorFont() {
+	    if (!string.IsNullOrEmpty(UiFontFamily)) {
+	        var fontFamily = new FontFamily(UiFontFamily);
+	        EditableText.FontFamily = fontFamily;
+	        OriginalText.FontFamily = fontFamily;
+	        CommentText.FontFamily = fontFamily;
+	    } else {
+	        EditableText.ClearValue(FontFamilyProperty);
+	        OriginalText.ClearValue(FontFamilyProperty);
+	        CommentText.ClearValue(FontFamilyProperty);
+	    }
+
+	    if (UiFontSize > 0) {
+	        EditableText.FontSize = UiFontSize;
+	        OriginalText.FontSize = UiFontSize;
+	        CommentText.FontSize = UiFontSize;
+	    } else {
+	        EditableText.ClearValue(FontSizeProperty);
+	        OriginalText.ClearValue(FontSizeProperty);
+	        CommentText.ClearValue(FontSizeProperty);
+	    }
+	}
 
     public async Task LoadBackground()
     {
@@ -560,6 +646,10 @@ public partial class MainWindow : Window
             StringKey.IsUndoEnabled = false;
             StringKey.Text = sc.Key;
             StringKey.IsUndoEnabled = true;
+            CommentText.IsUndoEnabled = false;
+            CommentText.Text = sc.Comment;
+            CommentText.IsUndoEnabled = true;
+
 
             await PopulateCustomPropertiesValues();
             if (lastSel.EqStrings != sc.EqStrings)
@@ -693,6 +783,18 @@ public partial class MainWindow : Window
     {
         var settings = new Settings(this);
         await settings.ShowDialog(this);
+        
+        if (StyleData?.Script is not null && SelectedStyle is not null && StyleSettings.TryGetValue(SelectedStyle, out var savedProps))
+        {
+            var liveProps = await StyleData.Script.RegisterCustomSettings();
+            foreach (var live in liveProps)
+            {
+                var saved = savedProps.FirstOrDefault(p => p.Name == live.Name);
+                if (saved is not null)
+                    live.StringToValue(saved.ValueToString());
+            }
+        }
+
         if (ScriptNeedsInitialization)
         {
             await InitializeCustomScript();
@@ -746,6 +848,23 @@ public partial class MainWindow : Window
                             StyleSettings[folder].Add(new CustomProperty<string>("<null>", null, WebUtility.UrlDecode(spl[0]), WebUtility.UrlDecode(spl[1])));
                         }
                         break;
+                    case "RestrictTab":
+                        RestrictTabNavigation = f[i] == "1";
+                        break;
+                    case "DictPaths":
+                        if (DictionaryAffPath.Length == 0)
+                            DictionaryAffPath = f[i];
+                        else
+                            DictionaryDicPath = f[i];
+                        break;
+                    case "EditorFontFamily":
+                        UiFontFamily = f[i].Length > 0 ? f[i] : null;
+                        break;
+                    case "EditorFontSize":
+                        if (double.TryParse(f[i], CultureInfo.InvariantCulture, out var parsedSize))
+                            UiFontSize = parsedSize;
+                        break;
+
                 }
             }
             i++;
@@ -775,6 +894,19 @@ public partial class MainWindow : Window
             l.Add($"StyleSettings@@{WebUtility.UrlEncode(ss.Key)}");
             l.AddRange(ss.Value.Select(prop => $"{WebUtility.UrlEncode(prop.Name)}@@{WebUtility.UrlEncode(prop.ValueToString())}"));
             l.Add("@@end@@");
+            l.Add("RestrictTab@@");
+            l.Add(RestrictTabNavigation ? "1" : "0");
+            l.Add("@@end@@");
+            l.Add("EditorFontFamily@@");
+            l.Add(UiFontFamily ?? "");
+            l.Add("@@end@@");
+            l.Add("EditorFontSize@@");
+            l.Add(UiFontSize.ToString(CultureInfo.InvariantCulture));
+            l.Add("@@end@@");
+            l.Add("DictPaths@@");
+            l.Add(DictionaryAffPath);
+            l.Add(DictionaryDicPath);
+            l.Add("@@end@@");
         }
         File.WriteAllLines($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt", l);
     }
@@ -799,6 +931,8 @@ public partial class MainWindow : Window
         MiddleStackPanel.RowDefinitions[0].Height = new GridLength(235 * ClientSize.Height / 720);
         MiddleStackPanel.RowDefinitions[2].Height = new GridLength(230 * ClientSize.Height / 720);
         await LoadSettings();
+        UpdateRestrictTabIndicator();
+        ApplyEditorFont();
         if (SelectedStyle is null)
         {
             w.Hide();
@@ -864,6 +998,10 @@ public partial class MainWindow : Window
             img.Dispose();
         LoadedImages.Clear();
 
+        foreach (var img in RasterizedGlyphs.Values)
+            img.Dispose();
+        RasterizedGlyphs.Clear();
+        
         try
         {
             await (StyleData!.Script?.Init(new(this, StyleData)) ?? Task.CompletedTask);
@@ -930,22 +1068,7 @@ public partial class MainWindow : Window
                         // invalid user hotkey
                     }
                 }
-                item.Click += async (_, _) =>
-                {
-                    try
-                    {
-                        await tool.Func(new CustomToolWindowHandler(this, StyleData!));
-                    }
-                    catch (Exception ex)
-                    {
-                        var se = new StyleError
-                        {
-                            MessageBlock = { Text = "The custom tool has encountered an error" },
-                            ErrorBox = { Text = ex.ToString() },
-                        };
-                        await se.ShowDialog(this);
-                    }
-                };
+                item.Click += async (_, _) => await RunCustomTool(tool);
                 CustomToolsMenu.Items.Add(item);
             }
         }
@@ -956,6 +1079,23 @@ public partial class MainWindow : Window
         {
             CustomPropertiesNone.IsVisible = false;
             UpdateCustomProperties(CustomPropertiesPanel, CustomProperties.AsEnumerable(), true);
+        }
+    }
+    
+    private async Task RunCustomTool(CustomTool tool)
+    {
+        try
+        {
+            await tool.Func(new CustomToolWindowHandler(this, StyleData!));
+        }
+        catch (Exception ex)
+        {
+            var se = new StyleError
+            {
+                MessageBlock = { Text = "The custom tool has encountered an error" },
+                ErrorBox = { Text = ex.ToString() },
+            };
+            await se.ShowDialog(this);
         }
     }
 
@@ -1406,6 +1546,14 @@ public partial class MainWindow : Window
         );
         UpdateBoxBounds();
     }
+    
+    void CommentText_OnTextChanging(object? sender, TextChangingEventArgs? e) {
+        if (SelectedString is not null && !UpdatingEntry && FileData is not null && e is not null) {
+            SelectedString.Comment = CommentText.Text ?? "";
+            IsFileModified = true;
+            Title = "Dialogue Helper*";
+        }
+    }
 
     async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
     {
@@ -1445,9 +1593,46 @@ public partial class MainWindow : Window
         await UpdateEditableText(UpdateKind.ScaleChanged);
         await UpdateOriginalText(UpdateKind.ScaleChanged);
     }
+    
+    void TextBox_OnSelectionPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property != TextBox.SelectionStartProperty && e.Property != TextBox.SelectionEndProperty)
+            return;
+        if (sender is not TextBox textBox)
+            return;
+	
+        var length = Math.Abs(textBox.SelectionEnd - textBox.SelectionStart);
+        SelectionCharCountLabel.Text = length > 0 ? $"{length} character{(length == 1 ? "" : "s")} selected" : "";
+    }
+	    
+    void ShowSpellcheckUnderline_OnClick(object? sender, RoutedEventArgs e)
+    {
+        EditableText_OnTextChanging(null, null);
+        OriginalText_OnTextChanging(null, null);
+    }
+
 
     async void SaveFile_OnClick(object? sender, RoutedEventArgs e)
     {
+        // if you want your Style to use one of it's CustomTool as the default save,
+        // set its hotkey to "Ctrl+Alt+S"
+        var tool = CustomTools.FirstOrDefault(t => t.HotKey == "Ctrl+Alt+S");
+        if (tool is not null) {
+            try {
+                await RunCustomTool(tool);
+                IsFileModified = false;
+                Title = "Dialogue Helper";
+            } catch (Exception ex) {
+                var se = new StyleError {
+                    Title = "Save error",
+                    MessageBlock = { Text = "DialogueHelper has encountered an error while saving a file" },
+                    ErrorBox = { Text = ex.ToString() }
+                };
+                await se.ShowDialog(this);
+            }
+            return;
+        }
+
         if (LastSavePath is null || LastSavePath.Length == 0)
         {
             SaveFileAs_OnClick(sender, e);
@@ -1657,6 +1842,12 @@ public partial class MainWindow : Window
                 .Where(m => m.StartsWith("Key:", StringComparison.InvariantCultureIgnoreCase))
                 .Select(m => m[4..])
                 .ToList();
+        
+        var commentText = matches
+            .Where(m => m.StartsWith("Comment:", StringComparison.InvariantCultureIgnoreCase))
+            .Select(m => m[8..])
+            .ToList();
+
 
         var searchText = matches
                 .Where(m =>
@@ -1668,6 +1859,7 @@ public partial class MainWindow : Window
                     && !m.StartsWith("Id:", StringComparison.InvariantCultureIgnoreCase)
                     && !m.StartsWith("Key:", StringComparison.InvariantCultureIgnoreCase)
                     && !m.StartsWith("Exact:", StringComparison.InvariantCultureIgnoreCase)
+                    && !m.StartsWith("Comment:", StringComparison.InvariantCultureIgnoreCase)
                 ).ToList();
 
         foreach (var value in delta ?? EtvTargetChildren)
@@ -1696,6 +1888,13 @@ public partial class MainWindow : Window
                         SearchExactness.Exact => !item.OriginalText.Equals(ogText, targetCasing),
                         _ => !item.OriginalText.Contains(ogText, targetCasing),
                     }) || searchOgText.Any(ogText => ogText.Length == 0 && item.OriginalText.Length > 0))
+                        goto NotFound;
+                    if (commentText.Any(comment => searchExact switch {
+                        SearchExactness.StartsWith => !(item.Comment ?? "").StartsWith(comment, targetCasing),
+                        SearchExactness.EndsWith => !(item.Comment ?? "").EndsWith(comment, targetCasing),
+                        SearchExactness.Exact => !(item.Comment ?? "").Equals(comment, targetCasing),
+                        _ => !(item.Comment ?? "").Contains(comment, targetCasing),
+                    }) || commentText.Any(comment => comment.Length == 0 && (item.Comment?.Length ?? 0) > 0))
                         goto NotFound;
                     if (searchText.Any(text =>
                     {

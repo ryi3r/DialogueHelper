@@ -106,6 +106,12 @@ public class Deltarune : StyleScript
     public static (double X, double Y) EnvSmallOtherPortraitOffset;
 
     public static char[] Newlines = ['\n', '&', '#'];
+    
+    protected static string UtmtPath = $"{AppContext.BaseDirectory}/UndertaleModCli/";
+			
+    protected virtual byte StarManualNewLineCompensation => 2;
+    protected virtual bool DisableAutoWrap => false;
+
 
     public override Task Init(CustomToolWindowHandler wh)
     {
@@ -140,7 +146,7 @@ public class Deltarune : StyleScript
 
     public async Task<bool> DownloadUndertaleModToolCli(CustomToolWindowHandler wh)
     {
-        var folderPath = $"{wh.GetStylePath()}/UndertaleModCli/";
+        var folderPath = UtmtPath;
         var filePath = folderPath + $"UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
         if (!File.Exists(filePath) && await wh.ShowDialog<bool>(new QuestionWindow("Do you wish to automatically download UndertaleModTool's Cli on the folder?")))
         {
@@ -183,7 +189,7 @@ public class Deltarune : StyleScript
             catch (Exception e)
             {
                 Console.WriteLine($"fetch exception: {e}");
-                var w = new InfoWindow("Unable to fetch latest UndertaleModCli, please manually download and add UndertaleModCli to this style's folder.");
+                var w = new InfoWindow($"Unable to fetch latest UndertaleModCli, please manually download and extract UndertaleModCli to {UtmtPath}.");
                 await wh.ShowDialog(w);
                 return false;
             }
@@ -632,7 +638,7 @@ public class Deltarune : StyleScript
             var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
             {
                 Title = title ?? "Select the game data file",
-                FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["data.win"] }, new("All files") { Patterns = ["*"] }],
+                FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["*.win"] }, new("All files") { Patterns = ["*"] }],
             });
             if (f.Count <= 0)
                 return null;
@@ -652,9 +658,9 @@ public class Deltarune : StyleScript
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
+                FileName = $"{UtmtPath}/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
                 Arguments = args,
-                WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
+                WorkingDirectory = UtmtPath,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             },
@@ -1159,7 +1165,7 @@ public class Deltarune : StyleScript
                 charPos += ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2;
             }
             var wrapSize = data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale();
-            if (!IsLastNewline && charPos + 18 >= (EnvDynLimitWrap / data.GetCurrentFontScale()) - data.Char.StartPosition.X && !EnvFirstDrawnChar)
+            if (!DisableAutoWrap && !IsLastNewline && charPos + 18 >= (EnvDynLimitWrap / data.GetCurrentFontScale()) - data.Char.StartPosition.X && !EnvFirstDrawnChar)
             {
                 actAsNewline = true;
                 if (EnvStartedAsterisk)
@@ -1172,7 +1178,7 @@ public class Deltarune : StyleScript
         {
             EnvLastNewline = true;
             if (addSpaceXNewline <= 0 && EnvStartedAsterisk && (Parsed.TextTrimLength - data.Char.Index < 2 || (Parsed.TextTrimLength - data.Char.Index >= 2 && data.Char.String[data.Char.Index + 1] != '*')))
-                addSpaceXNewline = 2;
+                addSpaceXNewline = StarManualNewLineCompensation;
             data.Char.PositionOffset.X = 0;
             if (addSpaceXNewline > 0)
             {

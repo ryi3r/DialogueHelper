@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using DialogueHelper.External;
 using DialogueHelper.StylesParser;
 
@@ -17,6 +19,8 @@ public partial class Settings : Window
     public readonly List<StyleParser> StyleData = [];
     public readonly List<string> BackgroundData = [];
     public List<string> IgnoreStyles = [];
+    
+    private const string UseProgramDefaultLabel = "Use program default";
 
     public bool Init;
 
@@ -35,6 +39,14 @@ public partial class Settings : Window
         RepoUrl.Text = mainWindow.GitOptions.RepoUrl;
         SelectedBranch.Text = mainWindow.GitOptions.Branch;
         GroupOnlyEntries.IsChecked = mainWindow.ShowOnlyGroupEntries;
+        
+        RestrictTabNavigationCheckBox.IsChecked = mainWindow.RestrictTabNavigation;
+        UiFontComboBox.ItemsSource = new[] { UseProgramDefaultLabel }.Concat(FontManager.Current.SystemFonts.Select(f => f.Name).OrderBy(n => n).ToList()).ToList();
+        UiFontComboBox.SelectedItem = mainWindow.UiFontFamily ?? UseProgramDefaultLabel;
+        UiFontSizeBox.Value = (decimal)mainWindow.UiFontSize;
+        AffPathBox.Text = mainWindow.DictionaryAffPath;
+        DicPathBox.Text = mainWindow.DictionaryDicPath;
+        UpdateDownloadStatusIcons();
 
         StyleComboBox.Items.Clear();
         BackgroundComboBox.Items.Clear();
@@ -62,6 +74,15 @@ public partial class Settings : Window
             MainWindow.AuthorName = AuthorName.Text!;
             MainWindow.ShowOnlyGroupEntries = GroupOnlyEntries.IsChecked ?? false;
 
+            MainWindow.RestrictTabNavigation = RestrictTabNavigationCheckBox.IsChecked ?? false;
+            var selectedFont = UiFontComboBox.SelectedItem as string;
+            MainWindow.UiFontFamily = selectedFont == UseProgramDefaultLabel ? null : selectedFont;
+            MainWindow.UiFontSize = (double)(UiFontSizeBox.Value ?? 14);
+            MainWindow.ApplyEditorFont();
+            MainWindow.UpdateRestrictTabIndicator();
+            MainWindow.DictionaryAffPath = AffPathBox.Text ?? "";
+            MainWindow.DictionaryDicPath = DicPathBox.Text ?? "";
+            
             var selStyle = StyleData[StyleComboBox.SelectedIndex];
             MainWindow.ScriptNeedsInitialization = false;
             var abs = Path.GetFullPath(selStyle.Folder);
@@ -84,6 +105,64 @@ public partial class Settings : Window
         if (!Init)
             Close();
     }
+    
+    async void DownloadDictionary_OnClick(object? sender, RoutedEventArgs e)
+    {
+        var affPath = AffPathBox.Text?.Trim().TrimStart('/');
+        var dicPath = DicPathBox.Text?.Trim().TrimStart('/');
+        if (string.IsNullOrEmpty(affPath) || string.IsNullOrEmpty(dicPath))
+        {
+            DownloadStatusText.Text = "Enter both an .aff and a .dic path first.";
+            return;
+        }
+
+        DownloadStatusText.Text = "Downloading...";
+        try
+        {
+            var dictFolder = Path.Combine(AppContext.BaseDirectory, "SpellCheckDictionaries");
+            Directory.CreateDirectory(dictFolder);
+            using var http = new HttpClient();
+
+            await DownloadOne(http, affPath, dictFolder);
+            await DownloadOne(http, dicPath, dictFolder);
+
+            DownloadStatusText.Text = "Downloaded successfully. Restart the app to use it.";
+        }
+        catch (Exception ex)
+        {
+            DownloadStatusText.Text = $"Download failed: {ex.Message}";
+        }
+        UpdateDownloadStatusIcons();
+    }
+
+    static async Task DownloadOne(HttpClient http, string repoPath, string destFolder)
+    {
+        var url = $"https://raw.githubusercontent.com/LibreOffice/dictionaries/master/{repoPath}";
+        var bytes = await http.GetByteArrayAsync(url);
+        var fileName = repoPath[(repoPath.LastIndexOf('/') + 1)..];
+        await File.WriteAllBytesAsync(Path.Combine(destFolder, fileName), bytes);
+    }
+    
+    void PathBox_OnTextChanged(object? sender, TextChangedEventArgs e) => UpdateDownloadStatusIcons();
+
+    void UpdateDownloadStatusIcons()
+    {
+        var dictFolder = Path.Combine(AppContext.BaseDirectory, "SpellCheckDictionaries");
+        AffStatusIcon.IsVisible = FileAlreadyDownloaded(dictFolder, AffPathBox.Text);
+        DicStatusIcon.IsVisible = FileAlreadyDownloaded(dictFolder, DicPathBox.Text);
+    }
+
+    static bool FileAlreadyDownloaded(string dictFolder, string? repoPath)
+    {
+        repoPath = repoPath?.Trim().TrimStart('/');
+        if (string.IsNullOrEmpty(repoPath))
+            return false;
+        var fileName = repoPath[(repoPath.LastIndexOf('/') + 1)..];
+        return File.Exists(Path.Combine(dictFolder, fileName));
+    }
+    
+    async void OpenDictionariesRepo_OnClick(object? sender, RoutedEventArgs e) =>
+        await Launcher.LaunchUriAsync(new Uri("https://github.com/LibreOffice/dictionaries"));
 
     async void OnOpened(object? sender, EventArgs e)
     {
