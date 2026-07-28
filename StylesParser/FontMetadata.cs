@@ -45,7 +45,7 @@ public class FontMetadata
                 Size = (glyph.Size[0], glyph.Size[1]),
             });
         }
-        GlyphDictionary = new GlyphLookup(this);
+        GlyphDictionary = new(this);
         foreach (var glyph in Glyphs)
             GlyphDictionary.Add(glyph.Char, glyph);
     }

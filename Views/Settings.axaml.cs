@@ -20,7 +20,7 @@ public partial class Settings : Window
     public readonly List<string> BackgroundData = [];
     public List<string> IgnoreStyles = [];
     
-    private const string UseProgramDefaultLabel = "Use program default";
+    const string UseProgramDefaultLabel = "Use program default";
 
     public bool Init;
 
@@ -108,10 +108,12 @@ public partial class Settings : Window
     
     async void DownloadDictionary_OnClick(object? sender, RoutedEventArgs e)
     {
+        DownloadStatusText.ClearValue(TextBlock.ForegroundProperty);
         var affPath = AffPathBox.Text?.Trim().TrimStart('/');
         var dicPath = DicPathBox.Text?.Trim().TrimStart('/');
         if (string.IsNullOrEmpty(affPath) || string.IsNullOrEmpty(dicPath))
         {
+            DownloadStatusText.Foreground = Brushes.Red;
             DownloadStatusText.Text = "Enter both an .aff and a .dic path first.";
             return;
         }
@@ -126,10 +128,12 @@ public partial class Settings : Window
             await DownloadOne(http, affPath, dictFolder);
             await DownloadOne(http, dicPath, dictFolder);
 
-            DownloadStatusText.Text = "Downloaded successfully. Restart the app to use it.";
+            MainWindow?.ReloadSpellChecker();
+            DownloadStatusText.Text = "Downloaded successfully. Ready for use.";
         }
         catch (Exception ex)
         {
+            DownloadStatusText.Foreground = Brushes.Red;
             DownloadStatusText.Text = $"Download failed: {ex.Message}";
         }
         UpdateDownloadStatusIcons();

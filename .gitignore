@@ -9,3 +9,7 @@ crash.txt
 /.vscode/settings.json
 backup.dh
 *.lscache
+
+/Styles/*
+!/Styles/Template/
+!/Styles/Deltarune/

@@ -3,34 +3,34 @@ using SkiaSharp;
 
 namespace DialogueHelper.StylesParser;
 
-public class GlyphLookup(FontMetadata font) {
+public class GlyphLookup(FontMetadata font)
+{
 	readonly Dictionary<char, GlyphMetadata> _cache = [];
 
 	public GlyphMetadata this[char c] {
 		get {
-			if (_cache.TryGetValue(c, out var existing)) {
+			if (_cache.TryGetValue(c, out var existing))
 				return existing;
-			}
 
-			if (!font.IsTtf) {
+			if (!font.IsTtf)
 				throw new KeyNotFoundException(
 					$"No glyph defined for character '{c}' (0x{(int)c:X4}) in font '{font.Name}'.");
-			}
 
 			return Rasterize(c);
 		}
 	}
 
-	public bool ContainsKey(char c) {
-		if (_cache.ContainsKey(c)) {
+	public bool ContainsKey(char c)
+	{
+		if (_cache.ContainsKey(c))
 			return true;
-		}
 		return font.IsTtf && font.Typeface is not null && font.Typeface.GetGlyph(c) != 0;
 	}
 
 	public void Add(char c, GlyphMetadata glyph) => _cache[c] = glyph;
 
-	private GlyphMetadata Rasterize(char c) {
+	GlyphMetadata Rasterize(char c)
+	{
 		using var skFont = new SKFont(font.Typeface, (float)font.Size);
 		var advance = skFont.MeasureText(c.ToString());
 		skFont.GetFontMetrics(out var metrics);
@@ -47,13 +47,16 @@ public class GlyphLookup(FontMetadata font) {
 		return glyph;
 	}
 	
-	public bool TryGetValue(char c, out GlyphMetadata glyph) {
-		if (_cache.TryGetValue(c, out var existing)) {
+	public bool TryGetValue(char c, out GlyphMetadata? glyph)
+	{
+		if (_cache.TryGetValue(c, out var existing))
+		{
 			glyph = existing;
 			return true;
 		}
-		if (!font.IsTtf) {
-			glyph = null!;
+		if (!font.IsTtf)
+		{
+			glyph = null;
 			return false;
 		}
 		glyph = Rasterize(c);

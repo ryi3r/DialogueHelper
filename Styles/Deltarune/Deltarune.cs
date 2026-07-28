@@ -109,8 +109,7 @@ public class Deltarune : StyleScript
     
     protected static string UtmtPath = $"{AppContext.BaseDirectory}/UndertaleModCli/";
 			
-    protected virtual byte StarManualNewLineCompensation => 2;
-    protected virtual bool DisableAutoWrap => false;
+    protected virtual byte AsteriskManualNewLineCompensation => 2;
 
 
     public override Task Init(CustomToolWindowHandler wh)
@@ -1166,7 +1165,7 @@ public class Deltarune : StyleScript
                 charPos += ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2;
             }
             var wrapSize = data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale();
-            if (!DisableAutoWrap && !IsLastNewline && charPos + 18 >= (EnvDynLimitWrap / data.GetCurrentFontScale()) - data.Char.StartPosition.X && !EnvFirstDrawnChar)
+            if (!IsLastNewline && charPos + 18 >= (EnvDynLimitWrap / data.GetCurrentFontScale()) - data.Char.StartPosition.X && !EnvFirstDrawnChar)
             {
                 actAsNewline = true;
                 if (EnvStartedAsterisk)
@@ -1179,7 +1178,7 @@ public class Deltarune : StyleScript
         {
             EnvLastNewline = true;
             if (addSpaceXNewline <= 0 && EnvStartedAsterisk && (Parsed.TextTrimLength - data.Char.Index < 2 || (Parsed.TextTrimLength - data.Char.Index >= 2 && data.Char.String[data.Char.Index + 1] != '*')))
-                addSpaceXNewline = StarManualNewLineCompensation;
+                addSpaceXNewline = AsteriskManualNewLineCompensation;
             data.Char.PositionOffset.X = 0;
             if (addSpaceXNewline > 0)
             {

@@ -74,8 +74,7 @@ public class StringContainer()
         if (fEntry.Data.ContainsKey("MarkAsModified"))
             MarkAsModified = true;
         
-        if (fEntry.Data.TryGetValue("Comment", out var comment)
-            || fEntry.Data.TryGetValue("CommentContent", out comment))
+        if (fEntry.Data.TryGetValue("Comment", out var comment))
             Comment = comment;
     }
 

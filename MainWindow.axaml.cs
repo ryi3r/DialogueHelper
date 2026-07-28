@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -70,7 +71,7 @@ public partial class MainWindow : Window
     public List<Image> BgndImages = [];
     internal string _lastBgndPath = "";
     public bool RedrawRenderer;
-    public readonly SpellCheckerConfig? SpellCheckerConfig;
+    public SpellCheckerConfig? SpellCheckerConfig;
     public bool RestrictTabNavigation;
     public string? UiFontFamily;
     public double UiFontSize = 14;
@@ -185,15 +186,7 @@ public partial class MainWindow : Window
         };
         _redrawTimer.Start();
         SizeChanged += async (_, _) => await LoadBackground();
-        var dictPath = Path.Combine(AppContext.BaseDirectory, "SpellCheckDictionaries");
-        var conf = new SpellCheckerConfig
-        {
-            DictionariesFolder = dictPath,
-            EnabledLanguages = [.. Directory.EnumerateFiles(dictPath).Where(x => x.EndsWith(".dic")).Select(x => x[(x.Replace('\\', '/').LastIndexOf('/') + 1)..x.LastIndexOf(".dic")])],
-        };
-        SpellCheckerConfig = conf;
-        new TextBoxSpellChecker(conf).Initialize(EditableText);
-        new TextBoxSpellChecker(conf).Initialize(OriginalText);
+        ReloadSpellChecker();
         EditableText.PropertyChanged += TextBox_OnSelectionPropertyChanged;
         OriginalText.PropertyChanged += TextBox_OnSelectionPropertyChanged;
         Task.Run(async () =>
@@ -254,15 +247,16 @@ public partial class MainWindow : Window
         });
     }
     
-    private void MainWindow_OnKeyDown(object? sender, KeyEventArgs e) {
-	    if (e.Key != Key.Tab) {
+    void MainWindow_OnKeyDown(object? sender, KeyEventArgs e)
+    {
+	    if (e.Key != Key.Tab)
 	        return;
-	    }
 	    
 	    var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
 	    var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 	    
-	    if (ctrl && shift) {
+	    if (ctrl && shift)
+        {
 	        RestrictTabNavigation = !RestrictTabNavigation;
 	        SaveSettings();
 	        UpdateRestrictTabIndicator();
@@ -270,57 +264,63 @@ public partial class MainWindow : Window
 	        return;
 	    }
 	    
-	    if (ctrl || shift) {
+	    if (ctrl || shift)
 	        return;
-	    }
 	    
-	    if (!RestrictTabNavigation) 
+        if (!RestrictTabNavigation)
         {
-            if (TryGetFocusedTargetTextBox(out var textBox))
+            var textBox = GetFocusedTargetTextBox();
+            if (textBox is not null)
             {
                 InsertTabCharacter(textBox);
                 e.Handled = true;
             }
             return;
-	    }
+        }
 
-	    var focused = GetTopLevel(this)?.FocusManager.GetFocusedElement() as Visual;
+        var focused = (Visual?)GetTopLevel(this)?.FocusManager.GetFocusedElement();
 	    var focusInTree = focused is not null && (Equals(focused, EntryTreeView) || EntryTreeView.IsVisualAncestorOf(focused));
 
 	    e.Handled = true;
 
 	    Dispatcher.UIThread.Post(() => {
-	        if (focusInTree) {
+	        if (focusInTree)
+            {
 	            EditableText.Focus(NavigationMethod.Tab);
-	            // move the cursor to the beginning, because that makes sense when translating without using the moue
+	            // move the cursor to the beginning, because that makes sense when translating without using the mouse
 	            EditableText.CaretIndex = 0;
 	            EditableText.SelectionStart = 0;
 	            EditableText.SelectionEnd = 0;
-	        } else {
+	        }
+            else
+            {
 	            var container = EntryTreeView.SelectedItem is not null
 	                ? EntryTreeView.TreeContainerFromItem(EntryTreeView.SelectedItem)
 	                : null;
-	            (container as Control ?? EntryTreeView).Focus(NavigationMethod.Tab);
+                (container ?? EntryTreeView).Focus(NavigationMethod.Tab);
 	        }
 	    });
 	}
     
-    private bool TryGetFocusedTargetTextBox(out TextBox textBox)
+    TextBox? GetFocusedTargetTextBox()
     {
-        var focused = GetTopLevel(this)?.FocusManager.GetFocusedElement() as Visual;
-        foreach (var candidate in new[] { EditableText, OriginalText, CommentText }) {
-            if (focused is null || (!Equals(focused, candidate) && !candidate.IsVisualAncestorOf(focused)))
-            {
+        TextBox? textBox = null;
+        if (GetTopLevel(this)?.FocusManager.GetFocusedElement() is not Visual focused)
+            return textBox;
+        
+        foreach (var candidate in new[] { EditableText, OriginalText, CommentText })
+        {
+            if (!Equals(focused, candidate) && !candidate.IsVisualAncestorOf(focused))
                 continue;
-            }
+
             textBox = candidate;
-            return true;
+            break;
         }
-        textBox = null!;
-        return false;
+
+        return textBox;
     }
 
-    private static void InsertTabCharacter(TextBox textBox)
+    static void InsertTabCharacter(TextBox textBox)
     {
         if (textBox.IsReadOnly)
             return;
@@ -334,28 +334,21 @@ public partial class MainWindow : Window
 	public void UpdateRestrictTabIndicator() =>
 	    RestrictTabIndicator.Text = RestrictTabNavigation ? "Tab restricted mode (Ctrl+Shift+Tab): ON" : "Tab restricted mode (Ctrl+Shift+Tab): OFF";
 	
-	public void ApplyEditorFont() {
-	    if (!string.IsNullOrEmpty(UiFontFamily)) {
-	        var fontFamily = new FontFamily(UiFontFamily);
-	        EditableText.FontFamily = fontFamily;
-	        OriginalText.FontFamily = fontFamily;
-	        CommentText.FontFamily = fontFamily;
-	    } else {
-	        EditableText.ClearValue(FontFamilyProperty);
-	        OriginalText.ClearValue(FontFamilyProperty);
-	        CommentText.ClearValue(FontFamilyProperty);
-	    }
-
-	    if (UiFontSize > 0) {
-	        EditableText.FontSize = UiFontSize;
-	        OriginalText.FontSize = UiFontSize;
-	        CommentText.FontSize = UiFontSize;
-	    } else {
-	        EditableText.ClearValue(FontSizeProperty);
-	        OriginalText.ClearValue(FontSizeProperty);
-	        CommentText.ClearValue(FontSizeProperty);
-	    }
-	}
+    public void ApplyEditorFont()
+    {
+        var fontFamily = string.IsNullOrEmpty(UiFontFamily) ? FontFamily.Default : new(UiFontFamily);
+        UpdatingEntry = true;
+        foreach (var node in new[] { EditableText, OriginalText, CommentText })
+        {
+            node.FontFamily = fontFamily;
+            if (UiFontSize <= 0)
+                node.ClearValue(FontSizeProperty);
+            else
+                node.FontSize = UiFontSize;
+        }
+        // todo: fix a bug with `EditableText` not updating until you type again
+        UpdatingEntry = false;
+    }
 
     public async Task LoadBackground()
     {
@@ -881,7 +874,7 @@ public partial class MainWindow : Window
                         }
                         break;
                     case "RestrictTab":
-                        RestrictTabNavigation = f[i] == "1";
+                        RestrictTabNavigation = bool.Parse(f[i]);
                         break;
                     case "DictPaths":
                         if (DictionaryAffPath.Length == 0)
@@ -927,7 +920,7 @@ public partial class MainWindow : Window
             l.AddRange(ss.Value.Select(prop => $"{WebUtility.UrlEncode(prop.Name)}@@{WebUtility.UrlEncode(prop.ValueToString())}"));
             l.Add("@@end@@");
             l.Add("RestrictTab@@");
-            l.Add(RestrictTabNavigation ? "1" : "0");
+            l.Add(RestrictTabNavigation.ToString(CultureInfo.InvariantCulture));
             l.Add("@@end@@");
             l.Add("EditorFontFamily@@");
             l.Add(UiFontFamily ?? "");
@@ -1423,24 +1416,6 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
-
-                case not null when tool.Type == typeof(ICustomPropertyList):
-                    {
-                        var dropdown = (ICustomPropertyList)tool;
-                        var node = new ComboBox
-                        {
-                            ItemsSource = dropdown.Data,
-                            SelectedIndex = int.Clamp(dropdown.SelectedIndex, 0, dropdown.Data!.Count - 1),
-                            IsEnabled = !tool.ReadOnly,
-                        };
-                        node.SelectionChanged += (_, _) =>
-                        {
-                            tool.StringToValue(node.SelectedIndex.ToString());
-                        };
-                        tool.Node = node;
-                        item.Children.Add(node);
-                    }
-                    break;
                 
                 case not null when tool.Type == typeof(Color):
                     {
@@ -1597,8 +1572,10 @@ public partial class MainWindow : Window
         UpdateBoxBounds();
     }
     
-    void CommentText_OnTextChanging(object? sender, TextChangingEventArgs? e) {
-        if (SelectedString is not null && !UpdatingEntry && FileData is not null && e is not null) {
+    void CommentText_OnTextChanging(object? sender, TextChangingEventArgs? e)
+    {
+        if (SelectedString is not null && !UpdatingEntry && FileData is not null && e is not null)
+        {
             SelectedString.Comment = CommentText.Text ?? "";
             IsFileModified = true;
             Title = "Dialogue Helper*";
@@ -1661,19 +1638,56 @@ public partial class MainWindow : Window
         OriginalText_OnTextChanging(null, null);
     }
 
+    public void ReloadSpellChecker()
+    {
+        var isFirstInit = SpellCheckerConfig is null;
+
+        var dictPath = Path.Combine(AppContext.BaseDirectory, "SpellCheckDictionaries");
+        var conf = new SpellCheckerConfig
+        {
+            DictionariesFolder = dictPath,
+            EnabledLanguages = [.. Directory.EnumerateFiles(dictPath).Where(x => x.EndsWith(".dic")).Select(x => x[(x.Replace('\\', '/').LastIndexOf('/') + 1)..x.LastIndexOf(".dic")])],
+        };
+        SpellCheckerConfig = conf;
+
+        var field = typeof(SpellChecker).GetField("dictionaryManager", BindingFlags.NonPublic | BindingFlags.Static);
+        field?.SetValue(null, null);
+        _ = new SpellChecker(conf);
+
+        if (isFirstInit)
+        {
+            new TextBoxSpellChecker(conf).Initialize(EditableText);
+            new TextBoxSpellChecker(conf).Initialize(OriginalText);
+            new TextBoxSpellChecker(conf).Initialize(CommentText);
+        }
+        else
+        {
+            foreach (var textBox in new[] { EditableText, OriginalText, CommentText })
+            {
+                textBox.GetVisualDescendants()
+                    .OfType<SpellCheckerTextPresenter>()
+                    .FirstOrDefault()?
+                    .ForceInvalidateTextLayout();
+            }
+        }
+    }
 
     async void SaveFile_OnClick(object? sender, RoutedEventArgs e)
     {
         // if you want your Style to use one of it's CustomTool as the default save,
         // set its hotkey to "Ctrl+Alt+S"
         var tool = CustomTools.FirstOrDefault(t => t.HotKey == "Ctrl+Alt+S");
-        if (tool is not null) {
+        if (tool is not null)
+        {
             try {
                 await RunCustomTool(tool);
                 IsFileModified = false;
                 Title = "Dialogue Helper";
-            } catch (Exception ex) {
-                var se = new StyleError {
+            }
+            catch (Exception ex)
+            {
+                var se = new StyleError
+                {
                     Title = "Save error",
                     MessageBlock = { Text = "DialogueHelper has encountered an error while saving a file" },
                     ErrorBox = { Text = ex.ToString() }
@@ -2435,7 +2449,7 @@ public partial class MainWindow : Window
         await new GroupEditor(this).ShowDialog(this);
     }
 
-    private void StringKey_OnTextChanging(object? sender, TextChangingEventArgs? e)
+    void StringKey_OnTextChanging(object? sender, TextChangingEventArgs? e)
     {
         if (SelectedString is null || FileData is null || UpdatingEntry || e is null)
             return;

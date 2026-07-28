@@ -103,20 +103,12 @@ public class PreviewRenderer(MainWindow mainWindow)
             var wh = new CustomToolWindowHandler(MainWindow, style);
             eData.Char.String = str;
             //Console.WriteLine("rendering prep");
-            foreach (var ttfFont in style.FontMetadata) {
-                if (!ttfFont.IsTtf) {
-                    continue;
-                }
-                foreach (var c in str.Distinct()) {
-                    _ = ttfFont.GlyphDictionary[c];
-                }
-            }
             // get every misspelled word
             var misspelled = MainWindow.SpellCheckerConfig is null
                 ? [] : new SpellChecker(MainWindow.SpellCheckerConfig).CheckSpellingFullText(str);
             var charRects = new Dictionary<int, (double X0, double X1, double Y)>();
             // get the bottom of the 'g' character from the current font
-            var showSpellcheck = MainWindow.ShowSpellcheckUnderline.IsChecked == true;
+            var showSpellcheck = MainWindow.ShowSpellcheckUnderline.IsChecked ?? false;
             // this will break if the current style doesn't also have the size multiplied by 2 in it's DrawGlyph()
             var baselineGlyph = font.GlyphDictionary.TryGetValue('g', out var g)
                 ? g : font.Glyphs.OrderByDescending(x => x.Size.Y).First();
