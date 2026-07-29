@@ -72,7 +72,6 @@ public partial class MainWindow : Window
     internal string _lastBgndPath = "";
     public bool RedrawRenderer;
     public SpellCheckerConfig? SpellCheckerConfig;
-    public bool RestrictTabNavigation;
     public string? UiFontFamily;
     public double UiFontSize = 14;
     public string DictionaryAffPath = "";
@@ -249,57 +248,63 @@ public partial class MainWindow : Window
     
     void MainWindow_OnKeyDown(object? sender, KeyEventArgs e)
     {
-	    if (e.Key != Key.Tab)
-	        return;
-	    
-	    var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
-	    var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
-	    
-	    if (ctrl && shift)
+        switch (e.Key)
         {
-	        RestrictTabNavigation = !RestrictTabNavigation;
-	        SaveSettings();
-	        UpdateRestrictTabIndicator();
-	        e.Handled = true;
-	        return;
-	    }
+            case Key.Tab:
+                var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
+                var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 	    
-	    if (ctrl || shift)
-	        return;
+                if (ctrl && shift)
+                {
+                    RestrictTabIndicator.IsChecked = !RestrictTabIndicator.IsChecked;
+                    SaveSettings();
+                    e.Handled = true;
+                    break;
+                }
 	    
-        if (!RestrictTabNavigation)
-        {
-            var textBox = GetFocusedTargetTextBox();
-            if (textBox is not null)
-            {
-                InsertTabCharacter(textBox);
-                e.Handled = true;
-            }
-            return;
+                if (ctrl || shift)
+                    break;
+        
+                switch (RestrictTabIndicator.IsChecked)
+                {
+                    case false:
+                        var textBox = GetFocusedTargetTextBox();
+                        if (textBox is not null)
+                        {
+                            InsertTabCharacter(textBox);
+                            e.Handled = true;
+                        }
+                        break;
+                    case true:
+                        var focused = (Visual?)GetTopLevel(this)?.FocusManager.GetFocusedElement();
+                        var focusInTree = focused is not null && (Equals(focused, EntryTreeView) || EntryTreeView.IsVisualAncestorOf(focused));
+
+                        e.Handled = true;
+
+                        Dispatcher.UIThread.Post(() => {
+                            if (focusInTree)
+                            {
+                                EditableText.Focus(NavigationMethod.Tab);
+                                // move the cursor to the beginning, because that makes sense when translating without using the mouse
+                                EditableText.CaretIndex = 0;
+                                EditableText.SelectionStart = 0;
+                                EditableText.SelectionEnd = 0;
+                            }
+                            else
+                            {
+                                var container = EntryTreeView.SelectedItem is not null
+                                    ? EntryTreeView.TreeContainerFromItem(EntryTreeView.SelectedItem)
+                                    : null;
+                                (container ?? EntryTreeView).Focus(NavigationMethod.Tab);
+                            }
+                        });
+                        break;
+                    // don't do anything on null
+                }
+                break;
+            /* switch in case we want to us this method for anything else later,
+               maybe make the mouse side back/forward buttons cycle between entries */
         }
-
-        var focused = (Visual?)GetTopLevel(this)?.FocusManager.GetFocusedElement();
-	    var focusInTree = focused is not null && (Equals(focused, EntryTreeView) || EntryTreeView.IsVisualAncestorOf(focused));
-
-	    e.Handled = true;
-
-	    Dispatcher.UIThread.Post(() => {
-	        if (focusInTree)
-            {
-	            EditableText.Focus(NavigationMethod.Tab);
-	            // move the cursor to the beginning, because that makes sense when translating without using the mouse
-	            EditableText.CaretIndex = 0;
-	            EditableText.SelectionStart = 0;
-	            EditableText.SelectionEnd = 0;
-	        }
-            else
-            {
-	            var container = EntryTreeView.SelectedItem is not null
-	                ? EntryTreeView.TreeContainerFromItem(EntryTreeView.SelectedItem)
-	                : null;
-                (container ?? EntryTreeView).Focus(NavigationMethod.Tab);
-	        }
-	    });
 	}
     
     TextBox? GetFocusedTargetTextBox()
@@ -330,9 +335,6 @@ public partial class MainWindow : Window
         textBox.Text = text[..start] + "\t" + text[end..];
         textBox.CaretIndex = start + 1;
     }
-	
-	public void UpdateRestrictTabIndicator() =>
-	    RestrictTabIndicator.Text = RestrictTabNavigation ? "Tab restricted mode (Ctrl+Shift+Tab): ON" : "Tab restricted mode (Ctrl+Shift+Tab): OFF";
 	
     public void ApplyEditorFont()
     {
@@ -874,7 +876,7 @@ public partial class MainWindow : Window
                         }
                         break;
                     case "RestrictTab":
-                        RestrictTabNavigation = bool.Parse(f[i]);
+                        RestrictTabIndicator.IsChecked = bool.Parse(f[i]);
                         break;
                     case "DictPaths":
                         if (DictionaryAffPath.Length == 0)
@@ -914,23 +916,23 @@ public partial class MainWindow : Window
             WebUtility.UrlEncode(SelectedStyle ?? ""),
             WebUtility.UrlEncode(BgndPath),
         };
+        l.Add("RestrictTab@@");
+        l.Add(RestrictTabIndicator.IsChecked.ToString());
+        l.Add("@@end@@");
+        l.Add("EditorFontFamily@@");
+        l.Add(UiFontFamily ?? "");
+        l.Add("@@end@@");
+        l.Add("EditorFontSize@@");
+        l.Add(UiFontSize.ToString(CultureInfo.InvariantCulture));
+        l.Add("@@end@@");
+        l.Add("DictPaths@@");
+        l.Add(DictionaryAffPath);
+        l.Add(DictionaryDicPath);
+        l.Add("@@end@@");
         foreach (var ss in StyleSettings)
         {
             l.Add($"StyleSettings@@{WebUtility.UrlEncode(ss.Key)}");
             l.AddRange(ss.Value.Select(prop => $"{WebUtility.UrlEncode(prop.Name)}@@{WebUtility.UrlEncode(prop.ValueToString())}"));
-            l.Add("@@end@@");
-            l.Add("RestrictTab@@");
-            l.Add(RestrictTabNavigation.ToString(CultureInfo.InvariantCulture));
-            l.Add("@@end@@");
-            l.Add("EditorFontFamily@@");
-            l.Add(UiFontFamily ?? "");
-            l.Add("@@end@@");
-            l.Add("EditorFontSize@@");
-            l.Add(UiFontSize.ToString(CultureInfo.InvariantCulture));
-            l.Add("@@end@@");
-            l.Add("DictPaths@@");
-            l.Add(DictionaryAffPath);
-            l.Add(DictionaryDicPath);
             l.Add("@@end@@");
         }
         File.WriteAllLines($"{Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)}/DialogueHelper/settings.txt", l);
@@ -956,7 +958,6 @@ public partial class MainWindow : Window
         MiddleStackPanel.RowDefinitions[0].Height = new GridLength(235 * ClientSize.Height / 720);
         MiddleStackPanel.RowDefinitions[2].Height = new GridLength(230 * ClientSize.Height / 720);
         await LoadSettings();
-        UpdateRestrictTabIndicator();
         ApplyEditorFont();
         if (SelectedStyle is null)
         {
@@ -1632,10 +1633,10 @@ public partial class MainWindow : Window
         SelectionCharCountLabel.Text = length > 0 ? $"{length} character{(length == 1 ? "" : "s")} selected" : "";
     }
 	    
-    void ShowSpellcheckUnderline_OnClick(object? sender, RoutedEventArgs e)
+    async void ShowSpellcheckUnderline_OnClick(object? sender, RoutedEventArgs e)
     {
-        EditableText_OnTextChanging(null, null);
-        OriginalText_OnTextChanging(null, null);
+        await UpdateEditableText(UpdateKind.None);
+        await UpdateOriginalText(UpdateKind.None);
     }
 
     public void ReloadSpellChecker()
@@ -1674,13 +1675,12 @@ public partial class MainWindow : Window
 
     async void SaveFile_OnClick(object? sender, RoutedEventArgs e)
     {
-        // if you want your Style to use one of it's CustomTool as the default save,
-        // set its hotkey to "Ctrl+Alt+S"
-        var tool = CustomTools.FirstOrDefault(t => t.HotKey == "Ctrl+Alt+S");
-        if (tool is not null)
+        var styleSave = StyleData?.Script?.OnFileSave;
+        if (styleSave is not null)
         {
-            try {
-                await RunCustomTool(tool);
+            try
+            {
+                await RunCustomTool(styleSave);
                 IsFileModified = false;
                 Title = "Dialogue Helper";
             }
@@ -2822,5 +2822,9 @@ public partial class MainWindow : Window
         EntryTextBox.Focus();
         EntryTextBox.SelectionStart = EntryTextBox.Text?.Length ?? 0;
         EntryTextBox.SelectionEnd = EntryTextBox.SelectionStart;
+    }
+
+    private void RestrictTabIndicator_OnClick(object? sender, RoutedEventArgs e) {
+        SaveSettings();
     }
 }

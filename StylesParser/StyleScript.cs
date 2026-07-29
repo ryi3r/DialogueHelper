@@ -13,6 +13,8 @@ public class StyleScript
 
     public virtual Task<IEnumerable<CustomTool>> RegisterCustomTools() => Task.FromResult<IEnumerable<CustomTool>>([]);
 
+    public virtual CustomTool? OnFileSave => null;
+
     /// <summary>
     /// if it returns true then it finishes drawing early.
     /// </summary>

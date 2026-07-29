@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using SkiaSharp;
 
 namespace DialogueHelper.StylesParser;
@@ -47,7 +48,7 @@ public class GlyphLookup(FontMetadata font)
 		return glyph;
 	}
 	
-	public bool TryGetValue(char c, out GlyphMetadata? glyph)
+	public bool TryGetValue(char c, [NotNullWhen(true)] out GlyphMetadata? glyph)
 	{
 		if (_cache.TryGetValue(c, out var existing))
 		{

@@ -47,6 +47,10 @@
                     <TextBlock Margin="0 7 0 0">Author Groups</TextBlock>
                     <TextBox Name="AuthorGroup" ToolTip.Tip="Leave this value empty to select all groups" Margin="0 10 0 0" MaxHeight="0" PlaceholderText="Group1,Group2, ..." />
                     <CheckBox Name="GroupOnlyEntries">Only show entries inside author groups</CheckBox>
+                </StackPanel>
+            </TabItem>
+            <TabItem Header="Dictionaries">
+                <StackPanel Orientation="Vertical">
                     <StackPanel Orientation="Horizontal" Margin="0 7 0 0">
                         <TextBlock Text="Dictionary .aff path (relative to " />
                         <Button Click="OpenDictionariesRepo_OnClick" Padding="0" Background="Transparent" BorderThickness="0" Cursor="Hand">
@@ -57,7 +61,7 @@
                     
                     <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
                         <TextBox Name="AffPathBox" Width="200" PlaceholderText="en/en_US.aff" TextChanged="PathBox_OnTextChanged" />
-                        <TextBlock Name="AffStatusIcon" Text="✓" Foreground="Gray" FontWeight="Bold" Margin="8 0 0 0" IsVisible="False" ToolTip.Tip="Already downloaded" />
+                        <TextBlock Name="AffStatusIcon" Text="✓" Foreground="LimeGreen" FontWeight="Bold" Margin="8 0 0 0" IsVisible="False" ToolTip.Tip="Already downloaded" />
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="0 7 0 0">
@@ -70,7 +74,7 @@
                     
                     <StackPanel Orientation="Horizontal" Margin="0 10 0 0">
                         <TextBox Name="DicPathBox" Width="200" PlaceholderText="en/en_US.dic" TextChanged="PathBox_OnTextChanged" />
-                        <TextBlock Name="DicStatusIcon" Text="✓" Foreground="Gray" FontWeight="Bold" Margin="8 0 0 0" IsVisible="False" ToolTip.Tip="Already downloaded" />
+                        <TextBlock Name="DicStatusIcon" Text="✓" Foreground="LimeGreen" FontWeight="Bold" Margin="8 0 0 0" IsVisible="False" ToolTip.Tip="Already downloaded" />
                     </StackPanel>
                     
                     <Button Name="DownloadDictionaryButton" Content="Download dictionary files" Click="DownloadDictionary_OnClick" Margin="0 10 0 0" />
@@ -79,7 +83,6 @@
             </TabItem>
             <TabItem Header="Editor">
                 <StackPanel Orientation="Vertical">
-                    <CheckBox Name="RestrictTabNavigationCheckBox">Restrict Tab to entries / editable text</CheckBox>
                     <TextBlock Margin="0 10 0 0">Editor Font</TextBlock>
                     <ComboBox Name="UiFontComboBox" Margin="0 5 0 0" HorizontalAlignment="Stretch" />
                     <TextBlock Margin="0 10 0 0">Editor Font Size (default: 14)</TextBlock>

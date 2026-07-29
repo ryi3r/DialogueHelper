@@ -40,7 +40,6 @@ public partial class Settings : Window
         SelectedBranch.Text = mainWindow.GitOptions.Branch;
         GroupOnlyEntries.IsChecked = mainWindow.ShowOnlyGroupEntries;
         
-        RestrictTabNavigationCheckBox.IsChecked = mainWindow.RestrictTabNavigation;
         UiFontComboBox.ItemsSource = new[] { UseProgramDefaultLabel }.Concat(FontManager.Current.SystemFonts.Select(f => f.Name).OrderBy(n => n).ToList()).ToList();
         UiFontComboBox.SelectedItem = mainWindow.UiFontFamily ?? UseProgramDefaultLabel;
         UiFontSizeBox.Value = (decimal)mainWindow.UiFontSize;
@@ -74,12 +73,10 @@ public partial class Settings : Window
             MainWindow.AuthorName = AuthorName.Text!;
             MainWindow.ShowOnlyGroupEntries = GroupOnlyEntries.IsChecked ?? false;
 
-            MainWindow.RestrictTabNavigation = RestrictTabNavigationCheckBox.IsChecked ?? false;
             var selectedFont = UiFontComboBox.SelectedItem as string;
             MainWindow.UiFontFamily = selectedFont == UseProgramDefaultLabel ? null : selectedFont;
             MainWindow.UiFontSize = (double)(UiFontSizeBox.Value ?? 14);
             MainWindow.ApplyEditorFont();
-            MainWindow.UpdateRestrictTabIndicator();
             MainWindow.DictionaryAffPath = AffPathBox.Text ?? "";
             MainWindow.DictionaryDicPath = DicPathBox.Text ?? "";
             

@@ -735,12 +735,14 @@ public class Deltarune : StyleScript
         {
             if (key == "date")
                 continue;
-            var pos = key.LastIndexOf("_gml_");
+            var pos = key.LastIndexOf("_gml_", StringComparison.Ordinal);
             if (pos == -1)
                 pos = key.LastIndexOf('_');
             if (pos == -1)
-                // throw new InvalidDataException($"Unable to make a string group of {key}");
+            {
+                //throw new InvalidDataException($"Unable to make a string group of {key}");
                 pos = 0;
+            }
             var header = key[..pos];
             if (header != lastHeader)
             {
