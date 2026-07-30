@@ -40,7 +40,7 @@ public partial class Settings : Window
         SelectedBranch.Text = mainWindow.GitOptions.Branch;
         GroupOnlyEntries.IsChecked = mainWindow.ShowOnlyGroupEntries;
         
-        UiFontComboBox.ItemsSource = new[] { UseProgramDefaultLabel }.Concat(FontManager.Current.SystemFonts.Select(f => f.Name).OrderBy(n => n).ToList()).ToList();
+        UiFontComboBox.ItemsSource = (string[])[UseProgramDefaultLabel, .. FontManager.Current.SystemFonts.Select(f => f.Name).Order()];
         UiFontComboBox.SelectedItem = mainWindow.UiFontFamily ?? UseProgramDefaultLabel;
         UiFontSizeBox.Value = (decimal)mainWindow.UiFontSize;
         AffPathBox.Text = mainWindow.DictionaryAffPath;

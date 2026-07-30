@@ -915,20 +915,20 @@ public partial class MainWindow : Window
             WebUtility.UrlEncode(AuthorName),
             WebUtility.UrlEncode(SelectedStyle ?? ""),
             WebUtility.UrlEncode(BgndPath),
+            "RestrictTab@@",
+            (RestrictTabIndicator.IsChecked ?? false).ToString(CultureInfo.InvariantCulture),
+            "@@end@@",
+            "EditorFontFamily@@",
+            UiFontFamily ?? "",
+            "@@end@@",
+            "EditorFontSize@@",
+            UiFontSize.ToString(CultureInfo.InvariantCulture),
+            "@@end@@",
+            "DictPaths@@",
+            DictionaryAffPath,
+            DictionaryDicPath,
+            "@@end@@"
         };
-        l.Add("RestrictTab@@");
-        l.Add(RestrictTabIndicator.IsChecked.ToString());
-        l.Add("@@end@@");
-        l.Add("EditorFontFamily@@");
-        l.Add(UiFontFamily ?? "");
-        l.Add("@@end@@");
-        l.Add("EditorFontSize@@");
-        l.Add(UiFontSize.ToString(CultureInfo.InvariantCulture));
-        l.Add("@@end@@");
-        l.Add("DictPaths@@");
-        l.Add(DictionaryAffPath);
-        l.Add(DictionaryDicPath);
-        l.Add("@@end@@");
         foreach (var ss in StyleSettings)
         {
             l.Add($"StyleSettings@@{WebUtility.UrlEncode(ss.Key)}");
@@ -1629,7 +1629,7 @@ public partial class MainWindow : Window
         if (sender is not TextBox textBox)
             return;
 	
-        var length = Math.Abs(textBox.SelectionEnd - textBox.SelectionStart);
+        var length = int.Abs(textBox.SelectionEnd - textBox.SelectionStart);
         SelectionCharCountLabel.Text = length > 0 ? $"{length} character{(length == 1 ? "" : "s")} selected" : "";
     }
 	    
@@ -2824,7 +2824,7 @@ public partial class MainWindow : Window
         EntryTextBox.SelectionEnd = EntryTextBox.SelectionStart;
     }
 
-    private void RestrictTabIndicator_OnClick(object? sender, RoutedEventArgs e) {
+    void RestrictTabIndicator_OnClick(object? sender, RoutedEventArgs e) {
         SaveSettings();
     }
 }

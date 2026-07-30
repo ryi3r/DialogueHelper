@@ -109,7 +109,7 @@ public class Deltarune : StyleScript
     
     protected static string UtmtPath = $"{AppContext.BaseDirectory}/UndertaleModCli/";
 			
-    protected virtual byte AsteriskManualNewLineCompensation => 2;
+    protected virtual int AsteriskManualNewLineCompensation => 2;
 
 
     public override Task Init(CustomToolWindowHandler wh)
@@ -740,7 +740,7 @@ public class Deltarune : StyleScript
                 pos = key.LastIndexOf('_');
             if (pos == -1)
             {
-                //throw new InvalidDataException($"Unable to make a string group of {key}");
+                Console.WriteLine($"Unable to make a string group of {key}");
                 pos = 0;
             }
             var header = key[..pos];

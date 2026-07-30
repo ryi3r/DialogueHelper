@@ -28,7 +28,7 @@ public class FontMetadata
         ImagePath = font.ImagePath;
         TtfPath = font.TtfPath;
         if (ImagePath is null && TtfPath is null) {
-            throw new KeyNotFoundException($"The font \"{Name}\" doesn't have a ImagePath or a TtfPath defined, so it's style couldn't be loaded");
+            throw new KeyNotFoundException($"The font \"{Name}\" doesn't have a ImagePath or a TtfPath defined, so the style couldn't be loaded");
         }
         Scale = font.Scale;
         Size = font.Size;
