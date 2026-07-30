@@ -46,6 +46,7 @@
                                 The search groups are the following:
                                 <LineBreak /><Span FontWeight="Bold">Group</Span>: Search for author group names, such as "authorGroup1"
                                 <LineBreak /><Span FontWeight="Bold">OgText</Span>: Search for a original text containing the specified Original Text
+                                <LineBreak /><Span FontWeight="Bold">Comment</Span>: Search for a comment containing the specified comment text
                                 <LineBreak /><Span FontWeight="Bold">Header</Span>: Search for a header containing the specified string header
                                 <LineBreak /><Span FontWeight="Bold">Key</Span>: Search for a key containing the specified string key
                                 <LineBreak /><Span FontWeight="Bold">State</Span>: Check the status of the text, valid options to input here are: <Span FontWeight="Bold">Modified</Span> and <Span FontWeight="Bold">Original</Span>/<Span FontWeight="Bold">Base</Span><LineBreak /><Span FontWeight="Bold">Casing</Span>: Set the casing to check for, valid options to input here are: <Span FontWeight="Bold">Sensible</Span> and <Span FontWeight="Bold">Insensible</Span><LineBreak /><Span FontWeight="Bold">Id</Span>: Search for specific text ids, separated by commas (,): note that all entries are 0-indexed, and should be used as such: <Span FontWeight="Bold">Id:0,1</Span>: This will only search for entries 0 and 1 respectively.
@@ -101,10 +102,17 @@
                         </StackPanel>
                     </Grid>
                     <GridSplitter Name="OuterGridSplitter" Grid.Row="1" Margin="5" ResizeDirection="Rows" Background="Gray" />
-                    <UniformGrid Grid.Row="2" Rows="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
-                        <TextBox Name="EditableText" TextChanging="EditableText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" PlaceholderText="Editable Text" />
-                        <TextBox Name="OriginalText" TextChanging="OriginalText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" IsReadOnly="True" PlaceholderText="Original Text" />
-                    </UniformGrid>
+                    <DockPanel Grid.Row="2">
+                        <Grid DockPanel.Dock="Bottom" Margin="5 2" ColumnDefinitions="*, *">
+                            <CheckBox Name="RestrictTabIndicator" ToolTip.Tip="Ctrl+Shit+Tab" IsChecked="False" Click="RestrictTabIndicator_OnClick">Restrict Tab</CheckBox>
+                            <TextBlock Name="SelectionCharCountLabel" Grid.Column="1" HorizontalAlignment="Right" Text="" />
+                        </Grid>
+                        <UniformGrid Rows="3" VerticalAlignment="Stretch" HorizontalAlignment="Stretch">
+                            <TextBox Name="EditableText" TextChanging="EditableText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" PlaceholderText="Editable Text" />
+                            <TextBox Name="OriginalText" TextChanging="OriginalText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" IsReadOnly="True" PlaceholderText="Original Text" />
+                            <TextBox Name="CommentText" TextChanging="CommentText_OnTextChanging" UndoLimit="-1" VerticalAlignment="Stretch" MinHeight="30" Margin="0 10 0 0" AcceptsReturn="True" PlaceholderText="Comment" />
+                        </UniformGrid>
+                    </DockPanel>
                 </Grid>
                 <GridSplitter Grid.Column="3" Margin="5" ResizeDirection="Columns" Background="Gray" />
                 <DockPanel Grid.Column="4" Margin="5">
@@ -142,6 +150,7 @@
                                     <TextBlock Margin="7">Preview Scale</TextBlock>
                                     <NumericUpDown Name="PreviewScale" ValueChanged="OnScaleValueChanged" Value="1" FormatString="0.00" Increment="0.01" />
                                 </StackPanel>
+                                <CheckBox Click="ShowSpellcheckUnderline_OnClick" Name="ShowSpellcheckUnderline" Margin="8 0 0 0" IsChecked="True">Show spellcheck underline in preview</CheckBox>
                                 <StackPanel Orientation="Horizontal" Margin="5">
                                     <TextBlock Margin="7">Initial Text Color</TextBlock>
                                     <ColorPicker Name="InitialTextColor" ColorChanged="InitialTextColor_OnColorChanged" />

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using DialogueHelper.FileFormat;
 using DialogueHelper.StylesParser;
@@ -40,13 +41,36 @@ public class ExternalData(MainWindow mainWindow, StringContainer stringContainer
 
     public TintedImage? DrawGlyph()
     {
+        if (Font.IsTtf)
+            return DrawTtfGlyph();
+
         var fontGlyph = Font.GlyphDictionary[Char.Char];
-        if (!Style.ImageAssets.TryGetValue(Font.ImagePath, out var targetTexture))
+        if (Font.ImagePath is null || !Style.ImageAssets.TryGetValue(Font.ImagePath, out var targetTexture))
             return null;
-        var glyphImg = new TintedImage
-        {
-            Source = targetTexture,
-            SourceRect = new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y),
+
+        return PlaceGlyphImage(targetTexture, new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y));
+    }
+
+    TintedImage? DrawTtfGlyph()
+    {
+        if (Font.Typeface is null)
+            return null;
+
+        var key = (Font, Char.Char);
+        if (mainWindow.RasterizedGlyphs.TryGetValue(key, out var bitmap))
+            return PlaceGlyphImage(bitmap, null);
+        
+        bitmap = RasterizeTtfGlyph(Font, Char.Char);
+        mainWindow.RasterizedGlyphs.Add(key, bitmap);
+
+        return PlaceGlyphImage(bitmap, null);
+    }
+
+    TintedImage PlaceGlyphImage(SKBitmap texture, PixelRect? sourceRect)
+    {
+        var glyphImg = new TintedImage {
+            Source = texture,
+            SourceRect = sourceRect,
             TintEnabled = true,
             Tint = Glyph.Color,
             Width = Glyph.Size.X * Glyph.Scale.X,
@@ -66,6 +90,21 @@ public class ExternalData(MainWindow mainWindow, StringContainer stringContainer
             canvas.Height = y + glyphImg.Height;
 
         return glyphImg;
+    }
+    
+    static SKBitmap RasterizeTtfGlyph(FontMetadata font, char c)
+    {
+        var glyphMeta = font.GlyphDictionary[c];
+        var width = int.Max(1, (int)double.Ceiling(glyphMeta.Size.X));
+        var height = int.Max(1, (int)double.Ceiling(glyphMeta.Size.Y));
+        
+        var bitmap = new SKBitmap(width, height);
+        using var skCanvas = new SKCanvas(bitmap);
+        using var skFont = new SKFont(font.Typeface, (float)font.Size);
+        using var paint = new SKPaint { IsAntialias = true, Color = SKColors.White };
+        skFont.GetFontMetrics(out var metrics);
+        skCanvas.DrawText(c.ToString(), 0, -metrics.Ascent, skFont, paint);
+        return bitmap;
     }
 
     public TintedImage DrawTexture(SKBitmap img, (double X, double Y) position, Color? color = null)

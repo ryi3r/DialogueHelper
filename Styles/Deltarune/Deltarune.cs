@@ -106,6 +106,11 @@ public class Deltarune : StyleScript
     public static (double X, double Y) EnvSmallOtherPortraitOffset;
 
     public static char[] Newlines = ['\n', '&', '#'];
+    
+    protected static string UtmtPath = $"{AppContext.BaseDirectory}/UndertaleModCli/";
+			
+    protected virtual int AsteriskManualNewLineCompensation => 2;
+
 
     public override Task Init(CustomToolWindowHandler wh)
     {
@@ -140,7 +145,7 @@ public class Deltarune : StyleScript
 
     public async Task<bool> DownloadUndertaleModToolCli(CustomToolWindowHandler wh)
     {
-        var folderPath = $"{wh.GetStylePath()}/UndertaleModCli/";
+        var folderPath = UtmtPath;
         var filePath = folderPath + $"UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
         if (!File.Exists(filePath) && await wh.ShowDialog<bool>(new QuestionWindow("Do you wish to automatically download UndertaleModTool's Cli on the folder?")))
         {
@@ -183,7 +188,7 @@ public class Deltarune : StyleScript
             catch (Exception e)
             {
                 Console.WriteLine($"fetch exception: {e}");
-                var w = new InfoWindow("Unable to fetch latest UndertaleModCli, please manually download and add UndertaleModCli to this style's folder.");
+                var w = new InfoWindow($"Unable to fetch latest UndertaleModCli, please manually download and extract UndertaleModCli to {UtmtPath}.");
                 await wh.ShowDialog(w);
                 return false;
             }
@@ -632,7 +637,7 @@ public class Deltarune : StyleScript
             var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
             {
                 Title = title ?? "Select the game data file",
-                FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["data.win"] }, new("All files") { Patterns = ["*"] }],
+                FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["*.win"] }, new("All files") { Patterns = ["*"] }],
             });
             if (f.Count <= 0)
                 return null;
@@ -652,9 +657,9 @@ public class Deltarune : StyleScript
             {
                 UseShellExecute = false,
                 CreateNoWindow = true,
-                FileName = $"{wh.GetStylePath()}/UndertaleModCli/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
+                FileName = $"{UtmtPath}/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
                 Arguments = args,
-                WorkingDirectory = $"{wh.GetStylePath()}/UndertaleModCli",
+                WorkingDirectory = UtmtPath,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
             },
@@ -730,11 +735,14 @@ public class Deltarune : StyleScript
         {
             if (key == "date")
                 continue;
-            var pos = key.LastIndexOf("_gml_");
+            var pos = key.LastIndexOf("_gml_", StringComparison.Ordinal);
             if (pos == -1)
                 pos = key.LastIndexOf('_');
             if (pos == -1)
-                throw new InvalidDataException($"Unable to make a string group of {key}");
+            {
+                Console.WriteLine($"Unable to make a string group of {key}");
+                pos = 0;
+            }
             var header = key[..pos];
             if (header != lastHeader)
             {
@@ -1172,7 +1180,7 @@ public class Deltarune : StyleScript
         {
             EnvLastNewline = true;
             if (addSpaceXNewline <= 0 && EnvStartedAsterisk && (Parsed.TextTrimLength - data.Char.Index < 2 || (Parsed.TextTrimLength - data.Char.Index >= 2 && data.Char.String[data.Char.Index + 1] != '*')))
-                addSpaceXNewline = 2;
+                addSpaceXNewline = AsteriskManualNewLineCompensation;
             data.Char.PositionOffset.X = 0;
             if (addSpaceXNewline > 0)
             {
@@ -1429,7 +1437,7 @@ public class ParsedString
                             break;
                         case 'V':
                             {
-                                if (!"ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
+                                if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
                                     ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid voice-clip selected: {slice[1]}"));
                                 Events.Add(i, new DialogueFloweryVoiceClip(fullSlice));
                             }

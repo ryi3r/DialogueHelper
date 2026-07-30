@@ -1,31 +1,42 @@
 using System;
 using System.Collections.Generic;
+using SkiaSharp;
 
 namespace DialogueHelper.StylesParser;
 
 public class FontMetadata
 {
     public readonly string Name;
-    public readonly string ImagePath;
+    public readonly string? ImagePath;
+    public readonly string? TtfPath;
     public readonly double Scale;
     public readonly double Size;
     public readonly double Ascender;
     public readonly double AscenderOffset;
     public readonly List<GlyphMetadata> Glyphs;
-    public readonly Dictionary<char, GlyphMetadata> GlyphDictionary;
+    public readonly GlyphLookup GlyphDictionary;
     public readonly float Index = float.MaxValue;
+    
+    public SKTypeface? Typeface;
+	
+    public bool IsTtf => TtfPath is not null;
+
 
     public FontMetadata(FontMetadataJson font)
     {
         Name = font.Name;
         ImagePath = font.ImagePath;
+        TtfPath = font.TtfPath;
+        if (ImagePath is null && TtfPath is null) {
+            throw new KeyNotFoundException($"The font \"{Name}\" doesn't have a ImagePath or a TtfPath defined, so the style couldn't be loaded");
+        }
         Scale = font.Scale;
         Size = font.Size;
         Ascender = font.Ascender;
         AscenderOffset = font.AscenderOffset;
         Index = font.Index;
         Glyphs = [];
-        foreach (var glyph in font.Glyphs)
+        foreach (var glyph in font.Glyphs ?? [])
         {
             Glyphs.Add(new()
             {
@@ -37,7 +48,7 @@ public class FontMetadata
                 Size = (glyph.Size[0], glyph.Size[1]),
             });
         }
-        GlyphDictionary = [];
+        GlyphDictionary = new(this);
         foreach (var glyph in Glyphs)
             GlyphDictionary.Add(glyph.Char, glyph);
     }
@@ -56,12 +67,13 @@ public class GlyphMetadata
 public class FontMetadataJson
 {
     public required string Name;
-    public required string ImagePath;
+    public string? ImagePath;
+    public string? TtfPath;
     public double Scale = 1;
     public double Size = 10;
     public double Ascender = 10;
     public double AscenderOffset = 0;
-    public required List<GlyphMetadataJson> Glyphs;
+    public List<GlyphMetadataJson>? Glyphs;
     public float Index = float.MaxValue;
 }
 

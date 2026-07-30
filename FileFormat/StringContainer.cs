@@ -9,6 +9,7 @@ public class StringContainer()
     public int Id = -1;
     public string? Text;
     public string OriginalText = "";
+    public string? Comment;
     public string? Key
     {
         get;
@@ -72,6 +73,9 @@ public class StringContainer()
             AuthorGroups = [.. authorGroups.Split('@').Select(x => WebUtility.UrlDecode(x)!)];
         if (fEntry.Data.ContainsKey("MarkAsModified"))
             MarkAsModified = true;
+        
+        if (fEntry.Data.TryGetValue("Comment", out var comment))
+            Comment = comment;
     }
 
     public FormatEntry OutputFormatEntry()
@@ -107,6 +111,9 @@ public class StringContainer()
             fe.Data["AuthorGroups"] = string.Join('@', AuthorGroups.Select(WebUtility.UrlEncode));
         if (MarkAsModified)
             fe.Data["MarkAsModified"] = "";
+        if (Comment is not null && !string.IsNullOrWhiteSpace(Comment)) {
+            fe.Data["Comment"] = Comment;
+        }
         if (Key is not null)
             fe.Data["Key"] = Key;
         return fe;

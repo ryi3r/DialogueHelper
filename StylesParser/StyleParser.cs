@@ -49,8 +49,13 @@ public class StyleParser
             if (!f.EndsWith(".jsonc"))
                 continue;
             FontMetadata.Add(new(JsonSerializer.Deserialize<FontMetadataJson>(File.ReadAllText(f), jsonSeri)!));
+            if (FontMetadata[^1].IsTtf)
+            {
+                FontMetadata[^1].Typeface = SKTypeface.FromFile($"{path}/{FontMetadata[^1].TtfPath}");
+                continue;
+            }
             var imgp = FontMetadata[^1].ImagePath;
-            if (ImageAssets.ContainsKey(imgp))
+            if (imgp is null || ImageAssets.ContainsKey(imgp))
                 continue;
             ImageAssets.Add(imgp, SKBitmap.Decode($"{path}/{imgp}"));
         }
