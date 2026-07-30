@@ -8,14 +8,15 @@ public class GlyphLookup(FontMetadata font)
 {
 	readonly Dictionary<char, GlyphMetadata> _cache = [];
 
-	public GlyphMetadata this[char c] {
-		get {
+	public GlyphMetadata this[char c]
+	{
+		get
+		{
 			if (_cache.TryGetValue(c, out var existing))
 				return existing;
 
 			if (!font.IsTtf)
-				throw new KeyNotFoundException(
-					$"No glyph defined for character '{c}' (0x{(int)c:X4}) in font '{font.Name}'.");
+				throw new KeyNotFoundException($"No glyph defined for character '{c}' (0x{(int)c:X4}) in font '{font.Name}'.");
 
 			return Rasterize(c);
 		}
@@ -36,7 +37,8 @@ public class GlyphLookup(FontMetadata font)
 		var advance = skFont.MeasureText(c.ToString());
 		skFont.GetFontMetrics(out var metrics);
 
-		var glyph = new GlyphMetadata {
+		var glyph = new GlyphMetadata
+		{
 			Char = c,
 			Position = (0, 0),
 			Size = (advance, metrics.Descent - metrics.Ascent),
@@ -47,7 +49,7 @@ public class GlyphLookup(FontMetadata font)
 		font.Glyphs.Add(glyph); // needed so code that scans Font.Glyphs directly (not through this indexer) sees TTF characters too
 		return glyph;
 	}
-	
+
 	public bool TryGetValue(char c, [NotNullWhen(true)] out GlyphMetadata? glyph)
 	{
 		if (_cache.TryGetValue(c, out var existing))

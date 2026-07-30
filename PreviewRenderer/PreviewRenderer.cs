@@ -109,10 +109,6 @@ public class PreviewRenderer(MainWindow mainWindow)
             var charRects = new Dictionary<int, (double X0, double X1, double Y)>();
             // get the bottom of the 'g' character from the current font
             var showSpellcheck = MainWindow.ShowSpellcheckUnderline.IsChecked ?? false;
-            // this will break if the current style doesn't also have the size multiplied by 2 in it's DrawGlyph()
-            var baselineGlyph = font.GlyphDictionary.TryGetValue('g', out var g)
-                ? g : font.Glyphs.OrderByDescending(x => x.Size.Y).First();
-            var baselineHeight = baselineGlyph.Size.Y * 2;
             if (!await (style.Script?.PrepareDraw(wh, eData) ?? Task.FromResult(false)))
             {
                 //Console.WriteLine("rendering start");
@@ -124,21 +120,19 @@ public class PreviewRenderer(MainWindow mainWindow)
                     eData.Char.IsIgnore = style.Metadata.Ignore.Contains(chr);
                     eData.Glyph.Scale = (font.Scale * sc.FontScale * sc.PreviewScale, font.Scale * sc.FontScale * sc.PreviewScale);
                     eData.QueueRedraw = false;
+                    eData.MaxCharYRender = -1;
 
                     try
                     {
                         if (await (style.Script?.DrawGlyph(wh, eData) ?? Task.FromResult(false)))
                             break;
-                        if (misspelled.Any(m => i >= m.Start && i < m.Start + m.Length))
+                        if (eData.MaxCharYRender != -1 && misspelled.Any(m => i >= m.Start && i < m.Start + m.Length))
                         {
-                            // not too much since we are already pretty low by using 'g' as a baseline
                             const double underlineGap = 2;
-			                            
+
                             var x0 = eData.Glyph.Position.X * eData.Glyph.Scale.X;
                             var x1 = x0 + eData.Glyph.Size.X * eData.Glyph.Scale.X;
-                            var y = eData.Glyph.Position.Y * eData.Glyph.Scale.Y
-                                    + baselineHeight * eData.Glyph.Scale.Y
-                                    + underlineGap * eData.Glyph.Scale.Y;
+                            var y = eData.MaxCharYRender + (underlineGap * eData.Glyph.Scale.Y);
                             charRects[i] = (x0, x1, y);
                         }
                     }
@@ -155,9 +149,20 @@ public class PreviewRenderer(MainWindow mainWindow)
                     {
                         if (!charRects.TryGetValue(entry.Start, out var first))
                             continue;
-                        if (!charRects.TryGetValue(entry.Start + entry.Length - 1, out var last))
+                        var last = first;
+                        for (var i = entry.Start; i < entry.Start + entry.Length; i++)
+                        {
+                            if (!charRects.TryGetValue(i, out var e))
+                                continue;
+                            last.Y = double.Max(last.Y, e.Y);
+                            first.Y = double.Max(first.Y, e.Y);
+
+                            last.X0 = double.Max(last.X0, e.X0);
+                            last.X1 = double.Max(last.X1, e.X1);
+                        }
+                        if (last.X0 == first.X1 || last.X1 == first.X1)
                             continue;
-			
+
                         canvas.Children.Add(new Line
                         {
                             StartPoint = new Point(first.X0, first.Y),

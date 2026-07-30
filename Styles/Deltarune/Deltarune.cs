@@ -106,9 +106,9 @@ public class Deltarune : StyleScript
     public static (double X, double Y) EnvSmallOtherPortraitOffset;
 
     public static char[] Newlines = ['\n', '&', '#'];
-    
+
     protected static string UtmtPath = $"{AppContext.BaseDirectory}/UndertaleModCli/";
-			
+
     protected virtual int AsteriskManualNewLineCompensation => 2;
 
 

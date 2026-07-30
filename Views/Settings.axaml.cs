@@ -19,7 +19,7 @@ public partial class Settings : Window
     public readonly List<StyleParser> StyleData = [];
     public readonly List<string> BackgroundData = [];
     public List<string> IgnoreStyles = [];
-    
+
     const string UseProgramDefaultLabel = "Use program default";
 
     public bool Init;
@@ -39,7 +39,7 @@ public partial class Settings : Window
         RepoUrl.Text = mainWindow.GitOptions.RepoUrl;
         SelectedBranch.Text = mainWindow.GitOptions.Branch;
         GroupOnlyEntries.IsChecked = mainWindow.ShowOnlyGroupEntries;
-        
+
         UiFontComboBox.ItemsSource = (string[])[UseProgramDefaultLabel, .. FontManager.Current.SystemFonts.Select(f => f.Name).Order()];
         UiFontComboBox.SelectedItem = mainWindow.UiFontFamily ?? UseProgramDefaultLabel;
         UiFontSizeBox.Value = (decimal)mainWindow.UiFontSize;
@@ -79,7 +79,7 @@ public partial class Settings : Window
             MainWindow.ApplyEditorFont();
             MainWindow.DictionaryAffPath = AffPathBox.Text ?? "";
             MainWindow.DictionaryDicPath = DicPathBox.Text ?? "";
-            
+
             var selStyle = StyleData[StyleComboBox.SelectedIndex];
             MainWindow.ScriptNeedsInitialization = false;
             var abs = Path.GetFullPath(selStyle.Folder);
@@ -102,7 +102,7 @@ public partial class Settings : Window
         if (!Init)
             Close();
     }
-    
+
     async void DownloadDictionary_OnClick(object? sender, RoutedEventArgs e)
     {
         DownloadStatusText.ClearValue(TextBlock.ForegroundProperty);
@@ -143,7 +143,7 @@ public partial class Settings : Window
         var fileName = repoPath[(repoPath.LastIndexOf('/') + 1)..];
         await File.WriteAllBytesAsync(Path.Combine(destFolder, fileName), bytes);
     }
-    
+
     void PathBox_OnTextChanged(object? sender, TextChangedEventArgs e) => UpdateDownloadStatusIcons();
 
     void UpdateDownloadStatusIcons()
@@ -161,7 +161,7 @@ public partial class Settings : Window
         var fileName = repoPath[(repoPath.LastIndexOf('/') + 1)..];
         return File.Exists(Path.Combine(dictFolder, fileName));
     }
-    
+
     async void OpenDictionariesRepo_OnClick(object? sender, RoutedEventArgs e) =>
         await Launcher.LaunchUriAsync(new Uri("https://github.com/LibreOffice/dictionaries"));
 

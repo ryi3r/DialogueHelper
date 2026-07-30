@@ -21,6 +21,8 @@ public class ExternalData(MainWindow mainWindow, StringContainer stringContainer
 
     public bool QueueRedraw;
 
+    public double MaxCharYRender = -1;
+
     public SKBitmap LoadTexture(string path)
     {
         if (mainWindow.LoadedImages.TryGetValue(path, out var value))
@@ -59,7 +61,7 @@ public class ExternalData(MainWindow mainWindow, StringContainer stringContainer
         var key = (Font, Char.Char);
         if (mainWindow.RasterizedGlyphs.TryGetValue(key, out var bitmap))
             return PlaceGlyphImage(bitmap, null);
-        
+
         bitmap = RasterizeTtfGlyph(Font, Char.Char);
         mainWindow.RasterizedGlyphs.Add(key, bitmap);
 
@@ -68,7 +70,8 @@ public class ExternalData(MainWindow mainWindow, StringContainer stringContainer
 
     TintedImage PlaceGlyphImage(SKBitmap texture, PixelRect? sourceRect)
     {
-        var glyphImg = new TintedImage {
+        var glyphImg = new TintedImage
+        {
             Source = texture,
             SourceRect = sourceRect,
             TintEnabled = true,
@@ -79,9 +82,10 @@ public class ExternalData(MainWindow mainWindow, StringContainer stringContainer
 
         var x = Glyph.Position.X * Glyph.Scale.X;
         var y = Glyph.Position.Y * Glyph.Scale.Y;
+        MaxCharYRender = double.Max(MaxCharYRender, y + glyphImg.Height);
         glyphImg.SetValue(Canvas.LeftProperty, x);
         glyphImg.SetValue(Canvas.TopProperty, y);
-        glyphImg.RenderTransformOrigin = Avalonia.RelativePoint.TopLeft;
+        glyphImg.RenderTransformOrigin = RelativePoint.TopLeft;
         canvas.Children.Add(glyphImg);
 
         if (x + glyphImg.Width > canvas.Width)
@@ -91,20 +95,24 @@ public class ExternalData(MainWindow mainWindow, StringContainer stringContainer
 
         return glyphImg;
     }
-    
+
     static SKBitmap RasterizeTtfGlyph(FontMetadata font, char c)
     {
         var glyphMeta = font.GlyphDictionary[c];
         var width = int.Max(1, (int)double.Ceiling(glyphMeta.Size.X));
         var height = int.Max(1, (int)double.Ceiling(glyphMeta.Size.Y));
-        
-        var bitmap = new SKBitmap(width, height);
-        using var skCanvas = new SKCanvas(bitmap);
-        using var skFont = new SKFont(font.Typeface, (float)font.Size);
-        using var paint = new SKPaint { IsAntialias = true, Color = SKColors.White };
-        skFont.GetFontMetrics(out var metrics);
-        skCanvas.DrawText(c.ToString(), 0, -metrics.Ascent, skFont, paint);
-        return bitmap;
+
+        var bmp = new SKBitmap(width, height);
+        {
+            using var ttf = new SKFont(font.Typeface, (float)font.Size);
+            ttf.GetFontMetrics(out var metrics);
+            {
+                using var canvas = new SKCanvas(bmp);
+                using var paint = new SKPaint { IsAntialias = true, Color = SKColors.White };
+                canvas.DrawText(c.ToString(), 0, -metrics.Ascent, ttf, paint);
+            }
+        }
+        return bmp;
     }
 
     public TintedImage DrawTexture(SKBitmap img, (double X, double Y) position, Color? color = null)

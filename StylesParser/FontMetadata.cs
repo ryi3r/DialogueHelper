@@ -16,9 +16,9 @@ public class FontMetadata
     public readonly List<GlyphMetadata> Glyphs;
     public readonly GlyphLookup GlyphDictionary;
     public readonly float Index = float.MaxValue;
-    
+
     public SKTypeface? Typeface;
-	
+
     public bool IsTtf => TtfPath is not null;
 
 
@@ -27,7 +27,8 @@ public class FontMetadata
         Name = font.Name;
         ImagePath = font.ImagePath;
         TtfPath = font.TtfPath;
-        if (ImagePath is null && TtfPath is null) {
+        if (ImagePath is null && TtfPath is null)
+        {
             throw new KeyNotFoundException($"The font \"{Name}\" doesn't have a ImagePath or a TtfPath defined, so the style couldn't be loaded");
         }
         Scale = font.Scale;

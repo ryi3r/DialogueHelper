@@ -245,7 +245,7 @@ public partial class MainWindow : Window
             }
         });
     }
-    
+
     void MainWindow_OnKeyDown(object? sender, KeyEventArgs e)
     {
         switch (e.Key)
@@ -253,7 +253,7 @@ public partial class MainWindow : Window
             case Key.Tab:
                 var ctrl = e.KeyModifiers.HasFlag(KeyModifiers.Control);
                 var shift = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
-	    
+
                 if (ctrl && shift)
                 {
                     RestrictTabIndicator.IsChecked = !RestrictTabIndicator.IsChecked;
@@ -261,58 +261,57 @@ public partial class MainWindow : Window
                     e.Handled = true;
                     break;
                 }
-	    
+
                 if (ctrl || shift)
                     break;
-        
-                switch (RestrictTabIndicator.IsChecked)
+
+                if (RestrictTabIndicator.IsChecked ?? false)
                 {
-                    case false:
-                        var textBox = GetFocusedTargetTextBox();
-                        if (textBox is not null)
+                    var focused = (Visual?)GetTopLevel(this)?.FocusManager.GetFocusedElement();
+                    var focusInTree = focused is not null && (Equals(focused, EntryTreeView) || EntryTreeView.IsVisualAncestorOf(focused));
+
+                    e.Handled = true;
+
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        if (focusInTree)
                         {
-                            InsertTabCharacter(textBox);
-                            e.Handled = true;
+                            EditableText.Focus(NavigationMethod.Tab);
+                            // move the cursor to the beginning, because that makes sense when translating without using the mouse
+                            EditableText.CaretIndex = 0;
+                            EditableText.SelectionStart = 0;
+                            EditableText.SelectionEnd = 0;
                         }
-                        break;
-                    case true:
-                        var focused = (Visual?)GetTopLevel(this)?.FocusManager.GetFocusedElement();
-                        var focusInTree = focused is not null && (Equals(focused, EntryTreeView) || EntryTreeView.IsVisualAncestorOf(focused));
-
+                        else
+                        {
+                            var container = EntryTreeView.SelectedItem is not null
+                                ? EntryTreeView.TreeContainerFromItem(EntryTreeView.SelectedItem)
+                                : null;
+                            (container ?? EntryTreeView).Focus(NavigationMethod.Tab);
+                        }
+                    });
+                }
+                else
+                {
+                    var textBox = GetFocusedTargetTextBox();
+                    if (textBox is not null)
+                    {
+                        InsertTabCharacter(textBox);
                         e.Handled = true;
-
-                        Dispatcher.UIThread.Post(() => {
-                            if (focusInTree)
-                            {
-                                EditableText.Focus(NavigationMethod.Tab);
-                                // move the cursor to the beginning, because that makes sense when translating without using the mouse
-                                EditableText.CaretIndex = 0;
-                                EditableText.SelectionStart = 0;
-                                EditableText.SelectionEnd = 0;
-                            }
-                            else
-                            {
-                                var container = EntryTreeView.SelectedItem is not null
-                                    ? EntryTreeView.TreeContainerFromItem(EntryTreeView.SelectedItem)
-                                    : null;
-                                (container ?? EntryTreeView).Focus(NavigationMethod.Tab);
-                            }
-                        });
-                        break;
-                    // don't do anything on null
+                    }
                 }
                 break;
-            /* switch in case we want to us this method for anything else later,
-               maybe make the mouse side back/forward buttons cycle between entries */
+                /* switch in case we want to us this method for anything else later,
+                   maybe make the mouse side back/forward buttons cycle between entries */
         }
-	}
-    
+    }
+
     TextBox? GetFocusedTargetTextBox()
     {
         TextBox? textBox = null;
         if (GetTopLevel(this)?.FocusManager.GetFocusedElement() is not Visual focused)
             return textBox;
-        
+
         foreach (var candidate in new[] { EditableText, OriginalText, CommentText })
         {
             if (!Equals(focused, candidate) && !candidate.IsVisualAncestorOf(focused))
@@ -335,7 +334,7 @@ public partial class MainWindow : Window
         textBox.Text = text[..start] + "\t" + text[end..];
         textBox.CaretIndex = start + 1;
     }
-	
+
     public void ApplyEditorFont()
     {
         var fontFamily = string.IsNullOrEmpty(UiFontFamily) ? FontFamily.Default : new(UiFontFamily);
@@ -810,7 +809,7 @@ public partial class MainWindow : Window
     {
         var settings = new Settings(this);
         await settings.ShowDialog(this);
-        
+
         if (StyleData?.Script is not null && SelectedStyle is not null && StyleSettings.TryGetValue(SelectedStyle, out var savedProps))
         {
             var liveProps = await StyleData.Script.RegisterCustomSettings();
@@ -1027,7 +1026,7 @@ public partial class MainWindow : Window
         foreach (var img in RasterizedGlyphs.Values)
             img.Dispose();
         RasterizedGlyphs.Clear();
-        
+
         try
         {
             await (StyleData!.Script?.Init(new(this, StyleData)) ?? Task.CompletedTask);
@@ -1107,8 +1106,8 @@ public partial class MainWindow : Window
             UpdateCustomProperties(CustomPropertiesPanel, CustomProperties.AsEnumerable(), true);
         }
     }
-    
-    private async Task RunCustomTool(CustomTool tool)
+
+    async Task RunCustomTool(CustomTool tool)
     {
         try
         {
@@ -1417,7 +1416,7 @@ public partial class MainWindow : Window
                         item.Children.Add(node);
                     }
                     break;
-                
+
                 case not null when tool.Type == typeof(Color):
                     {
                         var col = (Color)tool.Value!;
@@ -1572,7 +1571,7 @@ public partial class MainWindow : Window
         );
         UpdateBoxBounds();
     }
-    
+
     void CommentText_OnTextChanging(object? sender, TextChangingEventArgs? e)
     {
         if (SelectedString is not null && !UpdatingEntry && FileData is not null && e is not null)
@@ -1621,18 +1620,18 @@ public partial class MainWindow : Window
         await UpdateEditableText(UpdateKind.ScaleChanged);
         await UpdateOriginalText(UpdateKind.ScaleChanged);
     }
-    
+
     void TextBox_OnSelectionPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
     {
         if (e.Property != TextBox.SelectionStartProperty && e.Property != TextBox.SelectionEndProperty)
             return;
         if (sender is not TextBox textBox)
             return;
-	
+
         var length = int.Abs(textBox.SelectionEnd - textBox.SelectionStart);
         SelectionCharCountLabel.Text = length > 0 ? $"{length} character{(length == 1 ? "" : "s")} selected" : "";
     }
-	    
+
     async void ShowSpellcheckUnderline_OnClick(object? sender, RoutedEventArgs e)
     {
         await UpdateEditableText(UpdateKind.None);
@@ -1906,7 +1905,7 @@ public partial class MainWindow : Window
                 .Where(m => m.StartsWith("Key:", StringComparison.InvariantCultureIgnoreCase))
                 .Select(m => m[4..])
                 .ToList();
-        
+
         var commentText = matches
             .Where(m => m.StartsWith("Comment:", StringComparison.InvariantCultureIgnoreCase))
             .Select(m => m[8..])
@@ -1953,7 +1952,8 @@ public partial class MainWindow : Window
                         _ => !item.OriginalText.Contains(ogText, targetCasing),
                     }) || searchOgText.Any(ogText => ogText.Length == 0 && item.OriginalText.Length > 0))
                         goto NotFound;
-                    if (commentText.Any(comment => searchExact switch {
+                    if (commentText.Any(comment => searchExact switch
+                    {
                         SearchExactness.StartsWith => !(item.Comment ?? "").StartsWith(comment, targetCasing),
                         SearchExactness.EndsWith => !(item.Comment ?? "").EndsWith(comment, targetCasing),
                         SearchExactness.Exact => !(item.Comment ?? "").Equals(comment, targetCasing),
@@ -2824,7 +2824,5 @@ public partial class MainWindow : Window
         EntryTextBox.SelectionEnd = EntryTextBox.SelectionStart;
     }
 
-    void RestrictTabIndicator_OnClick(object? sender, RoutedEventArgs e) {
-        SaveSettings();
-    }
+    void RestrictTabIndicator_OnClick(object? sender, RoutedEventArgs e) => SaveSettings();
 }
