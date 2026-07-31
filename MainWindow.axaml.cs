@@ -963,7 +963,7 @@ public partial class MainWindow : Window
             w.Hide();
             var settings = new Settings(this) { Init = true };
             await settings.ShowDialog(this);
-            await w.ShowDialog(this);
+            w.Show(this);
         }
         else
         {
