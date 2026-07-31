@@ -107,7 +107,7 @@ public class Deltarune : StyleScript
 
     public static char[] Newlines = ['\n', '&', '#'];
 
-    protected static string UtmtPath = $"{AppContext.BaseDirectory}/UndertaleModCli/";
+    protected static string UtmtPath = null!;
 
     protected virtual int AsteriskManualNewLineCompensation => 2;
 
@@ -116,6 +116,7 @@ public class Deltarune : StyleScript
     {
         // This is called when the script is loaded and ready to go.
         //await wh.ShowDialog(new InfoWindow("Hello world!"));
+        UtmtPath = $"{wh.GetStylePath()}/UndertaleModCli/";
         return Task.CompletedTask;
     }
 
@@ -147,8 +148,10 @@ public class Deltarune : StyleScript
     {
         var folderPath = UtmtPath;
         var filePath = folderPath + $"UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}";
-        if (!File.Exists(filePath) && await wh.ShowDialog<bool>(new QuestionWindow("Do you wish to automatically download UndertaleModTool's Cli on the folder?")))
+        if (!File.Exists(filePath))
         {
+            if (!await wh.ShowDialog<bool>(new QuestionWindow("Do you wish to automatically download UndertaleModTool's Cli on the folder?")))
+                return false;
             var pg = new LoadingWindow { Text = { Text = "Downloading..." }, ProgressBar = { Value = 0 }, };
             try
             {
@@ -321,12 +324,34 @@ public class Deltarune : StyleScript
             return;
         var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
         wh.Show(lw);
-        var output = await DataWinToJsonPrompt(wh, lw);
-        if (output is null)
-            return;
+        var fd = wh.GetLoadedFileData()!;
+        var allHaveKeys = true;
+        foreach (var e in fd.IterAllStrings())
+        {
+            if (e.Key is not null && e.Key.Length != 0)
+                continue;
+            allHaveKeys = false;
+        }
+        OrderedDictionary<string, string>? output;
+        if (allHaveKeys)
+        {
+            output = [];
+            foreach (var e in fd.IterAllStrings())
+            {
+                if (e.Key is null)
+                    throw new InvalidDataException($"unexpected null key on id {e.Id}");
+                output.Add(e.Key, e.OriginalText);
+            }
+        }
+        else
+        {
+            output = await DataWinToJsonPrompt(wh, lw);
+            if (output is null)
+                return;
+        }
         try
         {
-            var (data, _, warnedKeys) = ExportJson(output, wh, lw);
+            var (data, _, warnedKeys) = ExportJson(output, wh, lw, fd);
             var stream = await fSave.OpenWriteAsync();
             await JsonSerializer.SerializeAsync(stream, data, new JsonSerializerOptions { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
             await stream.DisposeAsync();
