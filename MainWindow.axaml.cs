@@ -781,8 +781,6 @@ public partial class MainWindow : Window
             await UpdateEditableText(UpdateKind.ChangedEntry);
             await UpdateOriginalText(UpdateKind.ChangedEntry);
         }
-        else
-            SelectedString = new();
     }
 
     public async Task PopulateCustomPropertiesValues()
