@@ -3,6 +3,9 @@
     "Images": [{
         "Path": "Assets/BoxPink.png"
     }],
+    "CustomProperties": {
+        "PortraitOffset": [34, 87]
+    },
     "TextOffset": [34, 87],
     "Index": 6
 }
