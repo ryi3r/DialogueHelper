@@ -810,17 +810,6 @@ public partial class MainWindow : Window
         var settings = new Settings(this);
         await settings.ShowDialog(this);
 
-        if (StyleData?.Script is not null && SelectedStyle is not null && StyleSettings.TryGetValue(SelectedStyle, out var savedProps))
-        {
-            var liveProps = await StyleData.Script.RegisterCustomSettings();
-            foreach (var live in liveProps)
-            {
-                var saved = savedProps.FirstOrDefault(p => p.Name == live.Name);
-                if (saved is not null)
-                    live.StringToValue(saved.ValueToString());
-            }
-        }
-
         if (ScriptNeedsInitialization)
         {
             await InitializeCustomScript();
@@ -1049,6 +1038,16 @@ public partial class MainWindow : Window
 
             CustomTools = [.. await (StyleData.Script?.RegisterCustomTools() ?? Task.FromResult(Enumerable.Empty<CustomTool>()))];
             CustomProperties = [.. await (StyleData.Script?.RegisterCustomProperties() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()))];
+
+            if (StyleSettings.TryGetValue(SelectedStyle!, out var set))
+            {
+                foreach (var e in await (StyleData.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>())))
+                {
+                    var s = set.FirstOrDefault(p => p.Name == e.Name);
+                    if (s is not null)
+                        e.StringToValue(s.ValueToString());
+                }
+            }
         }
         catch (Exception ex)
         {
