@@ -722,7 +722,7 @@ public class Deltarune : StyleScript
         }
         try
         {
-            if (isJson)
+            if (!isJson)
             {
                 var args = $"load \"{path}\" -s \"{wh.GetStylePath()}/";
                 if (!importToDataWin)
