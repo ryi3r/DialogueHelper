@@ -960,27 +960,7 @@ public partial class MainWindow : Window
             {
                 StyleData = new StyleParser(SelectedStyle);
                 await Task.Run(() => StyleData.CompileCode());
-                StyleSettings.TryAdd(SelectedStyle, []);
-                if (StyleData.Script is not null)
-                {
-                    var res = await StyleData.Script.RegisterCustomSettings();
-                    var props = StyleSettings[SelectedStyle];
-                    foreach (var prop in res)
-                    {
-                        var p = props.FirstOrDefault(p => p.Name == prop.Name);
-                        if (p is not null)
-                        {
-                            var val = p.ValueToString();
-                            if (val.Length > 0)
-                                prop.StringToValue(val);
-                            var ind = props.IndexOf(p);
-                            props.RemoveAt(ind);
-                            props.Insert(ind, prop);
-                        }
-                        else
-                            props.Add(prop);
-                    }
-                }
+                await InitializeCustomScript();
             }
             catch (Exception ex)
             {
@@ -1039,14 +1019,23 @@ public partial class MainWindow : Window
             CustomTools = [.. await (StyleData.Script?.RegisterCustomTools() ?? Task.FromResult(Enumerable.Empty<CustomTool>()))];
             CustomProperties = [.. await (StyleData.Script?.RegisterCustomProperties() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()))];
 
-            if (StyleSettings.TryGetValue(SelectedStyle!, out var set))
+            StyleSettings.TryAdd(SelectedStyle!, []);
+            var res = await (StyleData.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()));
+            var props = StyleSettings[SelectedStyle!];
+            foreach (var prop in res)
             {
-                foreach (var e in await (StyleData.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>())))
+                var p = props.FirstOrDefault(p => p.Name == prop.Name);
+                if (p is not null)
                 {
-                    var s = set.FirstOrDefault(p => p.Name == e.Name);
-                    if (s is not null)
-                        e.StringToValue(s.ValueToString());
+                    var val = p.ValueToString();
+                    if (val.Length > 0)
+                        prop.StringToValue(val);
+                    var ind = props.IndexOf(p);
+                    props.RemoveAt(ind);
+                    props.Insert(ind, prop);
                 }
+                else
+                    props.Add(prop);
             }
         }
         catch (Exception ex)
