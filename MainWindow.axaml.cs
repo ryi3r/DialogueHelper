@@ -676,13 +676,6 @@ public partial class MainWindow : Window
             CommentText.Text = sc.Comment;
             CommentText.IsUndoEnabled = true;
 
-
-            await PopulateCustomPropertiesValues();
-            if (lastSel.EqStrings != sc.EqStrings)
-                ReloadEqStringsField();
-
-            UpdateCustomScriptFields();
-
             {
                 var targetSel = sc;
                 //Console.WriteLine("updating");
@@ -730,6 +723,41 @@ public partial class MainWindow : Window
                 sc.TextColor.Rgba = targetSel.TextColor.Rgba;
                 InitialTextColor.Color = Avalonia.Media.Color.FromUInt32(targetSel.TextColor.Argb);
 
+                {
+                    var isDiff = sc.CustomProperties.Count != targetSel.CustomProperties.Count;
+                    if (!isDiff)
+                    {
+                        var baseKeys = sc.CustomProperties.Keys.ToArray();
+                        var targetKeys = targetSel.CustomProperties.Keys.ToArray();
+                        foreach (var (a, b) in baseKeys.Zip(targetKeys))
+                        {
+                            if (!targetKeys.Contains(a) || !baseKeys.Contains(b))
+                            {
+                                isDiff = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!isDiff)
+                    {
+                        foreach (var (k, v) in sc.CustomProperties)
+                        {
+                            if (v != targetSel.CustomProperties[k])
+                            {
+                                isDiff = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isDiff)
+                    {
+                        sc.CustomProperties.Clear();
+                        foreach (var (k, v) in targetSel.CustomProperties)
+                            sc.CustomProperties.Add(k, v);
+                        markAsModified = true;
+                    }
+                }
+
                 if (markAsModified)
                 {
                     //Console.WriteLine("marked as modified");
@@ -741,6 +769,12 @@ public partial class MainWindow : Window
                 }
                 //Console.WriteLine("OK");
             }
+
+            await PopulateCustomPropertiesValues();
+            if (lastSel.EqStrings != sc.EqStrings)
+                ReloadEqStringsField();
+
+            UpdateCustomScriptFields();
 
             UpdatingEntry = false;
 

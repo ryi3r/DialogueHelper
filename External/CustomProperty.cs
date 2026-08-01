@@ -134,8 +134,10 @@ public class CustomPropertyList<T>(string visualName, string? tooltip, string na
         if (Node is ComboBox cb)
         {
             cb.IsEnabled = !ReadOnly;
+            var idx = SelectedIndex;
             cb.ItemsSource = Data;
-            cb.SelectedItem = Value;
+            SelectedIndex = idx;
+            cb.SelectedIndex = SelectedIndex < 0 || SelectedIndex >= Data.Count ? -1 : SelectedIndex;
         }
         else
             base.UpdateUiValue();
