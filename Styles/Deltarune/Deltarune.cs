@@ -521,35 +521,34 @@ public class Deltarune : StyleScript
         var fd = wh.GetLoadedFileData()!;
         var entryCount = 0;
         var entriesUpdated = 0;
+        var unusedKeys = new List<(string Text, string Key)>();
         foreach (var (header, entries) in CalculateHeaders(output.Keys))
         {
-            var s = fd.GetString(header);
-            if (s is not null)
+            foreach (var key in entries)
+                unusedKeys.Add((output[key], key));
+        }
+        foreach (var sc in fd.IterAllStrings())
+        {
+            var assign = (sc.Key ?? "").Length == 0;
+            if ((sc.Key ?? "").Length > 0)
             {
-                var unusedKeys = new List<(string Text, string Key)>();
-                foreach (var key in entries)
-                    unusedKeys.Add((output[key], key));
-                foreach (var sc in s)
+                var kf = unusedKeys.Index().FirstOrDefault(x => x.Item.Key == sc.Key, (Index: -1, Item: (null!, null!)));
+                if (kf.Index != -1)
+                    unusedKeys.RemoveAt(kf.Index);
+                else
+                    assign = true;
+            }
+            if (assign)
+            {
+                var kf = unusedKeys.Index().FirstOrDefault(x => x.Item.Text == sc.OriginalText, (Index: -1, Item: (null!, null!)));
+                if (kf.Index != -1)
                 {
-                    if ((sc.Key ?? "").Length > 0)
-                    {
-                        var kf = unusedKeys.Index().FirstOrDefault(x => x.Item.Key == sc.Key, (Index: -1, Item: (null!, null!)));
-                        if (kf.Index != -1)
-                            unusedKeys.RemoveAt(kf.Index);
-                    }
-                    else if ((sc.Key ?? "").Length == 0)
-                    {
-                        var kf = unusedKeys.Index().FirstOrDefault(x => x.Item.Text == sc.OriginalText, (Index: -1, Item: (null!, null!)));
-                        if (kf.Index != -1)
-                        {
-                            sc.Key = kf.Item.Key;
-                            unusedKeys.RemoveAt(kf.Index);
-                            entriesUpdated++;
-                        }
-                    }
-                    entryCount++;
+                    sc.Key = kf.Item.Key;
+                    unusedKeys.RemoveAt(kf.Index);
+                    entriesUpdated++;
                 }
             }
+            entryCount++;
         }
         await wh.LoadRaw(fd);
         await wh.ShowDialog(new InfoWindow($"Updated data successfully.\n({entriesUpdated}/{entryCount} keys updated.)"));
@@ -682,6 +681,8 @@ public class Deltarune : StyleScript
                     fdFinal.GetString(entry)!.Add(sc.Cont);
                 }
             }
+            if (fdFinal.ContainsKeyString(entry) && fdFinal.GetString(entry)!.Count == 0)
+                fdFinal.RemoveString(entry);
         }
         if (conts.Count > 0)
             fdFinal.InsertString(0, "__NO_KEY_FOUND__", conts);
