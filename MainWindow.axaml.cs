@@ -2605,7 +2605,7 @@ public partial class MainWindow : Window
             }
             foreach (var (k, s) in l.GetStringKeysValues())
             {
-                if (final.ContainsKeyString(k))
+                if (!final.ContainsKeyString(k))
                     final.AddString(k, []);
                 var arr = final.GetString(k)!;
                 foreach (var n in s)
