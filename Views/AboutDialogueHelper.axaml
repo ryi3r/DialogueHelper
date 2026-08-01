@@ -5,7 +5,7 @@
                 <TextBlock>Dialogue Helper</TextBlock>
                 <TextBlock Name="Version">$V</TextBlock>
             </Span>
-            <LineBreak />Developed by <Span FontWeight="Bold" Foreground="CornflowerBlue">ryi3r</Span>.
+            <LineBreak />Developed by <Span FontWeight="Bold" Foreground="CornflowerBlue">ryi3r</Span> &amp; contributors.
         </TextBlock>
         <StackPanel Orientation="Horizontal" Spacing="7" HorizontalAlignment="Right" VerticalAlignment="Bottom">
             <Button Click="OpenProgRepo_OnClick">Open Program Repo</Button>

@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -18,6 +17,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.PreviewRenderer;
@@ -559,21 +559,32 @@ public class Deltarune : StyleScript
     {
         if (!await wh.EnsureFileOpen())
             return;
-        var oldOutput = await DataWinToJsonPrompt(wh, title: "Select the old game data file");
+        var fd = wh.GetLoadedFileData()!;
+        {
+            var keys = new HashSet<string>();
+            foreach (var e in fd.IterAllStrings())
+            {
+                if (e.Key is null || e.Key.Length == 0 || !keys.Add(e.Key))
+                {
+                    await wh.ShowDialog(new InfoWindow("This tool requires all entries to have a key (and be unique, too.)"));
+                    return;
+                }
+            }
+        }
+        var oldOutput = await DataWinToJsonPrompt(wh, title: "Select the old game data file", acceptJsonAsReplacement: true);
         if (oldOutput is null)
             return;
-        var newOutput = await DataWinToJsonPrompt(wh, title: "Select the new game data file");
+        var newOutput = await DataWinToJsonPrompt(wh, title: "Select the new game data file", acceptJsonAsReplacement: true);
         if (newOutput is null)
             return;
         var resetEdited = await wh.ShowDialog<bool>(new QuestionWindow("Do you want to reset the texts that were changed between the 2 game versions to rectify the translation?"));
-        var fd = wh.GetLoadedFileData()!;
         var lw = new LoadingWindow { ProgressBar = { IsIndeterminate = true, ShowProgressText = false } };
         wh.Show(lw);
         try
         {
             var oldHeaders = CalculateHeaders(oldOutput.Keys);
             var oldEj = ExportJson(oldOutput, wh, lw, fd, oldHeaders);
-            var newHeaders = CalculateHeaders(oldOutput.Keys);
+            var newHeaders = CalculateHeaders(newOutput.Keys);
             var newEj = ExportJson(newOutput, wh, lw, fd, newHeaders);
             var allKeys = newOutput.Keys.ToList();
             foreach (var k in oldOutput.Keys)
@@ -595,13 +606,37 @@ public class Deltarune : StyleScript
                     {
                         Id = fd.LastStringId++,
                         OriginalText = newValue!,
+                        Key = k,
                     });
                 }
                 else if (oldGot && !newGot)
                 {
-                    // todo finish this thing idk
+                    foreach (var (e, v) in fd.GetStringKeysValues())
+                    {
+                        var (idx, n) = v.Index().FirstOrDefault(x => x.Item.Key == k, (Index: -1, Item: null!));
+                        if (n is not null)
+                        {
+                            v.RemoveAt(idx);
+                            if (v.Count == 0)
+                                fd.RemoveString(e);
+                            break;
+                        }
+                    }
+                }
+                else if (oldValue != newValue)
+                {
+                    foreach (var e in fd.IterAllStrings())
+                    {
+                        if (e.Key != k)
+                            continue;
+                        e.OriginalText = newValue!;
+                        if (resetEdited)
+                            e.Text = null;
+                        break;
+                    }
                 }
             }
+            await wh.LoadRaw(fd);
         }
         finally
         {
@@ -653,43 +688,32 @@ public class Deltarune : StyleScript
         return fdFinal;
     }
 
-    public async Task<OrderedDictionary<string, string>?> DataWinToJsonPrompt(CustomToolWindowHandler wh, LoadingWindow? lw = null, string? path = null, bool importToDataWin = false, string? title = "")
+    public async Task<OrderedDictionary<string, string>?> DataWinToJsonPrompt(CustomToolWindowHandler wh, LoadingWindow? lw = null, string? path = null, bool importToDataWin = false, string? title = "", bool acceptJsonAsReplacement = false)
     {
         if (!await DownloadUndertaleModToolCli(wh))
             return null;
+        var isJson = false;
         if (path is null)
         {
+            List<FilePickerFileType> fpt = [new("GameMaker's Data Files") { Patterns = ["*.win"] }, new("All files") { Patterns = ["*"] }];
+            if (acceptJsonAsReplacement)
+                fpt.Insert(1, new("JSON Files") { Patterns = ["*.json"] });
             var f = await wh.GetStorageProvider().OpenFilePickerAsync(new()
             {
                 Title = title ?? "Select the game data file",
-                FileTypeFilter = [new("GameMaker's Data Files") { Patterns = ["*.win"] }, new("All files") { Patterns = ["*"] }],
+                FileTypeFilter = fpt,
             });
             if (f.Count <= 0)
                 return null;
-            path = f[0].Path.LocalPath.Replace("\"", "\\\"");
-        }
-        var args = $"load \"{path}\" -s ../";
-        if (!importToDataWin)
-        {
-            File.Delete($"{wh.GetStylePath()}/output.json");
-            args += "ExportStringsJson.csx";
-        }
-        else
-            args += $"ImportStringsJson.csx -o \"{path}\"";
-        using var proc = new Process
-        {
-            StartInfo =
+            if (acceptJsonAsReplacement && f[0].Path.LocalPath.EndsWith("json", StringComparison.InvariantCultureIgnoreCase))
             {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                FileName = $"{UtmtPath}/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
-                Arguments = args,
-                WorkingDirectory = UtmtPath,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-            },
-        };
-        proc.Start();
+                isJson = true;
+                path = f[0].Path.LocalPath;
+            }
+            else
+                path = f[0].Path.LocalPath.Replace("\"", "\\\"");
+        }
+        Process? proc = null;
         var autohide = lw is null;
         if (lw is null)
         {
@@ -698,45 +722,71 @@ public class Deltarune : StyleScript
         }
         try
         {
-            var stdout = new StringBuilder();
-            while (!proc.HasExited)
+            if (isJson)
             {
-                var line = await proc.StandardOutput.ReadLineAsync();
-                if (line is null)
-                    continue;
-                stdout.Append(line);
-                stdout.Append('\n');
-                line = line.Trim();
-                if (line.EndsWith(')'))
+                var args = $"load \"{path}\" -s \"{wh.GetStylePath()}/";
+                if (!importToDataWin)
                 {
-                    var idx = line.LastIndexOf('(');
-                    if (idx != -1)
+                    File.Delete($"{wh.GetStylePath()}/output.json");
+                    args += "ExportStringsJson.csx\"";
+                }
+                else
+                    args += $"ImportStringsJson.csx\" -o \"{path}\"";
+                proc = new Process
+                {
+                    StartInfo =
+                {
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    FileName = $"{UtmtPath}/UndertaleModCli{(OperatingSystem.IsWindows() ? ".exe" : "")}",
+                    Arguments = args,
+                    WorkingDirectory = UtmtPath,
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
+                },
+                };
+                proc.Start();
+
+                var stdout = new StringBuilder();
+                while (!proc.HasExited)
+                {
+                    var line = await proc.StandardOutput.ReadLineAsync();
+                    if (line is null)
+                        continue;
+                    stdout.Append(line);
+                    stdout.Append('\n');
+                    line = line.Trim();
+                    if (line.EndsWith(')'))
                     {
-                        var sep = line.IndexOf('/', idx + 1);
-                        if (sep != -1 && sep < line.Length - 1)
+                        var idx = line.LastIndexOf('(');
+                        if (idx != -1)
                         {
-                            lw.ProgressBar.IsIndeterminate = false;
-                            lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
-                            lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
+                            var sep = line.IndexOf('/', idx + 1);
+                            if (sep != -1 && sep < line.Length - 1)
+                            {
+                                lw.ProgressBar.IsIndeterminate = false;
+                                lw.ProgressBar.Maximum = long.Parse(line[(sep + 1)..(line.Length - 1)]);
+                                lw.ProgressBar.Value = long.Parse(line[(idx + 1)..sep]);
+                            }
                         }
                     }
+                    lw.Text.Text = line;
                 }
-                lw.Text.Text = line;
-            }
-            var stderr = await proc.StandardError.ReadToEndAsync();
+                var stderr = await proc.StandardError.ReadToEndAsync();
 
-            Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
-            if (proc.ExitCode != 0 || stderr.Trim().Length > 0 || (!importToDataWin && !File.Exists($"{wh.GetStylePath()}/output.json")))
-            {
-                lw.Close();
-                await wh.ShowDialog(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Text file") { Patterns = ["*.txt"] }]));
-                return null;
+                Console.WriteLine($"stdout:\n{stdout}\nstderr:\n{stderr}");
+                if (proc.ExitCode != 0 || stderr.Trim().Length > 0 || (!importToDataWin && !File.Exists($"{wh.GetStylePath()}/output.json")))
+                {
+                    lw.Close();
+                    await wh.ShowDialog(new TextBoxWindow($"UndertaleModCli exited with code {proc.ExitCode}", $"stdout:\n{stdout}\nstderr:\n{stderr}", [new("Text file") { Patterns = ["*.txt"] }]));
+                    return null;
+                }
             }
             if (importToDataWin)
                 return [];
             else
             {
-                var stream = new MemoryStream(await File.ReadAllBytesAsync($"{wh.GetStylePath()}/output.json"));
+                var stream = new MemoryStream(await File.ReadAllBytesAsync(isJson ? path : $"{wh.GetStylePath()}/output.json"));
                 var output = (await JsonSerializer.DeserializeAsync<OrderedDictionary<string, string>>(stream))!;
                 await stream.DisposeAsync();
 
@@ -745,7 +795,9 @@ public class Deltarune : StyleScript
         }
         finally
         {
-            File.Delete($"{wh.GetStylePath()}/{(!importToDataWin ? "output" : "input")}.json");
+            proc?.Dispose();
+            if (!isJson)
+                File.Delete($"{wh.GetStylePath()}/{(!importToDataWin ? "output" : "input")}.json");
             if (autohide)
                 lw.Close();
         }
@@ -760,7 +812,7 @@ public class Deltarune : StyleScript
         {
             if (key == "date")
                 continue;
-            var pos = key.LastIndexOf("_gml_", StringComparison.Ordinal);
+            var pos = key.LastIndexOf("_gml_");
             if (pos == -1)
                 pos = key.LastIndexOf('_');
             if (pos == -1)
@@ -885,25 +937,15 @@ public class Deltarune : StyleScript
     {
         if (data.UpdateKind is PreviewRenderer.UpdateKind.SelectedBoxChanged)
         {
-            DialogueKinds? targetBox = null;
-            switch ((Boxes)data.GetCurrentBox())
+            DialogueKinds? targetBox = (Boxes)data.GetCurrentBox() switch
             {
-                case Boxes.BattleIdle:
-                    targetBox = DialogueKinds.BattleIdle;
-                    break;
-                case Boxes.PlatformerDiaglogue:
-                    targetBox = DialogueKinds.Platformer;
-                    break;
-                case Boxes.OverworldPink:
-                    targetBox = DialogueKinds.Pink;
-                    break;
-                case Boxes.RecruitDescription:
-                    targetBox = DialogueKinds.DynamicWordwarp;
-                    break;
-                case Boxes.TennaBoard:
-                    targetBox = DialogueKinds.TennaBoard;
-                    break;
-            }
+                Boxes.BattleIdle => DialogueKinds.BattleIdle,
+                Boxes.PlatformerDiaglogue => DialogueKinds.Platformer,
+                Boxes.OverworldPink => DialogueKinds.Pink,
+                Boxes.RecruitDescription => DialogueKinds.DynamicWordwarp,
+                Boxes.TennaBoard => DialogueKinds.TennaBoard,
+                _ => null,
+            };
             if (targetBox is not null && DialogueType.SelectedIndex != (int)targetBox)
             {
                 DialogueType.SelectedIndex = (int)targetBox;
