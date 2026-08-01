@@ -630,7 +630,10 @@ public class Deltarune : StyleScript
                             continue;
                         e.OriginalText = newValue!;
                         if (resetEdited)
+                        {
+                            e.MarkAsModified = false;
                             e.Text = null;
+                        }
                         break;
                     }
                 }
