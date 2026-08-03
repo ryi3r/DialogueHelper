@@ -1428,7 +1428,7 @@ public class ParsedString
         TextTrimLength = trimLen;
         var sb = new StringBuilder();
         var tSpace = -1;
-        var cPos = -1;
+        var cPos = 0;
         var spaceSb = -1;
         var lastX = -1;
         //Console.WriteLine($"============== {text}");
@@ -1693,7 +1693,7 @@ public class ParsedString
                 if (cPos >= limit)
                 {
                     //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}->{text[i]},a:{AsteriskCheck}");
-                    cPos = 1;
+                    cPos = 0;
                     if (tSpace > 2)
                     {
                         i = tSpace - 1;
