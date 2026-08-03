@@ -41,16 +41,14 @@ public class ExternalData(MainWindow mainWindow, StringContainer stringContainer
         bitmap.Dispose();
     }
 
-    public TintedImage? DrawGlyph()
+    public TintedImage? DrawGlyph(char? c = null)
     {
         if (Font.IsTtf)
             return DrawTtfGlyph();
-
-        var fontGlyph = Font.GlyphDictionary[Char.Char];
         if (Font.ImagePath is null || !Style.ImageAssets.TryGetValue(Font.ImagePath, out var targetTexture))
             return null;
 
-        return PlaceGlyphImage(targetTexture, new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y));
+        return PlaceGlyphImage(targetTexture, Font.GlyphDictionary.TryGetValue(c ?? Char.Char, out var fontGlyph) ? new((int)fontGlyph.Position.X, (int)fontGlyph.Position.Y, (int)fontGlyph.Size.X, (int)fontGlyph.Size.Y) : null);
     }
 
     TintedImage? DrawTtfGlyph()

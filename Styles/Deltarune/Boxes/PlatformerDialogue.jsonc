@@ -6,9 +6,9 @@
         "Path": "Assets/BoxPlatDialogueNoPortrait.png"
     }],
     "CustomProperties": {
-        "SmallFlowerPortraitOffset": [84, 11],
+        "SmallFlowerPortraitOffset": [19, 11],
         "PortraitOffset": [136, 11]
     },
-    "TextOffset": [22, 11],
+    "TextOffset": [19, 11],
     "Index": 7
 }

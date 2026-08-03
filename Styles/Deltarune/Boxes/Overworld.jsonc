@@ -5,7 +5,7 @@
     }],
     "CustomProperties": {
         "PortraitOffset": [145, 28],
-        "SmallFlowerPortraitOffset": [99, 28],
+        "SmallFlowerPortraitOffset": [66, 28],
         "SmallOtherPortraitOffset": [81, 28]
     },
     "TextOffset": [34, 28],

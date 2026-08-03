@@ -65,4 +65,11 @@ public class GlyphLookup(FontMetadata font)
 		glyph = Rasterize(c);
 		return true;
 	}
+
+	public GlyphMetadata? GetValueOrDefault(char c, GlyphMetadata? @default = default)
+	{
+		if (!TryGetValue(c, out var g))
+			return @default;
+		return g;
+	}
 }

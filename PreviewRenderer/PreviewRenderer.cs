@@ -103,16 +103,17 @@ public class PreviewRenderer(MainWindow mainWindow)
             var wh = new CustomToolWindowHandler(MainWindow, style);
             eData.Char.String = str;
             //Console.WriteLine("rendering prep");
-            // get every misspelled word
-            var misspelled = MainWindow.SpellCheckerConfig is null
-                ? [] : new SpellChecker(MainWindow.SpellCheckerConfig).CheckSpellingFullText(str);
-            var charRects = new Dictionary<int, (double X0, double X1, double Y)>();
-            // get the bottom of the 'g' character from the current font
-            var showSpellcheck = MainWindow.ShowSpellcheckUnderline.IsChecked ?? false;
             if (!await (style.Script?.PrepareDraw(wh, eData) ?? Task.FromResult(false)))
             {
+                // get every misspelled word
+                var misspelled = MainWindow.SpellCheckerConfig is null
+                    ? [] : new SpellChecker(MainWindow.SpellCheckerConfig).CheckSpellingFullText(eData.Char.String);
+                var charRects = new Dictionary<int, (double X0, double X1, double Y)>();
+                // get the bottom of the 'g' character from the current font
+                var showSpellcheck = MainWindow.ShowSpellcheckUnderline.IsChecked ?? false;
+
                 //Console.WriteLine("rendering start");
-                foreach (var (i, chr) in str.Index())
+                foreach (var (i, chr) in eData.Char.String.Index())
                 {
                     eData.Char.Char = chr;
                     eData.Char.Index = i;

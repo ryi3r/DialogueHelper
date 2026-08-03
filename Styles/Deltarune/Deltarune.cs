@@ -88,8 +88,6 @@ public class Deltarune : StyleScript
     public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", null, "darkZone", false);
     public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "Battle Idle", "Platformer", "Platformer ACT", "Pink", "Shop Sell Equippable", "Tenna's Board", "Dynamic Wordwrap", "None"], [null, null, null, null, null, "This one doesn't actually change the line-wrapping style, but it'll change the box (if it's set correctly) to let you see the limit of that", null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes."], null, 0);
 
-    public static bool EnvLastNewline;
-    public static bool EnvStartedAsterisk;
     public static double EnvX;
     public static double EnvY;
     public static double EnvDynLimitWrap;
@@ -105,12 +103,11 @@ public class Deltarune : StyleScript
     public static (double X, double Y) EnvSmallFlowerPortraitOffset;
     public static (double X, double Y) EnvSmallOtherPortraitOffset;
 
+    public static bool EnvDrawAsterisk;
+
     public static char[] Newlines = ['\n', '&', '#'];
 
     protected static string UtmtPath = null!;
-
-    protected virtual int AsteriskManualNewLineCompensation => 2;
-
 
     public override Task Init(CustomToolWindowHandler wh)
     {
@@ -415,31 +412,43 @@ public class Deltarune : StyleScript
                 continue;
             var ogParsed = new ParsedString(og, Boxes.Overworld);
             var parsed = new ParsedString(value, Boxes.Overworld);
-            if (ogParsed.ParseWarns.Count != parsed.ParseWarns.Count)
             {
-                sb.AppendLine($"Parse warnings for {key} (ID `{sc[key].Cont.Id}`) wasn't the same for the original ({ogParsed.ParseWarns.Count}) to the translated ({parsed.ParseWarns.Count}) text.\n");
-
-                sb.AppendLine("|Old|New|\n|---|---|");
-                var ogParseWarns = ogParsed.ParseWarns.Select(x => (x.Key, x.Value)).ToArray();
-                var parseWarns = parsed.ParseWarns.Select(x => (x.Key, x.Value)).ToArray();
-                for (var i = 0; i < int.Max(parseWarns.Length, ogParseWarns.Length); i++)
+                var ogWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
+                var nWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
+                foreach (var (k, ev) in parsed.ParseWarns)
                 {
-                    sb.Append("|");
-                    if (i < ogParseWarns.Length)
-                        sb.Append($"{ogParseWarns[i].Key + 1}: {ogParseWarns[i].Value.Message}");
-                    sb.Append("|");
-                    if (i < parseWarns.Length)
-                    {
-                        var bold = i >= ogParseWarns.Length || parseWarns[i].Value.Argument != ogParseWarns[i].Value.Argument;
-                        sb.Append($"{parseWarns[i].Key + 1}: {(bold ? "**" : "")}{parseWarns[i].Value.Message}{(bold ? "**" : "")}");
-                    }
-                    sb.AppendLine("|");
+                    foreach (var e in ev)
+                        nWarns.Add((k, e));
                 }
-                sb.AppendLine();
-                warns++;
+                foreach (var (k, ev) in ogParsed.ParseWarns)
+                {
+                    foreach (var e in ev)
+                        ogWarns.Add((k, e));
+                }
+                if (ogWarns.Count != nWarns.Count)
+                {
+                    sb.AppendLine($"Parse warnings for {key} (ID `{sc[key].Cont.Id}`) wasn't the same for the original ({ogParsed.ParseWarns.Count}) to the translated ({parsed.ParseWarns.Count}) text.\n");
+
+                    sb.AppendLine("|Old|New|\n|---|---|");
+                    for (var i = 0; i < int.Max(nWarns.Count, ogWarns.Count); i++)
+                    {
+                        sb.Append("|");
+                        if (i < ogWarns.Count)
+                            sb.Append($"{ogWarns[i].Key + 1}: {ogWarns[i].Value.Message}");
+                        sb.Append("|");
+                        if (i < nWarns.Count)
+                        {
+                            var bold = i >= ogWarns.Count || nWarns[i].Value.Argument != ogWarns[i].Value.Argument;
+                            sb.Append($"{nWarns[i].Key + 1}: {(bold ? "**" : "")}{nWarns[i].Value.Message}{(bold ? "**" : "")}");
+                        }
+                        sb.AppendLine("|");
+                    }
+                    sb.AppendLine();
+                    warns++;
+                }
             }
-            var ogParse = ogParsed.Events.Where(x => x.Value is not DialogueTimeSkip and not DialogueIgnore).Select(x => (x.Key, x.Value)).ToArray();
-            var parse = parsed.Events.Where(x => x.Value is not DialogueTimeSkip and not DialogueIgnore).Select(x => (x.Key, x.Value)).ToArray();
+            var ogParse = ogParsed.Events.Select(x => (x.Key, Item: x.Value.Where(x => x is not DialogueTimeSkip and not DialogueIgnore).ToList())).ToArray();
+            var parse = parsed.Events.Select(x => (x.Key, Item: x.Value.Where(x => x is not DialogueTimeSkip and not DialogueIgnore).ToList())).ToArray();
             var valid = true;
             if (parse.Length != ogParse.Length)
                 valid = false;
@@ -447,24 +456,50 @@ public class Deltarune : StyleScript
             {
                 for (var i = 0; i < parse.Length; i++)
                 {
-                    if (parse[i].Value.Argument != ogParse[i].Value.Argument)
+                    var evs = parse[i];
+                    var ogEvs = ogParse[i];
+                    if (evs.Item.Count != ogEvs.Item.Count)
+                    {
                         valid = false;
+                        break;
+                    }
+                    foreach (var (e, o) in evs.Item.Zip(ogEvs.Item))
+                    {
+                        if (e.Argument == o.Argument)
+                            continue;
+                        valid = false;
+                        break;
+                    }
+                    if (!valid)
+                        break;
                 }
             }
             if (!valid)
             {
                 sb.AppendLine($"Invalid events found for `{key}` (ID `{sc[key].Cont.Id}`) that weren't the same for the original ({ogParse.Length}) to the translated ({parse.Length}) text:\n");
                 sb.AppendLine("|Old|New|\n|---|---|");
-                for (var i = 0; i < int.Max(parse.Length, ogParse.Length); i++)
+                var evsParse = new List<(int Key, ParsedEvent Item)>();
+                var ogEvsParse = new List<(int Key, ParsedEvent Item)>();
+                foreach (var ev in parse)
+                {
+                    foreach (var e in ev.Item)
+                        evsParse.Add((ev.Key, e));
+                }
+                foreach (var ev in ogParse)
+                {
+                    foreach (var e in ev.Item)
+                        ogEvsParse.Add((ev.Key, e));
+                }
+                for (var i = 0; i < int.Max(evsParse.Count, ogEvsParse.Count); i++)
                 {
                     sb.Append("|");
                     if (i < ogParse.Length)
-                        sb.Append($"{ogParse[i].Key + 1}: {ogParse[i].Value.Argument}");
+                        sb.Append($"{ogParse[i].Key + 1}: {ogEvsParse[i].Item.Argument}");
                     sb.Append("|");
                     if (i < parse.Length)
                     {
-                        var bold = i >= ogParse.Length || parse[i].Value.Argument != ogParse[i].Value.Argument;
-                        sb.Append($"{parse[i].Key + 1}: {(bold ? "**" : "")}{parse[i].Value.Argument}{(bold ? "**" : "")}");
+                        var bold = i >= ogEvsParse.Count || evsParse[i].Item.Argument != ogEvsParse[i].Item.Argument;
+                        sb.Append($"{evsParse[i].Key + 1}: {(bold ? "**" : "")}{evsParse[i].Item.Argument}{(bold ? "**" : "")}");
                     }
                     sb.AppendLine("|");
                 }
@@ -939,9 +974,10 @@ public class Deltarune : StyleScript
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
+        var box = (Boxes)data.GetCurrentBox();
         if (data.UpdateKind is PreviewRenderer.UpdateKind.SelectedBoxChanged)
         {
-            DialogueKinds? targetBox = (Boxes)data.GetCurrentBox() switch
+            DialogueKinds? targetBox = box switch
             {
                 Boxes.BattleIdle => DialogueKinds.BattleIdle,
                 Boxes.PlatformerDiaglogue => DialogueKinds.Platformer,
@@ -954,10 +990,17 @@ public class Deltarune : StyleScript
             {
                 DialogueType.SelectedIndex = (int)targetBox;
                 DialogueType.UpdateUiValue();
+                if (box is Boxes.PlatformerDiaglogue)
+                {
+                    PortraitKind.SelectedIndex = (int)PortraitKinds.SmallFlowers;
+                    PortraitKind.UpdateUiValue();
+                }
                 return true;
             }
         }
-        switch ((Boxes)data.GetCurrentBox())
+        Parsed = new(data.Char.String, box);
+        data.Char.String = Parsed.ParsedText;
+        switch (box)
         {
             case Boxes.PlatformerDiaglogue:
                 data.BoxImages[0].IsVisible = false;
@@ -978,8 +1021,6 @@ public class Deltarune : StyleScript
                 }
                 break;
         }
-        EnvLastNewline = false;
-        EnvStartedAsterisk = false;
         EnvX = -1;
         EnvY = -1;
         EnvSkip = 0;
@@ -987,6 +1028,7 @@ public class Deltarune : StyleScript
         EnvCheckedIndex = -1;
         IsRainbow = false;
         IsLastNewline = true;
+        EnvDrawAsterisk = true;
         EnvDynLimitWrap = data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale();
         {
             var (x, y) = (0d, 0d);
@@ -1030,7 +1072,7 @@ public class Deltarune : StyleScript
                 _ => (0, 0),
             };
         }
-        Parsed = new(data.Char.String, (Boxes)data.GetCurrentBox());
+        //Console.WriteLine(string.Join(",", Parsed.AsteriskPositions));
         return await base.PrepareDraw(wh, data);
     }
 
@@ -1040,69 +1082,44 @@ public class Deltarune : StyleScript
     {
         if (Newlines.Contains(data.Char.Char))
             data.Char.IsNewline = true;
-        if (data.Char.IsIgnore || (!data.Font.GlyphDictionary.ContainsKey(data.Char.Char) && !data.Char.IsNewline))
-            return false;
-        if (EnvSkip > 0)
-        {
-            EnvSkip--;
-            return false;
-        }
 
         var font = (Fonts)data.GetCurrentFont();
         var box = (Boxes)data.GetCurrentBox();
 
-        if (Parsed.Events.TryGetValue(data.Char.Index, out var ev))
+        if (Parsed.Events.TryGetValue(data.Char.Index, out var evs))
         {
-            switch (ev)
+            foreach (var ev in evs)
             {
-                case DialogueEnd end:
-                    EnvSkip = end.Argument.Length - 1;
-                    return false;
-                case DialogueIgnore:
-                    return false;
-                case DialogueIndexPortrait or DialogueCharPortrait:
-                    if (!Parsed.ParseWarns.ContainsKey(data.Char.Index))
-                    {
+                switch (ev)
+                {
+                    case DialogueIgnore:
+                        break;
+                    case DialogueIndexPortrait or DialogueCharPortrait:
                         if (PortraitKind.SelectedIndex == (int)PortraitKinds.None)
                         {
                             PortraitKind.SelectedIndex = (int)PortraitKinds.Basic;
                             PortraitKind.UpdateUiValue();
                             return true;
                         }
-                        EnvSkip = ev.Argument.Length - 1;
-                        return false;
-                    }
-                    break;
-                case DialogueFonts fnt:
-                    if (!Parsed.ParseWarns.ContainsKey(data.Char.Index) && fnt.Font is not null)
-                    {
-                        data.Font = data.Style.FontMetadata[(int)fnt.Font.Value];
-                        EnvSkip = ev.Argument.Length - 1;
-                        return false;
-                    }
-                    break;
-                case DialogueColor col:
-                    IsRainbow = false;
-                    if (!Parsed.ParseWarns.ContainsKey(data.Char.Index))
-                    {
+                        break;
+                    case DialogueFonts fnt:
+                        if (fnt.Font is not null)
+                            data.Font = data.Style.FontMetadata[(int)fnt.Font.Value];
+                        break;
+                    case DialogueColor col:
+                        IsRainbow = col.Rainbow;
                         if (col.Color is not null)
                             data.Glyph.Color = col.Color.Value;
-                        else if (col.Rainbow)
-                            IsRainbow = true;
-                        EnvSkip = ev.Argument.Length - 1;
-                        if (col.Color is not null || col.Rainbow)
-                            return false;
-                    }
-                    break;
-                default:
-                    if (!Parsed.ParseWarns.ContainsKey(data.Char.Index))
-                    {
-                        EnvSkip = ev.Argument.Length - 1;
-                        return false;
-                    }
-                    break;
+                        break;
+                    case DialogueMiniFace:
+                        EnvDrawAsterisk = false;
+                        break;
+                }
             }
         }
+
+        if (EnvSkip-- > 0)
+            return false;
 
         if (IsRainbow)
         {
@@ -1182,8 +1199,7 @@ public class Deltarune : StyleScript
                     break;
             }
         }
-        var actAsNewline = IsNewlineSafe(data.Char.Index, data.Char.String) || Parsed.ActAsNewline.Contains(data.Char.Index);
-        var addSpaceXNewline = 0;
+        var actAsNewline = IsNewlineSafe(data.Char.Index, data.Char.String);
         if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.DynamicWordwarp && data.Char.Index > EnvCheckedIndex)
         {
             if (EnvCheckedIndex == -1)
@@ -1239,25 +1255,13 @@ public class Deltarune : StyleScript
             }
             var wrapSize = data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale();
             if (!IsLastNewline && charPos + 18 >= (EnvDynLimitWrap / data.GetCurrentFontScale()) - data.Char.StartPosition.X && !EnvFirstDrawnChar)
-            {
                 actAsNewline = true;
-                if (EnvStartedAsterisk)
-                    addSpaceXNewline = 2;
-            }
         }
 
         IsLastNewline = actAsNewline;
         if (actAsNewline)
         {
-            EnvLastNewline = true;
-            if (addSpaceXNewline <= 0 && EnvStartedAsterisk && (Parsed.TextTrimLength - data.Char.Index < 2 || (Parsed.TextTrimLength - data.Char.Index >= 2 && data.Char.String[data.Char.Index + 1] != '*')))
-                addSpaceXNewline = AsteriskManualNewLineCompensation;
             data.Char.PositionOffset.X = 0;
-            if (addSpaceXNewline > 0)
-            {
-                var glyph = data.Font.GlyphDictionary['|'];
-                data.Char.PositionOffset.X = ((EnvX != -1 ? EnvX : glyph.Shift) + glyph.Offset) * 2 * addSpaceXNewline;
-            }
 
             if (EnvY == -1)
             {
@@ -1269,7 +1273,14 @@ public class Deltarune : StyleScript
         }
         if (!IsNewlineSafe(data.Char.Index, data.Char.String) && !data.Char.IsIgnore)
         {
-            var glyph = data.Font.GlyphDictionary[data.Char.Char];
+            var glyph = data.Font.GlyphDictionary.GetValueOrDefault(data.Char.Char, new()
+            {
+                Char = '\0',
+                Position = (0, 0),
+                Size = (0, 0),
+                Shift = 0,
+                Offset = 0,
+            })!;
             if (EnvX == -1 && data.Char.Index > 0)
             {
                 var last = data.Char.String[data.Char.Index - 1];
@@ -1285,11 +1296,14 @@ public class Deltarune : StyleScript
             data.Glyph.Position.Y = data.Char.StartPosition.Y + data.Char.PositionOffset.Y + visualY;
             data.Glyph.Size.X = glyph.Size.X * 2;
             data.Glyph.Size.Y = glyph.Size.Y * 2;
-            data.DrawGlyph();
-            if ((EnvLastNewline || EnvFirstDrawnChar) && data.Char.Char == '*')
-                EnvStartedAsterisk = true;
+
+            if (!Parsed.UndrawPositions.Contains(data.Char.Index) && (EnvDrawAsterisk || (!EnvDrawAsterisk && !Parsed.AsteriskPositions.Contains(data.Char.Index))))
+                data.DrawGlyph(glyph.Char);
+            /*if (Parsed.AsteriskPositions.Contains(data.Char.Index))
+                Console.WriteLine($"{EnvDrawAsterisk}->{data.Char.Index}->{data.Char.Char}->{glyph.Char}");*/
+            //var last1 = data.Char.PositionOffset.X;
             data.Char.PositionOffset.X += (int)double.Ceiling(EnvX != -1 ? EnvX : (glyph.Shift + glyph.Offset)) * 2;
-            EnvLastNewline = false;
+            //Console.WriteLine($"{glyph.Char}->{(int)glyph.Char}, {last1}->{data.Char.PositionOffset.X}");
             EnvFirstDrawnChar = false;
         }
         return await base.PrepareDraw(wh, data);
@@ -1389,26 +1403,49 @@ public class ParsedString
     public string Text;
     public string ParsedText;
     public int TextTrimLength;
-    public Dictionary<int, ParsedEvent> Events = [];
-    public Dictionary<int, ParseWarn> ParseWarns = [];
-    public HashSet<int> ActAsNewline = [];
+    public Dictionary<int, List<ParsedEvent>> Events = [];
+    public Dictionary<int, List<ParseWarn>> ParseWarns = [];
+    public HashSet<int> AsteriskPositions = [];
+    public HashSet<int> UndrawPositions = [];
+    public bool AsteriskCheck;
 
-    public ParsedString(string text, Deltarune.Boxes box)
+    void AddEvent(int i, ParsedEvent ev)
+    {
+        Events.TryAdd(i, []);
+        Events[i].Add(ev);
+    }
+
+    void AddParseWarn(int i, ParseWarn warn)
+    {
+        ParseWarns.TryAdd(i, []);
+        ParseWarns[i].Add(warn);
+    }
+
+    public ParsedString(string text, Deltarune.Boxes box, bool autoAsterisk = true)
     {
         Text = text;
         var trimLen = text.TrimEnd().Length;
         TextTrimLength = trimLen;
         var sb = new StringBuilder();
         var tSpace = -1;
-        var cPos = 0;
-        var asteriskCheck = false;
-        var lastIsNewLine = true;
+        var cPos = -1;
+        var spaceSb = -1;
+        var lastX = -1;
+        //Console.WriteLine($"============== {text}");
         for (var i = 0; i < trimLen; i++)
         {
-            var @char = text[i];
+            var x = sb.Length;
+            if (lastX != x)
+            {
+                lastX = x;
+                Events.Remove(x);
+                ParseWarns.Remove(x);
+                AsteriskPositions.Remove(x);
+            }
+            char? @char = text[i];
             if (@char is '`')
             {
-                Events.Add(i, new DialogueIgnore(@char.ToString()));
+                AddEvent(x, new DialogueIgnore(@char.Value.ToString()));
                 i++;
                 continue;
             }
@@ -1417,7 +1454,7 @@ public class ParsedString
                 var sStr = text[i..(i + 3)];
                 if (sStr == "/%%")
                 {
-                    Events.Add(i, new DialogueEnd(sStr));
+                    AddEvent(x, new DialogueEnd(sStr));
                     i += 2;
                     continue;
                 }
@@ -1427,14 +1464,14 @@ public class ParsedString
                 var sStr = text[i..(i + 2)];
                 if (sStr == "/%" || sStr == "%%" || (sStr[0] == '^' && char.IsNumber(sStr[1])))
                 {
-                    Events.Add(i, sStr[0] == '^' ? new DialogueTimeSkip(sStr) : new DialogueEnd(sStr));
+                    AddEvent(x, sStr[0] == '^' ? new DialogueTimeSkip(sStr) : new DialogueEnd(sStr));
                     i++;
                     continue;
                 }
             }
             if (((trimLen - i == 1 || i == 0) && @char == '/') || (trimLen - i == 1 && @char == '%'))
             {
-                Events.Add(i, new DialogueEnd(@char.ToString()));
+                AddEvent(x, new DialogueEnd(@char.Value.ToString()));
                 continue;
             }
             if (@char == '\\')
@@ -1448,13 +1485,22 @@ public class ParsedString
                     {
                         case 'E':
                             if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
-                                ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
-                            Events.Add(i, new DialogueIndexPortrait(fullSlice));
+                            {
+                                valid = false;
+                                AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
+                            }
+                            else
+                                AddEvent(x, new DialogueIndexPortrait(fullSlice));
                             break;
                         case 'F':
+                            // todo: \F0 seems to reset line wrap
                             if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
-                                ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
-                            Events.Add(i, new DialogueCharPortrait(fullSlice));
+                            {
+                                valid = false;
+                                AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
+                            }
+                            else
+                                AddEvent(x, new DialogueCharPortrait(fullSlice));
                             break;
                         case 'T':
                             {
@@ -1466,8 +1512,12 @@ public class ParsedString
                                     _ => null,
                                 };
                                 if (f is null)
-                                    ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting font: {fullSlice}"));
-                                Events.Add(i, new DialogueFonts(fullSlice) { Font = f });
+                                {
+                                    valid = false;
+                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting font: {fullSlice}"));
+                                }
+                                else
+                                    AddEvent(x, new DialogueFonts(fullSlice) { Font = f });
                             }
                             break;
                         case 'c':
@@ -1502,15 +1552,23 @@ public class ParsedString
                                 if (slice[1] == 'Z')
                                     rnb = true;
                                 if (col is null && !rnb)
-                                    ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting color: {fullSlice}"));
-                                Events.Add(i, new DialogueColor(fullSlice) { Color = col, Rainbow = rnb });
+                                {
+                                    valid = false;
+                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting color: {fullSlice}"));
+                                }
+                                else
+                                    AddEvent(x, new DialogueColor(fullSlice) { Color = col, Rainbow = rnb });
                             }
                             break;
                         case 'V':
                             {
                                 if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
-                                    ParseWarns.Add(i, new ParseWarn(fullSlice, $"invalid voice-clip selected: {slice[1]}"));
-                                Events.Add(i, new DialogueFloweryVoiceClip(fullSlice));
+                                {
+                                    valid = false;
+                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid voice-clip selected: {slice[1]}"));
+                                }
+                                else
+                                    AddEvent(x, new DialogueFloweryVoiceClip(fullSlice));
                             }
                             break;
                         case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O' or 'v':
@@ -1523,43 +1581,59 @@ public class ParsedString
                                     {
                                         case 'v':
                                             if (v < 0 || v > 2)
-                                                ParseWarns.Add(i, new ParseOutOfRange(fullSlice, 0..2));
-                                            Events.Add(i, new DialogueVoiceClipMode(fullSlice));
+                                            {
+                                                valid = false;
+                                                AddParseWarn(x, new ParseOutOfRange(fullSlice, 0..2));
+                                            }
+                                            else
+                                                AddEvent(x, new DialogueVoiceClipMode(fullSlice));
                                             break;
                                         case 's':
                                             if (v < 0 || v > 1)
-                                                ParseWarns.Add(i, new ParseOutOfRange(fullSlice, 0..1));
-                                            Events.Add(i, new DialogueSkippable(fullSlice));
+                                            {
+                                                valid = false;
+                                                AddParseWarn(x, new ParseOutOfRange(fullSlice, 0..1));
+                                            }
+                                            else
+                                                AddEvent(x, new DialogueSkippable(fullSlice));
                                             break;
                                         case 'C':
                                             if (v < 1 || v > 4)
-                                                ParseWarns.Add(i, new ParseOutOfRange(fullSlice, 1..4));
-                                            Events.Add(i, new DialogueChoicer(fullSlice));
+                                            {
+                                                valid = false;
+                                                AddParseWarn(x, new ParseOutOfRange(fullSlice, 1..4));
+                                            }
+                                            else
+                                                AddEvent(x, new DialogueChoicer(fullSlice));
                                             break;
                                         case 'M':
-                                            Events.Add(i, new DialogueFlag20(fullSlice));
+                                            AddEvent(x, new DialogueFlag20(fullSlice));
                                             break;
                                         case 'S':
-                                            Events.Add(i, new DialogueSound(fullSlice));
+                                            AddEvent(x, new DialogueSound(fullSlice));
                                             break;
                                         case 'I':
-                                            Events.Add(i, new DialogueSprite(fullSlice));
+                                            AddEvent(x, new DialogueSprite(fullSlice));
                                             break;
                                         case 'm':
-                                            Events.Add(i, new DialogueMiniFace(fullSlice));
+                                            AddEvent(x, new DialogueMiniFace(fullSlice));
                                             break;
                                         case 'O':
-                                            Events.Add(i, new DialogueObject(fullSlice));
+                                            AddEvent(x, new DialogueObject(fullSlice));
                                             break;
                                         case 'f':
-                                            Events.Add(i, new DialogueInstanceUpdate(fullSlice));
+                                            AddEvent(x, new DialogueInstanceUpdate(fullSlice));
                                             break;
                                         default:
-                                            ParseWarns.Add(i, new ParseWarn(fullSlice, $"unknown parameter: {fullSlice}"));
+                                            valid = false;
+                                            AddParseWarn(x, new ParseWarn(fullSlice, $"unknown parameter: {fullSlice}"));
                                             break;
                                     }
                                 }
                             }
+                            break;
+                        default:
+                            valid = false;
                             break;
                     }
                 }
@@ -1569,49 +1643,90 @@ public class ParsedString
                     continue;
                 }
             }
+            //Console.WriteLine($"{lastIsNewLine}:{i},{cPos}->{text[i]}->{text[i] == '*'}");
+            if (text[i] == '*')
+            {
+                AsteriskCheck = true;
+                AsteriskPositions.Add(x);
+            }
+            if (@char == ' ')
+            {
+                tSpace = i + 1;
+                spaceSb = sb.Length;
+            }
+            if (Deltarune.IsNewlineSafe(i, text))
+            {
+                tSpace = -1;
+                cPos = 0;
+                sb.Append(@char);
+                @char = null;
+                if (AsteriskCheck && autoAsterisk && (i + 1 >= text.Length || text[i + 1] != '*'))
+                {
+                    cPos += 2;
+                    UndrawPositions.Add(sb.Length);
+                    UndrawPositions.Add(sb.Length + 1);
+                    sb.Append("||");
+                }
+            }
+
             // todo: parse events like ~1, ~2, ..., ~N and a way to test it out (presets/editor?)
             var dk = (Deltarune.DialogueKinds)Deltarune.DialogueType.SelectedIndex;
             if (box is not Deltarune.Boxes.CMenuDescription and not Deltarune.Boxes.CMenuCharacterDescription and not Deltarune.Boxes.ShopItemDescription && dk is not Deltarune.DialogueKinds.PlatformerAct and not Deltarune.DialogueKinds.DynamicWordwarp and not Deltarune.DialogueKinds.None)
             {
-                if (lastIsNewLine && text[i] == '*')
-                    asteriskCheck = true;
-                lastIsNewLine = false;
-                if (@char == ' ')
-                    tSpace = i + 1;
-                else if (Deltarune.IsNewlineSafe(i, text))
-                {
-                    tSpace = -1;
-                    cPos = 0;
-                    lastIsNewLine = true;
-                }
                 var pt = (Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex;
                 var limit = dk switch
                 {
                     Deltarune.DialogueKinds.BattleIdle => (pt > Deltarune.PortraitKinds.ForceNone) ? 29 : 37,
-                    Deltarune.DialogueKinds.Platformer => pt == Deltarune.PortraitKinds.SmallFlowers ? 33 : 29,
+                    // 5's from the charline_bonus
+                    Deltarune.DialogueKinds.Platformer => (pt == Deltarune.PortraitKinds.SmallFlowers ? 33 : 26) + 5,
                     Deltarune.DialogueKinds.Pink => 23,
                     Deltarune.DialogueKinds.TennaBoard => 22,
                     _ => pt switch
                     {
                         Deltarune.PortraitKinds.Basic => 26,
-                        Deltarune.PortraitKinds.SmallFlowers or Deltarune.PortraitKinds.SmallOther => 29,
+                        // todo: this actually seems 33 always? check if that's true or not
+                        //Deltarune.PortraitKinds.SmallFlowers or Deltarune.PortraitKinds.SmallOther => 29,
                         _ => 33,
                     }
                 };
-                //Console.WriteLine($"cPos:{cPos},i:{i}->{text[i]}");
-                while (cPos++ >= limit)
+                //Console.WriteLine($"cPos:{cPos},i:{i}->{text[i]}->l:{limit}");
+                if (cPos >= limit)
                 {
-                    //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}->{text[i]},a:{asteriskCheck}");
-                    ActAsNewline.Add(tSpace > 2 ? tSpace : i);
-                    cPos = tSpace > 2 ? i - tSpace : 0;
-                    if (asteriskCheck)
-                        cPos += 2;
+                    //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}->{text[i]},a:{AsteriskCheck}");
+                    cPos = 1;
+                    if (tSpace > 2)
+                    {
+                        i = tSpace - 1;
+                        if (spaceSb >= 0)
+                        {
+                            //Console.WriteLine($"s:{sb.ToString()[..spaceSb]},i:{spaceSb}");
+                            sb.Remove(spaceSb, sb.Length - spaceSb);
+                        }
+                        @char = null;
+                        sb.Append('&');
+                    }
+                    else
+                        sb.Append('&');
+                    if (AsteriskCheck && autoAsterisk)
+                    {
+                        UndrawPositions.Add(sb.Length);
+                        UndrawPositions.Add(sb.Length + 1);
+                        sb.Append("||");
+                    }
                     tSpace = -1;
-                    //Console.WriteLine($"new cPos:{cPos}");
+                    spaceSb = -1;
+                    //Console.WriteLine($"final cPos:{cPos}");
+                }
+                if (!Deltarune.IsNewlineSafe(i, text))
+                {
+                    cPos++;
+                    //Console.WriteLine($"new cPos:{cPos},i:{i}->{text[i]},a:{AsteriskCheck}");
                 }
             }
-            sb.Append(@char);
+            if (@char is not null)
+                sb.Append(@char.Value);
         }
+        //Console.WriteLine($"================================{sb}");
         ParsedText = sb.ToString();
     }
 }
