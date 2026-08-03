@@ -296,7 +296,8 @@ public partial class MainWindow : Window
                     var textBox = GetFocusedTargetTextBox();
                     if (textBox is not null)
                     {
-                        InsertTabCharacter(textBox);
+                        if (!textBox.IsReadOnly)
+                            textBox.SelectedText = "\t";
                         e.Handled = true;
                     }
                 }
@@ -322,17 +323,6 @@ public partial class MainWindow : Window
         }
 
         return textBox;
-    }
-
-    static void InsertTabCharacter(TextBox textBox)
-    {
-        if (textBox.IsReadOnly)
-            return;
-        var text = textBox.Text ?? "";
-        var start = Math.Min(textBox.SelectionStart, textBox.SelectionEnd);
-        var end = Math.Max(textBox.SelectionStart, textBox.SelectionEnd);
-        textBox.Text = text[..start] + "\t" + text[end..];
-        textBox.CaretIndex = start + 1;
     }
 
     public void ApplyEditorFont()
