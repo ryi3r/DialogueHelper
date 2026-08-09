@@ -3,6 +3,9 @@
     "Images": [{
         "Path": "Assets/BoxShopTalk.png"
     }],
+    "CustomProperties": {
+        "CharacterLimit": 37
+    },
     "TextOffset": [30, 29],
     "Index": 8
 }

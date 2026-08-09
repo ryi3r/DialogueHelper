@@ -3,6 +3,9 @@
     "Images": [{
         "Path": "Assets/BoxCharDesc.png"
     }],
+    "CustomProperties": {
+        "CharacterLimit": 18
+    },
     "TextOffset": [90, 12],
     "Index": 5
 }

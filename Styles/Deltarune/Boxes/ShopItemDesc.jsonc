@@ -5,6 +5,9 @@
     }, {
         "Path": "Assets/BoxShopDescEquip.png"
     }],
+    "CustomProperties": {
+        "CharacterLimit": 13
+    },
     "TextOffset": [40, 27],
     "Index": 10
 }

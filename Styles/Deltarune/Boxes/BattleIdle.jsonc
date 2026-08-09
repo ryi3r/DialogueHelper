@@ -3,6 +3,10 @@
     "Images": [{
         "Path": "Assets/BoxBattleIdle.png"
     }],
+    "CustomProperties": {
+        "CharacterLimit": 37,
+        "PortraitCharacterLimit": 29
+    },
     "TextOffset": [32, 52],
     "Index": 1
 }

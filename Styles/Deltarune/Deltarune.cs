@@ -21,6 +21,7 @@ using Avalonia.Platform.Storage;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.PreviewRenderer;
+using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
 
 public class Deltarune : StyleScript
@@ -97,7 +98,7 @@ public class Deltarune : StyleScript
     public static Stopwatch Stopwatch = Stopwatch.StartNew();
     public static bool IsRainbow;
     public static bool IsLastNewline;
-    public ParsedString Parsed = new("", Boxes.Overworld);
+    public ParsedString Parsed = new();
 
     public static (double X, double Y) EnvPortraitOffset;
     public static (double X, double Y) EnvSmallFlowerPortraitOffset;
@@ -410,8 +411,8 @@ public class Deltarune : StyleScript
         {
             if (!output.TryGetValue(key, out var og))
                 continue;
-            var ogParsed = new ParsedString(og, Boxes.Overworld);
-            var parsed = new ParsedString(value, Boxes.Overworld);
+            var ogParsed = new ParsedString(og);
+            var parsed = new ParsedString(value);
             {
                 var ogWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
                 var nWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
@@ -998,7 +999,7 @@ public class Deltarune : StyleScript
                 return true;
             }
         }
-        Parsed = new(data.Char.String, box);
+        Parsed = new(data.Char.String, data.Box);
         data.Char.String = Parsed.ParsedText;
         switch (box)
         {
@@ -1391,7 +1392,7 @@ public class DialogueVoiceClipMode(string argument) : ParsedEvent(argument) { }
 /// </summary>
 public class DialogueFloweryVoiceClip(string argument) : ParsedEvent(argument) { }
 
-public class ParsedString
+public class ParsedString(string text = "", BoxMetadata? box = null, bool autoAsterisk = true)
 {
     public class ParseWarn(string argument, string message)
     {
@@ -1400,9 +1401,7 @@ public class ParsedString
     }
     public class ParseOutOfRange(string argument, Range range) : ParseWarn(argument, $"Invalid range for \"{argument}\", valid range is only {range.Start} to {range.End}") { }
 
-    public string Text;
-    public string ParsedText;
-    public int TextTrimLength;
+    public int TextTrimLength = text.TrimEnd().Length;
     public Dictionary<int, List<ParsedEvent>> Events = [];
     public Dictionary<int, List<ParseWarn>> ParseWarns = [];
     public HashSet<int> AsteriskPositions = [];
@@ -1421,312 +1420,320 @@ public class ParsedString
         ParseWarns[i].Add(warn);
     }
 
-    public ParsedString(string text, Deltarune.Boxes box, bool autoAsterisk = true)
+    private string? _parsedText;    // field keyword doesn't work for some reason
+    public string ParsedText
     {
-        Text = text;
-        var trimLen = text.TrimEnd().Length;
-        TextTrimLength = trimLen;
-        var sb = new StringBuilder();
-        var tSpace = -1;
-        var cPos = 0;
-        var spaceSb = -1;
-        var lastX = -1;
-        //Console.WriteLine($"============== {text}");
-        for (var i = 0; i < trimLen; i++)
+        get
         {
-            var x = sb.Length;
-            if (lastX != x)
+            if (_parsedText is not null)
+                return _parsedText;
+            ParsedText = text;
+            return ParsedText;
+        }
+        set {
+            var trimLen = TextTrimLength;
+            var sb = new StringBuilder();
+            var tSpace = -1;
+            var cPos = 0;
+            var spaceSb = -1;
+            var lastX = -1;
+            //Console.WriteLine($"============== {text}");
+            int? limit = null;
+            if (box is not null)
             {
-                lastX = x;
-                Events.Remove(x);
-                ParseWarns.Remove(x);
-                AsteriskPositions.Remove(x);
-            }
-            char? @char = text[i];
-            if (@char is '`')
-            {
-                AddEvent(x, new DialogueIgnore(@char.Value.ToString()));
-                i++;
-                continue;
-            }
-            if (trimLen - i >= 3)
-            {
-                var sStr = text[i..(i + 3)];
-                if (sStr == "/%%")
+                if ((Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex == Deltarune.PortraitKinds.Basic
+                    && box.CustomProperties.TryGetValue("PortraitCharacterLimit", out var l)
+                    && l is JsonElement && ((JsonElement)l).TryGetInt32(out var eValue))
                 {
-                    AddEvent(x, new DialogueEnd(sStr));
-                    i += 2;
-                    continue;
+                    limit = eValue;
+                }
+                else
+                {
+                    /* CharacterLimit should have a dedicated field in BoxMetadata,
+                     * since this should be required for every box to have,
+                     * unlike PortraitCharacterLimit */
+                    limit = box.CustomProperties.TryGetValue("CharacterLimit", out l) && l is JsonElement && ((JsonElement)l).TryGetInt32(out eValue) ? eValue : int.MaxValue;
                 }
             }
-            if (trimLen - i >= 2)
+            for (var i = 0; i < trimLen; i++)
             {
-                var sStr = text[i..(i + 2)];
-                if (sStr == "/%" || sStr == "%%" || (sStr[0] == '^' && char.IsNumber(sStr[1])))
+                var x = sb.Length;
+                if (lastX != x)
                 {
-                    AddEvent(x, sStr[0] == '^' ? new DialogueTimeSkip(sStr) : new DialogueEnd(sStr));
+                    lastX = x;
+                    Events.Remove(x);
+                    ParseWarns.Remove(x);
+                    AsteriskPositions.Remove(x);
+                }
+                char? @char = value[i];
+                if (@char is '`')
+                {
+                    AddEvent(x, new DialogueIgnore(@char.Value.ToString()));
                     i++;
                     continue;
                 }
-            }
-            if (((trimLen - i == 1 || i == 0) && @char == '/') || (trimLen - i == 1 && @char == '%'))
-            {
-                AddEvent(x, new DialogueEnd(@char.Value.ToString()));
-                continue;
-            }
-            if (@char == '\\')
-            {
-                var valid = true;
                 if (trimLen - i >= 3)
                 {
-                    var fullSlice = text[i..(i + 3)];
-                    var slice = text[(i + 1)..(i + 3)];
-                    switch (slice[0])
+                    var sStr = value[i..(i + 3)];
+                    if (sStr == "/%%")
                     {
-                        case 'E':
-                            if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
-                            {
-                                valid = false;
-                                AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
-                            }
-                            else
-                                AddEvent(x, new DialogueIndexPortrait(fullSlice));
-                            break;
-                        case 'F':
-                            // todo: \F0 seems to reset line wrap
-                            if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
-                            {
-                                valid = false;
-                                AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
-                            }
-                            else
-                                AddEvent(x, new DialogueCharPortrait(fullSlice));
-                            break;
-                        case 'T':
-                            {
-                                Deltarune.Fonts? f = slice[1] switch
-                                {
-                                    '0' or '1' or 'A' or 'a' or 'N' or 'n' or 'B' or 'S' or 'X' or 'r' or 'T' or 'U' or 'C' => Deltarune.Fonts.Main,
-                                    'R' or 'L' or 'J' or 'K' or 'q' or 'Q' or 'p' or 'k' or 'j' or 'g' or 'v' => Deltarune.Fonts.Main, //"fnt_mainbig",
-                                    's' => Deltarune.Fonts.ComicSans,
-                                    _ => null,
-                                };
-                                if (f is null)
-                                {
-                                    valid = false;
-                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting font: {fullSlice}"));
-                                }
-                                else
-                                    AddEvent(x, new DialogueFonts(fullSlice) { Font = f });
-                            }
-                            break;
-                        case 'c':
-                            {
-                                var rnb = false;
-                                Color? col = slice[1] switch
-                                {
-                                    'R' => new() { Rgba = 0xff0000ff },
-                                    'B' => new() { Rgba = 0x0000ffff },
-                                    'Y' => new() { Rgba = 0xffff00ff },
-                                    'G' => new() { Rgba = 0x00ff00ff },
-                                    'W' => new() { Rgba = 0xffffffff },
-                                    'X' => new() { Rgba = 0x000000ff },
-                                    'P' => new() { Rgba = 0x800080ff },
-                                    'M' => new() { Rgba = 0x800000ff },
-                                    'O' => new() { Rgba = 0xffa500ff },
-                                    'A' => new() { Rgba = 0x00aeffff },
-                                    'S' => new() { Rgba = 0xff80ffff },
-                                    'V' => new() { Rgba = 0x80ff80ff },
-                                    'Z' => null,
-                                    'a' => new() { Rgba = 0x84f9ffff },
-                                    'y' => new() { Rgba = 0xfff8a1ff },
-                                    'g' => new() { Rgba = 0xaeffbcff },
-                                    'o' => new() { Rgba = 0xffac87ff },
-                                    's' => new() { Rgba = 0xe2a8fcff },
-                                    'p' => new() { Rgba = 0xff8a90ff },
-                                    'b' => new() { Rgba = 0x86a7ffff },
-                                    'I' => new() { Rgba = 0x549ff9ff },
-                                    '0' => new() { Rgba = 0xff69b4ff },
-                                    _ => null,
-                                };
-                                if (slice[1] == 'Z')
-                                    rnb = true;
-                                if (col is null && !rnb)
-                                {
-                                    valid = false;
-                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting color: {fullSlice}"));
-                                }
-                                else
-                                    AddEvent(x, new DialogueColor(fullSlice) { Color = col, Rainbow = rnb });
-                            }
-                            break;
-                        case 'V':
-                            {
-                                if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
-                                {
-                                    valid = false;
-                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid voice-clip selected: {slice[1]}"));
-                                }
-                                else
-                                    AddEvent(x, new DialogueFloweryVoiceClip(fullSlice));
-                            }
-                            break;
-                        case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O' or 'v':
-                            {
-                                if (!int.TryParse(slice[1].ToString(), out var v))
-                                    valid = false;
-                                else
-                                {
-                                    switch (slice[0])
-                                    {
-                                        case 'v':
-                                            if (v < 0 || v > 2)
-                                            {
-                                                valid = false;
-                                                AddParseWarn(x, new ParseOutOfRange(fullSlice, 0..2));
-                                            }
-                                            else
-                                                AddEvent(x, new DialogueVoiceClipMode(fullSlice));
-                                            break;
-                                        case 's':
-                                            if (v < 0 || v > 1)
-                                            {
-                                                valid = false;
-                                                AddParseWarn(x, new ParseOutOfRange(fullSlice, 0..1));
-                                            }
-                                            else
-                                                AddEvent(x, new DialogueSkippable(fullSlice));
-                                            break;
-                                        case 'C':
-                                            if (v < 1 || v > 4)
-                                            {
-                                                valid = false;
-                                                AddParseWarn(x, new ParseOutOfRange(fullSlice, 1..4));
-                                            }
-                                            else
-                                                AddEvent(x, new DialogueChoicer(fullSlice));
-                                            break;
-                                        case 'M':
-                                            AddEvent(x, new DialogueFlag20(fullSlice));
-                                            break;
-                                        case 'S':
-                                            AddEvent(x, new DialogueSound(fullSlice));
-                                            break;
-                                        case 'I':
-                                            AddEvent(x, new DialogueSprite(fullSlice));
-                                            break;
-                                        case 'm':
-                                            AddEvent(x, new DialogueMiniFace(fullSlice));
-                                            break;
-                                        case 'O':
-                                            AddEvent(x, new DialogueObject(fullSlice));
-                                            break;
-                                        case 'f':
-                                            AddEvent(x, new DialogueInstanceUpdate(fullSlice));
-                                            break;
-                                        default:
-                                            valid = false;
-                                            AddParseWarn(x, new ParseWarn(fullSlice, $"unknown parameter: {fullSlice}"));
-                                            break;
-                                    }
-                                }
-                            }
-                            break;
-                        default:
-                            valid = false;
-                            break;
+                        AddEvent(x, new DialogueEnd(sStr));
+                        i += 2;
+                        continue;
                     }
                 }
-                if (valid)
+                if (trimLen - i >= 2)
                 {
-                    i += 2;
+                    var sStr = value[i..(i + 2)];
+                    if (sStr == "/%" || sStr == "%%" || (sStr[0] == '^' && char.IsNumber(sStr[1])))
+                    {
+                        AddEvent(x, sStr[0] == '^' ? new DialogueTimeSkip(sStr) : new DialogueEnd(sStr));
+                        i++;
+                        continue;
+                    }
+                }
+                if (((trimLen - i == 1 || i == 0) && @char == '/') || (trimLen - i == 1 && @char == '%'))
+                {
+                    AddEvent(x, new DialogueEnd(@char.Value.ToString()));
                     continue;
                 }
-            }
-            //Console.WriteLine($"{lastIsNewLine}:{i},{cPos}->{text[i]}->{text[i] == '*'}");
-            if (text[i] == '*')
-            {
-                AsteriskCheck = true;
-                AsteriskPositions.Add(x);
-            }
-            if (@char == ' ')
-            {
-                tSpace = i + 1;
-                spaceSb = sb.Length;
-            }
-            if (Deltarune.IsNewlineSafe(i, text))
-            {
-                tSpace = -1;
-                cPos = 0;
-                sb.Append(@char);
-                @char = null;
-                if (AsteriskCheck && autoAsterisk && (i + 1 >= text.Length || text[i + 1] != '*'))
+                if (@char == '\\')
                 {
-                    cPos += 2;
-                    UndrawPositions.Add(sb.Length);
-                    UndrawPositions.Add(sb.Length + 1);
-                    sb.Append("||");
-                }
-            }
-
-            // todo: parse events like ~1, ~2, ..., ~N and a way to test it out (presets/editor?)
-            var dk = (Deltarune.DialogueKinds)Deltarune.DialogueType.SelectedIndex;
-            if (box is not Deltarune.Boxes.CMenuDescription and not Deltarune.Boxes.CMenuCharacterDescription and not Deltarune.Boxes.ShopItemDescription && dk is not Deltarune.DialogueKinds.PlatformerAct and not Deltarune.DialogueKinds.DynamicWordwarp and not Deltarune.DialogueKinds.None)
-            {
-                var pt = (Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex;
-                var limit = dk switch
-                {
-                    Deltarune.DialogueKinds.BattleIdle => (pt > Deltarune.PortraitKinds.ForceNone) ? 29 : 37,
-                    // 5's from the charline_bonus
-                    Deltarune.DialogueKinds.Platformer => (pt == Deltarune.PortraitKinds.SmallFlowers ? 33 : 26) + 5,
-                    Deltarune.DialogueKinds.Pink => 23,
-                    Deltarune.DialogueKinds.TennaBoard => 22,
-                    _ => pt switch
+                    var valid = true;
+                    if (trimLen - i >= 3)
                     {
-                        Deltarune.PortraitKinds.Basic => 26,
-                        // todo: this actually seems 33 always? check if that's true or not
-                        //Deltarune.PortraitKinds.SmallFlowers or Deltarune.PortraitKinds.SmallOther => 29,
-                        _ => 33,
-                    }
-                };
-                //Console.WriteLine($"cPos:{cPos},i:{i}->{text[i]}->l:{limit}");
-                if (cPos >= limit)
-                {
-                    //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}->{text[i]},a:{AsteriskCheck}");
-                    cPos = 0;
-                    if (tSpace > 2)
-                    {
-                        i = tSpace - 1;
-                        if (spaceSb >= 0)
+                        var fullSlice = value[i..(i + 3)];
+                        var slice = value[(i + 1)..(i + 3)];
+                        switch (slice[0])
                         {
-                            //Console.WriteLine($"s:{sb.ToString()[..spaceSb]},i:{spaceSb}");
-                            sb.Remove(spaceSb, sb.Length - spaceSb);
+                            case 'E':
+                                if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
+                                {
+                                    valid = false;
+                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
+                                }
+                                else
+                                    AddEvent(x, new DialogueIndexPortrait(fullSlice));
+                                break;
+                            case 'F':
+                                // todo: \F0 seems to reset line wrap
+                                if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
+                                {
+                                    valid = false;
+                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
+                                }
+                                else
+                                    AddEvent(x, new DialogueCharPortrait(fullSlice));
+                                break;
+                            case 'T':
+                                {
+                                    Deltarune.Fonts? f = slice[1] switch
+                                    {
+                                        '0' or '1' or 'A' or 'a' or 'N' or 'n' or 'B' or 'S' or 'X' or 'r' or 'T' or 'U' or 'C' => Deltarune.Fonts.Main,
+                                        'R' or 'L' or 'J' or 'K' or 'q' or 'Q' or 'p' or 'k' or 'j' or 'g' or 'v' => Deltarune.Fonts.Main, //"fnt_mainbig",
+                                        's' => Deltarune.Fonts.ComicSans,
+                                        _ => null,
+                                    };
+                                    if (f is null)
+                                    {
+                                        valid = false;
+                                        AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting font: {fullSlice}"));
+                                    }
+                                    else
+                                        AddEvent(x, new DialogueFonts(fullSlice) { Font = f });
+                                }
+                                break;
+                            case 'c':
+                                {
+                                    var rnb = false;
+                                    Color? col = slice[1] switch
+                                    {
+                                        'R' => new() { Rgba = 0xff0000ff },
+                                        'B' => new() { Rgba = 0x0000ffff },
+                                        'Y' => new() { Rgba = 0xffff00ff },
+                                        'G' => new() { Rgba = 0x00ff00ff },
+                                        'W' => new() { Rgba = 0xffffffff },
+                                        'X' => new() { Rgba = 0x000000ff },
+                                        'P' => new() { Rgba = 0x800080ff },
+                                        'M' => new() { Rgba = 0x800000ff },
+                                        'O' => new() { Rgba = 0xffa500ff },
+                                        'A' => new() { Rgba = 0x00aeffff },
+                                        'S' => new() { Rgba = 0xff80ffff },
+                                        'V' => new() { Rgba = 0x80ff80ff },
+                                        'Z' => null,
+                                        'a' => new() { Rgba = 0x84f9ffff },
+                                        'y' => new() { Rgba = 0xfff8a1ff },
+                                        'g' => new() { Rgba = 0xaeffbcff },
+                                        'o' => new() { Rgba = 0xffac87ff },
+                                        's' => new() { Rgba = 0xe2a8fcff },
+                                        'p' => new() { Rgba = 0xff8a90ff },
+                                        'b' => new() { Rgba = 0x86a7ffff },
+                                        'I' => new() { Rgba = 0x549ff9ff },
+                                        '0' => new() { Rgba = 0xff69b4ff },
+                                        _ => null,
+                                    };
+                                    if (slice[1] == 'Z')
+                                        rnb = true;
+                                    if (col is null && !rnb)
+                                    {
+                                        valid = false;
+                                        AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting color: {fullSlice}"));
+                                    }
+                                    else
+                                        AddEvent(x, new DialogueColor(fullSlice) { Color = col, Rainbow = rnb });
+                                }
+                                break;
+                            case 'V':
+                                {
+                                    if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
+                                    {
+                                        valid = false;
+                                        AddParseWarn(x, new ParseWarn(fullSlice, $"invalid voice-clip selected: {slice[1]}"));
+                                    }
+                                    else
+                                        AddEvent(x, new DialogueFloweryVoiceClip(fullSlice));
+                                }
+                                break;
+                            case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O' or 'v':
+                                {
+                                    if (!int.TryParse(slice[1].ToString(), out var v))
+                                        valid = false;
+                                    else
+                                    {
+                                        switch (slice[0])
+                                        {
+                                            case 'v':
+                                                if (v < 0 || v > 2)
+                                                {
+                                                    valid = false;
+                                                    AddParseWarn(x, new ParseOutOfRange(fullSlice, 0..2));
+                                                }
+                                                else
+                                                    AddEvent(x, new DialogueVoiceClipMode(fullSlice));
+                                                break;
+                                            case 's':
+                                                if (v < 0 || v > 1)
+                                                {
+                                                    valid = false;
+                                                    AddParseWarn(x, new ParseOutOfRange(fullSlice, 0..1));
+                                                }
+                                                else
+                                                    AddEvent(x, new DialogueSkippable(fullSlice));
+                                                break;
+                                            case 'C':
+                                                if (v < 1 || v > 4)
+                                                {
+                                                    valid = false;
+                                                    AddParseWarn(x, new ParseOutOfRange(fullSlice, 1..4));
+                                                }
+                                                else
+                                                    AddEvent(x, new DialogueChoicer(fullSlice));
+                                                break;
+                                            case 'M':
+                                                AddEvent(x, new DialogueFlag20(fullSlice));
+                                                break;
+                                            case 'S':
+                                                AddEvent(x, new DialogueSound(fullSlice));
+                                                break;
+                                            case 'I':
+                                                AddEvent(x, new DialogueSprite(fullSlice));
+                                                break;
+                                            case 'm':
+                                                AddEvent(x, new DialogueMiniFace(fullSlice));
+                                                break;
+                                            case 'O':
+                                                AddEvent(x, new DialogueObject(fullSlice));
+                                                break;
+                                            case 'f':
+                                                AddEvent(x, new DialogueInstanceUpdate(fullSlice));
+                                                break;
+                                            default:
+                                                valid = false;
+                                                AddParseWarn(x, new ParseWarn(fullSlice, $"unknown parameter: {fullSlice}"));
+                                                break;
+                                        }
+                                    }
+                                }
+                                break;
+                            default:
+                                valid = false;
+                                break;
                         }
-                        @char = null;
-                        sb.Append('&');
                     }
-                    else
-                        sb.Append('&');
-                    if (AsteriskCheck && autoAsterisk)
+                    if (valid)
                     {
+                        i += 2;
+                        continue;
+                    }
+                }
+                //Console.WriteLine($"{lastIsNewLine}:{i},{cPos}->{text[i]}->{text[i] == '*'}");
+                if (value[i] == '*')
+                {
+                    AsteriskCheck = true;
+                    AsteriskPositions.Add(x);
+                }
+                if (@char == ' ')
+                {
+                    tSpace = i + 1;
+                    spaceSb = sb.Length;
+                }
+                if (Deltarune.IsNewlineSafe(i, value))
+                {
+                    tSpace = -1;
+                    cPos = 0;
+                    sb.Append(@char);
+                    @char = null;
+                    if (AsteriskCheck && autoAsterisk && (i + 1 >= value.Length || value[i + 1] != '*'))
+                    {
+                        cPos += 2;
                         UndrawPositions.Add(sb.Length);
                         UndrawPositions.Add(sb.Length + 1);
                         sb.Append("||");
                     }
-                    tSpace = -1;
-                    spaceSb = -1;
-                    //Console.WriteLine($"final cPos:{cPos}");
                 }
-                if (!Deltarune.IsNewlineSafe(i, text))
+
+                // todo: parse events like ~1, ~2, ..., ~N and a way to test it out (presets/editor?)
+                if (limit is not null)
                 {
-                    cPos++;
-                    //Console.WriteLine($"new cPos:{cPos},i:{i}->{text[i]},a:{AsteriskCheck}");
+                    //Console.WriteLine($"cPos:{cPos},i:{i}->{text[i]}->l:{limit}");
+                    if (cPos >= limit)
+                    {
+                        //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}->{text[i]},a:{AsteriskCheck}");
+                        cPos = 0;
+                        if (tSpace > 2)
+                        {
+                            i = tSpace - 1;
+                            if (spaceSb >= 0)
+                            {
+                                //Console.WriteLine($"s:{sb.ToString()[..spaceSb]},i:{spaceSb}");
+                                sb.Remove(spaceSb, sb.Length - spaceSb);
+                            }
+                            @char = null;
+                            sb.Append('&');
+                        }
+                        else
+                            sb.Append('&');
+                        if (AsteriskCheck && autoAsterisk)
+                        {
+                            UndrawPositions.Add(sb.Length);
+                            UndrawPositions.Add(sb.Length + 1);
+                            sb.Append("||");
+                        }
+                        tSpace = -1;
+                        spaceSb = -1;
+                        //Console.WriteLine($"final cPos:{cPos}");
+                    }
+                    if (!Deltarune.IsNewlineSafe(i, value))
+                    {
+                        cPos++;
+                        //Console.WriteLine($"new cPos:{cPos},i:{i}->{text[i]},a:{AsteriskCheck}");
+                    }
                 }
+                if (@char is not null)
+                    sb.Append(@char.Value);
             }
-            if (@char is not null)
-                sb.Append(@char.Value);
+            //Console.WriteLine($"================================{sb}");
+            _parsedText = sb.ToString();
         }
-        //Console.WriteLine($"================================{sb}");
-        ParsedText = sb.ToString();
     }
 }
