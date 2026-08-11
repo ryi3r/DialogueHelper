@@ -857,7 +857,7 @@ public class Deltarune : StyleScript
             if (pos == -1)
             {
                 Console.WriteLine($"Unable to make a string group of {key}");
-                pos = 0;
+                pos = key.Length;
             }
             var header = key[..pos];
             if (header != lastHeader)

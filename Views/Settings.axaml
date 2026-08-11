@@ -87,7 +87,7 @@
                     <ComboBox Name="UiFontComboBox" Margin="0 5 0 0" HorizontalAlignment="Stretch" />
                     <TextBlock Margin="0 10 0 0">Editor Font Size (default: 14)</TextBlock>
                     <NumericUpDown Name="UiFontSizeBox" Margin="0 5 0 0" Minimum="6" Maximum="72" Value="14" FormatString="0" />
-                    <CheckBox Name="SwapPreviewsCheckBox" Margin="0 10 0 0">Swap Original/Editable previews</CheckBox>
+                    <CheckBox Name="SwapPreviewsCheckBox" ToolTip.Tip="Resizing is a little buggy for now" Margin="0 10 0 0">Swap Original/Editable previews</CheckBox>
                 </StackPanel>
             </TabItem>
         </TabControl>
