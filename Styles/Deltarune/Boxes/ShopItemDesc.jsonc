@@ -2,8 +2,6 @@
     "Name": "Shop Item Description",
     "Images": [{
         "Path": "Assets/BoxShopDesc.png"
-    }, {
-        "Path": "Assets/BoxShopDescEquip.png"
     }],
     "CustomProperties": {
         "CharacterLimit": 13

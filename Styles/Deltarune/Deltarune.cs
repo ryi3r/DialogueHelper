@@ -60,22 +60,15 @@ public class Deltarune : StyleScript
     public enum DialogueKinds
     {
         Default,
-        BattleIdle,
-        Platformer,
-        PlatformerAct, // no linewrap
-        Pink,
-        ShopSellEquippable,
-        TennaBoard,
-        DynamicWordwarp,
         None,
+        DynamicWordWrap,
+        PlatformerAct, // no linewrap
     }
     public enum PortraitKinds
     {
+        Default,
         None,
-        ForceNone,
         Basic,
-        SmallFlowers,
-        SmallOther,
     }
 
     public enum WarningKind
@@ -85,9 +78,9 @@ public class Deltarune : StyleScript
         MissingKey,
     }
 
-    public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait stype, sets the text offset as each specify", "portraitKind", ["None", "Force None", "Basic", "Small (Flowers)", "Small (Other)"], [], null, 0);
-    public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", null, "darkZone", false);
-    public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "Battle Idle", "Platformer", "Platformer ACT", "Pink", "Shop Sell Equippable", "Tenna's Board", "Dynamic Wordwrap", "None"], [null, null, null, null, null, "This one doesn't actually change the line-wrapping style, but it'll change the box (if it's set correctly) to let you see the limit of that", null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes."], null, 0);
+    public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait type, sets the text offset as each specify", "portraitKind", ["Default", "None", "Basic"], [ "Auto-detect portrait type", "Force no portrait", "Force default portrait" ], null, 0);
+    public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", null, "darkZone");
+    public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "None", "Dynamic", "Platformer ACT"], [null, null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes.", null], null, 0);
 
     public static double EnvX;
     public static double EnvY;
@@ -101,8 +94,6 @@ public class Deltarune : StyleScript
     public ParsedString Parsed = new();
 
     public static (double X, double Y) EnvPortraitOffset;
-    public static (double X, double Y) EnvSmallFlowerPortraitOffset;
-    public static (double X, double Y) EnvSmallOtherPortraitOffset;
 
     public static bool EnvDrawAsterisk;
 
@@ -975,53 +966,8 @@ public class Deltarune : StyleScript
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
-        var box = (Boxes)data.GetCurrentBox();
-        if (data.UpdateKind is PreviewRenderer.UpdateKind.SelectedBoxChanged)
-        {
-            DialogueKinds? targetBox = box switch
-            {
-                Boxes.BattleIdle => DialogueKinds.BattleIdle,
-                Boxes.PlatformerDiaglogue => DialogueKinds.Platformer,
-                Boxes.OverworldPink => DialogueKinds.Pink,
-                Boxes.RecruitDescription => DialogueKinds.DynamicWordwarp,
-                Boxes.TennaBoard => DialogueKinds.TennaBoard,
-                _ => null,
-            };
-            if (targetBox is not null && DialogueType.SelectedIndex != (int)targetBox)
-            {
-                DialogueType.SelectedIndex = (int)targetBox;
-                DialogueType.UpdateUiValue();
-                if (box is Boxes.PlatformerDiaglogue)
-                {
-                    PortraitKind.SelectedIndex = (int)PortraitKinds.SmallFlowers;
-                    PortraitKind.UpdateUiValue();
-                }
-                return true;
-            }
-        }
         Parsed = new(data.Char.String, data.Box);
         data.Char.String = Parsed.ParsedText;
-        switch (box)
-        {
-            case Boxes.PlatformerDiaglogue:
-                data.BoxImages[0].IsVisible = false;
-                data.BoxImages[1].IsVisible = true;
-                if (PortraitKind.SelectedIndex == (int)PortraitKinds.Basic)
-                {
-                    data.BoxImages[0].IsVisible = true;
-                    data.BoxImages[1].IsVisible = false;
-                }
-                break;
-            case Boxes.ShopItemDescription:
-                data.BoxImages[0].IsVisible = true;
-                data.BoxImages[1].IsVisible = false;
-                if (DialogueType.SelectedIndex == (int)DialogueKinds.ShopSellEquippable)
-                {
-                    data.BoxImages[0].IsVisible = false;
-                    data.BoxImages[1].IsVisible = true;
-                }
-                break;
-        }
         EnvX = -1;
         EnvY = -1;
         EnvSkip = 0;
@@ -1032,46 +978,28 @@ public class Deltarune : StyleScript
         EnvDrawAsterisk = true;
         EnvDynLimitWrap = data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale();
         {
-            var (x, y) = (0d, 0d);
+            double x, y;
             if (data.Box.CustomProperties.TryGetValue("PortraitOffset", out var bpo) && bpo is JsonElement po)
             {
                 po[0].TryGetDouble(out x);
                 po[1].TryGetDouble(out y);
             }
+            else
+            {
+                /* so that boxes that don't have PortraitOffset
+                 * don't default to the upper left corner
+                 * if PortraitKinds.Basic is active */
+                x = data.Box.TextOffset[0];
+                y = data.Box.TextOffset[1];
+            }
             EnvPortraitOffset = (x, y);
-        }
-        {
-            var (x, y) = (0d, 0d);
-            if (data.Box.CustomProperties.TryGetValue("SmallFlowerPortraitOffset", out var bpo) && bpo is JsonElement po)
-            {
-                po[0].TryGetDouble(out x);
-                po[1].TryGetDouble(out y);
-            }
-            EnvSmallFlowerPortraitOffset = (x, y);
-        }
-        {
-            var (x, y) = (0d, 0d);
-            if (data.Box.CustomProperties.TryGetValue("SmallOtherPortraitOffset", out var bpo) && bpo is JsonElement po)
-            {
-                po[0].TryGetDouble(out x);
-                po[1].TryGetDouble(out y);
-            }
-            EnvSmallOtherPortraitOffset = (x, y);
         }
         {
             if (data.Box.CustomProperties.TryGetValue("DynamicLimitWrap", out var bpo) && bpo is JsonElement po)
                 po.TryGetDouble(out EnvDynLimitWrap);
         }
-        var pk = (PortraitKinds)PortraitKind.SelectedIndex;
-        if (pk > PortraitKinds.ForceNone)
-        {
-            data.Char.StartPosition = pk switch
-            {
-                PortraitKinds.Basic => EnvPortraitOffset,
-                PortraitKinds.SmallFlowers => EnvSmallFlowerPortraitOffset,
-                PortraitKinds.SmallOther => EnvSmallOtherPortraitOffset,
-                _ => (0, 0),
-            };
+        if ((PortraitKinds)PortraitKind.SelectedIndex is PortraitKinds.Basic) {
+            data.Char.StartPosition = EnvPortraitOffset;
         }
         //Console.WriteLine(string.Join(",", Parsed.AsteriskPositions));
         return await base.PrepareDraw(wh, data);
@@ -1085,7 +1013,6 @@ public class Deltarune : StyleScript
             data.Char.IsNewline = true;
 
         var font = (Fonts)data.GetCurrentFont();
-        var box = (Boxes)data.GetCurrentBox();
 
         if (Parsed.Events.TryGetValue(data.Char.Index, out var evs))
         {
@@ -1096,7 +1023,7 @@ public class Deltarune : StyleScript
                     case DialogueIgnore:
                         break;
                     case DialogueIndexPortrait or DialogueCharPortrait:
-                        if (PortraitKind.SelectedIndex == (int)PortraitKinds.None)
+                        if (PortraitKind.SelectedIndex == (int)PortraitKinds.Default)
                         {
                             PortraitKind.SelectedIndex = (int)PortraitKinds.Basic;
                             PortraitKind.UpdateUiValue();
@@ -1135,7 +1062,8 @@ public class Deltarune : StyleScript
             case Fonts.Main:
                 EnvX = 8;
                 EnvY = 18;
-                switch (box)
+                //todo: this is the last segment keeping the Boxes enum from being deleted
+                switch ((Boxes)data.GetCurrentBox())
                 {
                     case Boxes.BattleIdle:
                         EnvY = 14;
@@ -1201,7 +1129,7 @@ public class Deltarune : StyleScript
             }
         }
         var actAsNewline = IsNewlineSafe(data.Char.Index, data.Char.String);
-        if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.DynamicWordwarp && data.Char.Index > EnvCheckedIndex)
+        if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.DynamicWordWrap && data.Char.Index > EnvCheckedIndex)
         {
             if (EnvCheckedIndex == -1)
                 EnvCheckedIndex = 0;

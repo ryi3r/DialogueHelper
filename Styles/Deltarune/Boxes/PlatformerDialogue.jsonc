@@ -2,11 +2,8 @@
     "Name": "Platformer Dialogue",
     "Images": [{
         "Path": "Assets/BoxPlatDialogue.png"
-    }, {
-        "Path": "Assets/BoxPlatDialogueNoPortrait.png"
     }],
     "CustomProperties": {
-        "SmallFlowerPortraitOffset": [19, 11],
         "PortraitOffset": [136, 11],
         "CharacterLimit": 38,
         "PortraitCharacterLimit": 31

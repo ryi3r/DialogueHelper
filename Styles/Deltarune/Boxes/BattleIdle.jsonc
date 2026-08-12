@@ -4,6 +4,7 @@
         "Path": "Assets/BoxBattleIdle.png"
     }],
     "CustomProperties": {
+        "PortraitOffset": [143, 52],
         "CharacterLimit": 37,
         "PortraitCharacterLimit": 29
     },
