@@ -10,6 +10,8 @@ public class BoxMetadata
     public Dictionary<string, dynamic?> CustomProperties = [];
     public float[] TextOffset = [0, 0];
     public float Index = float.MaxValue;
+    public double? TextAreaEnd = null;
+    public int? CharacterLimit = null;
 }
 
 public class ImageMetadata

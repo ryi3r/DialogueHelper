@@ -3,9 +3,7 @@
     "Images": [{
         "Path": "Assets/BoxBoardDiag.png"
     }],
-    "CustomProperties": {
-        "CharacterLimit": 22
-    },
     "TextOffset": [36, 28],
-    "Index": 12
+    "Index": 12,
+    "CharacterLimit": 22
 }

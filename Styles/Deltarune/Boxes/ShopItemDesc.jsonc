@@ -3,9 +3,6 @@
     "Images": [{
         "Path": "Assets/BoxShopDesc.png"
     }],
-    "CustomProperties": {
-        "CharacterLimit": 13
-    },
     "TextOffset": [40, 27],
     "Index": 10
 }

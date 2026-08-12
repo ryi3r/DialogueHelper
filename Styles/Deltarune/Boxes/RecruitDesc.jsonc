@@ -3,9 +3,7 @@
     "Images": [{
         "Path": "Assets/BoxRecruitDesc.png"
     }],
-    "CustomProperties": {
-        "DynamicLimitWrap": 560
-    },
     "TextOffset": [540, 154],
-    "Index": 11
+    "Index": 11,
+    "TextAreaEnd": 560
 }

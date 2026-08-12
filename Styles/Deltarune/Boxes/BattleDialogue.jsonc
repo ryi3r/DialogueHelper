@@ -3,9 +3,7 @@
     "Images": [{
         "Path": "Assets/BoxBattleDiag.png"
     }],
-        "CustomProperties": {
-        "CharacterLimit": 51
-    },
     "TextOffset": [20, 20],
-    "Index": 3
+    "Index": 3,
+    "CharacterLimit": 51
 }

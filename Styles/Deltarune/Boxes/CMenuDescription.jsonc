@@ -3,9 +3,6 @@
     "Images": [{
         "Path": "Assets/BoxCMenuDesc.png"
     }],
-    "CustomProperties": {
-        "CharacterLimit": 48
-    },
     "TextOffset": [23, 12],
     "Index": 4
 }
