@@ -43,6 +43,7 @@ public partial class Settings : Window
         UiFontComboBox.ItemsSource = (string[])[UseProgramDefaultLabel, .. FontManager.Current.SystemFonts.Select(f => f.Name).Order()];
         UiFontComboBox.SelectedItem = mainWindow.UiFontFamily ?? UseProgramDefaultLabel;
         UiFontSizeBox.Value = (decimal)mainWindow.UiFontSize;
+        SwapPreviewsCheckBox.IsChecked = mainWindow.SwapPreviews;
         AffPathBox.Text = mainWindow.DictionaryAffPath;
         DicPathBox.Text = mainWindow.DictionaryDicPath;
         UpdateDownloadStatusIcons();
@@ -77,6 +78,8 @@ public partial class Settings : Window
             MainWindow.UiFontFamily = selectedFont == UseProgramDefaultLabel ? null : selectedFont;
             MainWindow.UiFontSize = (double)(UiFontSizeBox.Value ?? 14);
             MainWindow.ApplyEditorFont();
+            MainWindow.SwapPreviews = SwapPreviewsCheckBox.IsChecked ?? false;
+            MainWindow.ApplyPreviewOrder();
             MainWindow.DictionaryAffPath = AffPathBox.Text ?? "";
             MainWindow.DictionaryDicPath = DicPathBox.Text ?? "";
 
