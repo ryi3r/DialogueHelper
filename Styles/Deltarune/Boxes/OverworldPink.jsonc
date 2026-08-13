@@ -3,9 +3,7 @@
     "Images": [{
         "Path": "Assets/BoxPink.png"
     }],
-    "CustomProperties": {
-        "CharacterLimit": 23
-    },
     "TextOffset": [34, 87],
-    "Index": 6
+    "Index": 6,
+    "CharacterLimit": 23
 }
