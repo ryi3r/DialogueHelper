@@ -1371,6 +1371,8 @@ public class ParsedString
         var cPos = 0;
         var spaceSb = -1;
         var lastX = -1;
+        var indentSize = 2;
+        //var flowerArg = false;
         //Console.WriteLine($"============== {text}");
         int? limit = null;
         if (box is not null)
@@ -1428,6 +1430,28 @@ public class ParsedString
                 AddEvent(x, new DialogueEnd(@char.Value.ToString()));
                 continue;
             }
+            //todo: finish this
+            /*if (@char == '~')
+            {
+                if (trimLen - i >= 2)
+                {
+                    var fullSlice = text[i..(i + 2)];
+                    var slice = text[(i + 1)..(i + 2)];
+                    if ("0123456789".Contains(slice[0]))
+                    {
+                        // valid argument detected
+                        if (trimLen - i >= 3 && text[i + 2] is '*')
+                        {
+                            flowerArg = true;
+                            // flower ~1 detected, insert '\m?\t\t'
+                        }
+                        else if (flowerArg)
+                        {
+                            // insert '&\t\t'
+                        }
+                    }
+                }
+            }*/
             if (@char == '\\')
             {
                 var valid = true;
@@ -1571,6 +1595,31 @@ public class ParsedString
                                             break;
                                         case 'm':
                                             AddEvent(x, new DialogueMiniFace(fullSlice));
+                                            indentSize = 0;
+                                            var ii = i + 3;
+                                            while (trimLen - (ii) > 0 && text[ii] is '*' or '\t' or ' ')
+                                            {
+                                                indentSize++;
+                                                ii++;
+                                            }
+
+                                            if (indentSize == 4)
+                                            {
+                                                Color? col = slice[1] switch
+                                                {
+                                                    '0' => new() { Rgba = 0x84f9ffff },
+                                                    '1' => new() { Rgba = 0xe2a8fcff },
+                                                    '2' => new() { Rgba = 0xffac87ff },
+                                                    '3' => new() { Rgba = 0xaeffbcff },
+                                                    '4' => new() { Rgba = 0xfff8a1ff },
+                                                    '5' => new() { Rgba = 0x86a7ffff },
+                                                    _ => null
+                                                };
+                                                if (col is not null)
+                                                {
+                                                    AddEvent(x, new DialogueColor(fullSlice) { Color = col, Rainbow = false });
+                                                }
+                                            }
                                             break;
                                         case 'O':
                                             AddEvent(x, new DialogueObject(fullSlice));
@@ -1617,9 +1666,9 @@ public class ParsedString
                 if (AsteriskCheck && autoAsterisk && (i + 1 >= text.Length || text[i + 1] != '*'))
                 {
                     cPos += 2;
-                    UndrawPositions.Add(sb.Length);
-                    UndrawPositions.Add(sb.Length + 1);
-                    sb.Append("||");
+                    for (var j = 0; j < 2; j++)
+                        UndrawPositions.Add(sb.Length + j);
+                    sb.Append(new string('|', 2));
                 }
             }
 
@@ -1646,9 +1695,9 @@ public class ParsedString
                         sb.Append('&');
                     if (AsteriskCheck && autoAsterisk)
                     {
-                        UndrawPositions.Add(sb.Length);
-                        UndrawPositions.Add(sb.Length + 1);
-                        sb.Append("||");
+                        for (var j = 0; j < indentSize; j++)
+                            UndrawPositions.Add(sb.Length + j);
+                        sb.Append(new string('|', indentSize));
                     }
                     tSpace = -1;
                     spaceSb = -1;
