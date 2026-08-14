@@ -1,0 +1,8 @@
+{
+    "Name": "Platformer Act",
+    "Images": [{
+        "Path": "Assets/BoxPlatDialogueNoPortrait.png"
+    }],
+    "TextOffset": [19, 11],
+    "Index": 7.5
+}

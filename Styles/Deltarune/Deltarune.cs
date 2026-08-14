@@ -62,7 +62,6 @@ public class Deltarune : StyleScript
         Default,
         None,
         DynamicWordWrap,
-        PlatformerAct, // no linewrap
     }
     public enum PortraitKinds
     {
@@ -80,7 +79,7 @@ public class Deltarune : StyleScript
 
     public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait type, sets the text offset as each specify", "portraitKind", ["Default", "None", "Basic"], [ "Auto-detect portrait type", "Force no portrait", "Force default portrait" ], null, 0);
     public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", null, "darkZone");
-    public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "None", "Dynamic", "Platformer ACT"], [null, null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes.", null], null, 0);
+    public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "None", "Dynamic"], [null, null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes."], null, 0);
 
     public static double EnvX;
     public static double EnvY;
@@ -1084,14 +1083,9 @@ public class Deltarune : StyleScript
                         EnvX = 7;
                         EnvY = 16;
                         break;
-                    case Boxes.CMenuDescription or Boxes.CMenuCharacterDescription or Boxes.ShopItemDescription:
-                        EnvX = -1; // drawn by gamemaker
-                        EnvY = -1;
-                        break;
                 }
-                if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.PlatformerAct)
-                {
-                    EnvX = -1; // drawn by gamemaker
+                if (data.Box.CharacterLimit is null) {
+                    EnvX = -1;
                     EnvY = -1;
                 }
                 break;
