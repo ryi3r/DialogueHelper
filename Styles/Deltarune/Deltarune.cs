@@ -61,6 +61,7 @@ public class Deltarune : StyleScript
         MissingKey,
     }
 
+    public static CustomProperty<bool> AutoIndentAutoWrappedMiniFaceLines = new("Auto Indent Auto Wrapped Mini Face Lines", "Allows not using manual line breaks with mini face (\\m?) lines in case your mod has it implemented.", "autoIndentAutoWrappedMiniFaceLines");
     public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait type, sets the text offset as each specify", "portraitKind", ["Default", "None", "Basic"], [ "Auto-detect portrait type", "Force no portrait", "Force default portrait" ], null, 0);
     public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", null, "darkZone");
     public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "None", "Dynamic"], [null, null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes."], null, 0);
@@ -90,6 +91,13 @@ public class Deltarune : StyleScript
         //await wh.ShowDialog(new InfoWindow("Hello world!"));
         UtmtPath = $"{wh.GetStylePath()}/UndertaleModCli/";
         return Task.CompletedTask;
+    }
+    
+    public override Task<IEnumerable<ICustomProperty>> RegisterCustomSettings()
+    {
+        return Task.FromResult<IEnumerable<ICustomProperty>>([
+            AutoIndentAutoWrappedMiniFaceLines
+        ]);
     }
 
     public override Task<IEnumerable<ICustomProperty>> RegisterCustomProperties()
@@ -1597,15 +1605,14 @@ public class ParsedString
                                             break;
                                         case 'm':
                                             AddEvent(x, new DialogueMiniFace(fullSlice));
-                                            indentSize = 0;
+                                            var indentCounter = 0;
                                             var ii = i + 3;
-                                            while (trimLen - (ii) > 0 && text[ii] is '*' or '\t' or ' ')
+                                            while (trimLen - ii > 0 && text[ii] is '*' or '\t' or ' ')
                                             {
-                                                indentSize++;
+                                                indentCounter++;
                                                 ii++;
                                             }
-
-                                            if (indentSize == 4)
+                                            if (indentCounter == 4)
                                             {
                                                 Color? col = slice[1] switch
                                                 {
@@ -1619,6 +1626,9 @@ public class ParsedString
                                                 };
                                                 if (col is not null)
                                                     AddEvent(x, new DialogueColor(fullSlice) { Color = col, Rainbow = false });
+                                            }
+                                            if (Deltarune.AutoIndentAutoWrappedMiniFaceLines.Value) {
+                                                indentSize = indentCounter;
                                             }
                                             break;
                                         case 'O':

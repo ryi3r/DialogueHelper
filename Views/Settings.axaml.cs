@@ -98,6 +98,7 @@ public partial class Settings : Window
             await MainWindow.LoadBackground();
         }
         Close();
+        MainWindow?.ForceStyleReload_OnClick(sender, e);
     }
 
     void Cancel_OnClick(object? sender, RoutedEventArgs e)

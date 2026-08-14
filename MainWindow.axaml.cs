@@ -1598,7 +1598,7 @@ public partial class MainWindow : Window
         }
     }
 
-    async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
+    public async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
     {
         var lWin = new LoadingWindow { Title = "Reloading style...", CanResize = false, ProgressBar = { IsIndeterminate = true } };
         lWin.Closing += (_, ev) =>
