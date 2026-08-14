@@ -3,6 +3,10 @@
     "Images": [{
         "Path": "Assets/BoxCMenuDesc.png"
     }],
+    "CustomProperties": {
+        "CustomY": -1,
+        "CustomX": -1
+    },
     "TextOffset": [23, 12],
     "Index": 4
 }

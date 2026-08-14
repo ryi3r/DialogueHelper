@@ -5,9 +5,9 @@
     }],
     "CustomProperties": {
         "PortraitOffset": [136, 11],
+        "CharacterLimit": 38,
         "PortraitCharacterLimit": 31
     },
     "TextOffset": [19, 11],
-    "Index": 7,
-    "CharacterLimit": 38
+    "Index": 7
 }

@@ -41,22 +41,6 @@ public class Deltarune : StyleScript
         JaKakugo,
         JaTinyNoelle,
     }
-    public enum Boxes
-    {
-        Overworld,
-        BattleIdle,
-        BattleItemInfo,
-        BattleDialogue,
-        CMenuDescription, // no linewrap
-        CMenuCharacterDescription, // no linewrap
-        OverworldPink,
-        PlatformerDiaglogue,
-        ShopTalk,
-        ShopTalkIdle, // wrong linewrap (33 in the code but should be much lower)
-        ShopItemDescription, // no linewrap
-        RecruitDescription,
-        TennaBoard,
-    }
     public enum DialogueKinds
     {
         Default,
@@ -965,9 +949,21 @@ public class Deltarune : StyleScript
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
+        int? characterLimit;
+        double? textAreaEnd;
+        {
+            characterLimit = data.Box.CustomProperties.TryGetValue("CharacterLimit", out var l)
+                             && l is JsonElement && ((JsonElement)l).TryGetInt32(out var eValue)
+                ? eValue
+                : null;
+            textAreaEnd = data.Box.CustomProperties.TryGetValue("TextAreaEnd", out l)
+                          && l is JsonElement && ((JsonElement)l).TryGetDouble(out var d)
+                ? d
+                : null;
+        }
         if (data.UpdateKind is PreviewRenderer.UpdateKind.SelectedBoxChanged)
         {
-            if (data.Box.CharacterLimit is null)
+            if (characterLimit is null)
             {
                 DialogueType.SelectedIndex = (int)DialogueKinds.DynamicWordWrap;
                 DialogueType.UpdateUiValue();
@@ -1007,8 +1003,8 @@ public class Deltarune : StyleScript
             }
             EnvPortraitOffset = (x, y);
         }
-        if (data.Box.TextAreaEnd.HasValue)
-            EnvDynLimitWrap = data.Box.TextAreaEnd.Value;
+        if (textAreaEnd.HasValue)
+            EnvDynLimitWrap = textAreaEnd.Value;
         if ((PortraitKinds)PortraitKind.SelectedIndex is PortraitKinds.Basic) {
             data.Char.StartPosition = EnvPortraitOffset;
         }
@@ -1073,21 +1069,6 @@ public class Deltarune : StyleScript
             case Fonts.Main:
                 EnvX = 8;
                 EnvY = 18;
-                //todo: this is the last segment keeping the Boxes enum from being deleted
-                switch ((Boxes)data.GetCurrentBox())
-                {
-                    case Boxes.BattleIdle:
-                        EnvY = 14;
-                        break;
-                    case Boxes.BattleItemInfo:
-                        EnvX = 7;
-                        EnvY = 16;
-                        break;
-                }
-                if (data.Box.CharacterLimit is null) {
-                    EnvX = -1;
-                    EnvY = -1;
-                }
                 break;
             case Fonts.ComicSans:
                 EnvX = 8;
@@ -1108,6 +1089,14 @@ public class Deltarune : StyleScript
             default:
                 { EnvX = data.Font.GlyphDictionary.TryGetValue(data.Char.Char, out var glyph) ? glyph.Shift : -1; }
                 break;
+        }
+        {
+            if (data.Box.CustomProperties.TryGetValue("CustomY", out var l)
+                && l is JsonElement && ((JsonElement)l).TryGetDouble(out var eValue))
+                EnvY = eValue;
+            if (data.Box.CustomProperties.TryGetValue("CustomX", out l)
+                && l is JsonElement && ((JsonElement)l).TryGetDouble(out eValue))
+                EnvX = eValue;
         }
         var visualY = 0;
         if ((Enum.GetName(font) ?? "").Contains("jp", StringComparison.InvariantCultureIgnoreCase) && data.Char.Char <= 0xff || (data.Char.Char >= 65377 && data.Char.Char <= 65439))
@@ -1370,16 +1359,19 @@ public class ParsedString
         int? limit = null;
         if (box is not null)
         {
-            if ((Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex == Deltarune.PortraitKinds.Basic
-                && box.CustomProperties.TryGetValue("PortraitCharacterLimit", out var l)
-                && l is JsonElement je && je.TryGetInt32(out var eValue))
-            {
+            // I don't know how to format this to not by this ugly
+            if (
+                // portrait
+                (Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex == Deltarune.PortraitKinds.Basic
+                    && box.CustomProperties.TryGetValue("PortraitCharacterLimit", out var l)
+                    && l is JsonElement
+                    && ((JsonElement)l).TryGetInt32(out var eValue)
+                // normal
+                ||  box.CustomProperties.TryGetValue("CharacterLimit", out l)
+                    && l is JsonElement
+                    && ((JsonElement)l).TryGetInt32(out eValue)
+                )
                 limit = eValue;
-            }
-            else
-            {
-                limit = box.CharacterLimit;
-            }
         }
         for (var i = 0; i < trimLen; i++)
         {
@@ -1426,17 +1418,18 @@ public class ParsedString
             switch (@char)
             {
                 case '~':
+                {
                     if (trimLen - i >= 1 && "0123456789".Contains(text[i + 1]))
                     {
                         var fullSlice = text[i..(i + 1)];
-                        if (text.StartsWith("~1* "))  // best way to detect if it's a flower line
+                        if (text.StartsWith("~1* "))    // best way to detect if it's a flower line
                         {
                             if (i == 0)
                             {
-                                 AddEvent(i, new DialogueMiniFace(fullSlice));
-                                 indentSize += 2;
-                                 for (var j = 0; j < 2; j++)
-                                     UndrawPositions.Add(sb.Length + j);
+                                AddEvent(i, new DialogueMiniFace(fullSlice));
+                                indentSize += 2;
+                                for (var j = 0; j < 2; j++)
+                                    UndrawPositions.Add(sb.Length + j);
                             }
                             else
                             {
@@ -1447,8 +1440,10 @@ public class ParsedString
                             }
                         }
                     }
+                }
                     break;
                 case '\\':
+                {
                     var valid = true;
                     if (trimLen - i >= 3)
                     {
@@ -1457,6 +1452,7 @@ public class ParsedString
                         switch (slice[0])
                         {
                             case 'E':
+                            {
                                 var oldFullSlice = fullSlice;
                                 if (slice[1] is '~' && trimLen - i >= 4 && "0123456789".Contains(text[i + 3]))
                                 {
@@ -1472,8 +1468,10 @@ public class ParsedString
                                     AddEvent(x, new DialogueIndexPortrait(fullSlice));
                                     i += fullSlice.Length - oldFullSlice.Length;
                                 }
+                            }
                                 break;
                             case 'F':
+                            {
                                 // todo: \F0 seems to reset line wrap
                                 if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
                                 {
@@ -1482,6 +1480,7 @@ public class ParsedString
                                 }
                                 else
                                     AddEvent(x, new DialogueCharPortrait(fullSlice));
+                            }
                                 break;
                             case 'T':
                             {
@@ -1619,9 +1618,7 @@ public class ParsedString
                                                     _ => null
                                                 };
                                                 if (col is not null)
-                                                {
                                                     AddEvent(x, new DialogueColor(fullSlice) { Color = col, Rainbow = false });
-                                                }
                                             }
                                             break;
                                         case 'O':
@@ -1648,7 +1645,7 @@ public class ParsedString
                         i += 2;
                         continue;
                     }
-
+                }
                     break;
                 //Console.WriteLine($"{lastIsNewLine}:{i},{cPos}->{text[i]}->{text[i] == '*'}");
                 case '*':

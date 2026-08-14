@@ -3,6 +3,10 @@
     "Images": [{
         "Path": "Assets/BoxCharDesc.png"
     }],
+    "CustomProperties": {
+        "CustomY": -1,
+        "CustomX": -1
+    },
     "TextOffset": [90, 12],
     "Index": 5
 }
