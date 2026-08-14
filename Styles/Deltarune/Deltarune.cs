@@ -72,6 +72,7 @@ public class Deltarune : StyleScript
     public static int EnvSkip;
     public static bool EnvFirstDrawnChar;
     public static int EnvCheckedIndex;
+    public static bool EnvAutoAsterisk = true;
     public static Stopwatch Stopwatch = Stopwatch.StartNew();
     public static bool IsRainbow;
     public static bool IsLastNewline;
@@ -983,7 +984,7 @@ public class Deltarune : StyleScript
             }
             return true;
         }
-        Parsed = new(data.Char.String, data.Box);
+        Parsed = new(data.Char.String, data.Box, EnvAutoAsterisk);
         data.Char.String = Parsed.ParsedText;
         EnvX = -1;
         EnvY = -1;
@@ -1353,7 +1354,8 @@ public class ParsedString
         ParseWarns[i].Add(warn);
     }
     
-    public ParsedString(string text = "", BoxMetadata? box = null, bool autoAsterisk = true) {
+    public ParsedString(string text = "", BoxMetadata? box = null, bool autoAsterisk = true)
+    {
         Text = text;
         var trimLen = text.TrimEnd().Length;
         TextTrimLength = trimLen;
