@@ -1372,7 +1372,6 @@ public class ParsedString
         var spaceSb = -1;
         var lastX = -1;
         var indentSize = 2;
-        //var flowerArg = false;
         //Console.WriteLine($"============== {text}");
         int? limit = null;
         if (box is not null)
@@ -1430,57 +1429,67 @@ public class ParsedString
                 AddEvent(x, new DialogueEnd(@char.Value.ToString()));
                 continue;
             }
-            //todo: finish this
-            /*if (@char == '~')
+            switch (@char)
             {
-                if (trimLen - i >= 2)
-                {
-                    var fullSlice = text[i..(i + 2)];
-                    var slice = text[(i + 1)..(i + 2)];
-                    if ("0123456789".Contains(slice[0]))
+                case '~':
+                    if (trimLen - i >= 1 && "0123456789".Contains(text[i + 1]))
                     {
-                        // valid argument detected
-                        if (trimLen - i >= 3 && text[i + 2] is '*')
+                        var fullSlice = text[i..(i + 1)];
+                        if (text.StartsWith("~1* "))  // best way to detect if it's a flower line
                         {
-                            flowerArg = true;
-                            // flower ~1 detected, insert '\m?\t\t'
-                        }
-                        else if (flowerArg)
-                        {
-                            // insert '&\t\t'
+                            if (i == 0)
+                            {
+                                 AddEvent(i, new DialogueMiniFace(fullSlice));
+                                 indentSize += 2;
+                                 for (var j = 0; j < 2; j++)
+                                     UndrawPositions.Add(sb.Length + j);
+                            }
+                            else
+                            {
+                                // this is a little janky, but it works
+                                text = text.Replace(fullSlice, "\n\t");
+                                for (var j = 0; j < 6; j++)
+                                    UndrawPositions.Add(sb.Length + j);
+                            }
                         }
                     }
-                }
-            }*/
-            if (@char == '\\')
-            {
-                var valid = true;
-                if (trimLen - i >= 3)
-                {
-                    var fullSlice = text[i..(i + 3)];
-                    var slice = text[(i + 1)..(i + 3)];
-                    switch (slice[0])
+                    break;
+                case '\\':
+                    var valid = true;
+                    if (trimLen - i >= 3)
                     {
-                        case 'E':
-                            if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
-                            {
-                                valid = false;
-                                AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
-                            }
-                            else
-                                AddEvent(x, new DialogueIndexPortrait(fullSlice));
-                            break;
-                        case 'F':
-                            // todo: \F0 seems to reset line wrap
-                            if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
-                            {
-                                valid = false;
-                                AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
-                            }
-                            else
-                                AddEvent(x, new DialogueCharPortrait(fullSlice));
-                            break;
-                        case 'T':
+                        var fullSlice = text[i..(i + 3)];
+                        var slice = text[(i + 1)..(i + 3)];
+                        switch (slice[0])
+                        {
+                            case 'E':
+                                var oldFullSlice = fullSlice;
+                                if (slice[1] is '~' && trimLen - i >= 4 && "0123456789".Contains(text[i + 3]))
+                                {
+                                    fullSlice = text[i..(i + 4)];
+                                }
+                                else if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
+                                {
+                                    valid = false;
+                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
+                                }
+                                if (valid)
+                                {
+                                    AddEvent(x, new DialogueIndexPortrait(fullSlice));
+                                    i += fullSlice.Length - oldFullSlice.Length;
+                                }
+                                break;
+                            case 'F':
+                                // todo: \F0 seems to reset line wrap
+                                if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
+                                {
+                                    valid = false;
+                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
+                                }
+                                else
+                                    AddEvent(x, new DialogueCharPortrait(fullSlice));
+                                break;
+                            case 'T':
                             {
                                 Deltarune.Fonts? f = slice[1] switch
                                 {
@@ -1497,8 +1506,8 @@ public class ParsedString
                                 else
                                     AddEvent(x, new DialogueFonts(fullSlice) { Font = f });
                             }
-                            break;
-                        case 'c':
+                                break;
+                            case 'c':
                             {
                                 var rnb = false;
                                 Color? col = slice[1] switch
@@ -1537,8 +1546,8 @@ public class ParsedString
                                 else
                                     AddEvent(x, new DialogueColor(fullSlice) { Color = col, Rainbow = rnb });
                             }
-                            break;
-                        case 'V':
+                                break;
+                            case 'V':
                             {
                                 if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
                                 {
@@ -1548,8 +1557,8 @@ public class ParsedString
                                 else
                                     AddEvent(x, new DialogueFloweryVoiceClip(fullSlice));
                             }
-                            break;
-                        case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O' or 'v':
+                                break;
+                            case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O' or 'v':
                             {
                                 if (!int.TryParse(slice[1].ToString(), out var v))
                                     valid = false;
@@ -1607,12 +1616,12 @@ public class ParsedString
                                             {
                                                 Color? col = slice[1] switch
                                                 {
-                                                    '0' => new() { Rgba = 0x84f9ffff },
-                                                    '1' => new() { Rgba = 0xe2a8fcff },
-                                                    '2' => new() { Rgba = 0xffac87ff },
-                                                    '3' => new() { Rgba = 0xaeffbcff },
-                                                    '4' => new() { Rgba = 0xfff8a1ff },
-                                                    '5' => new() { Rgba = 0x86a7ffff },
+                                                    '0' => new() { Rgba = 0x84f9ffff }, // Aqua
+                                                    '1' => new() { Rgba = 0xe2a8fcff }, // Seth
+                                                    '2' => new() { Rgba = 0xffac87ff }, // Orange
+                                                    '3' => new() { Rgba = 0xaeffbcff }, // Green
+                                                    '4' => new() { Rgba = 0xfff8a1ff }, // Yellow
+                                                    '5' => new() { Rgba = 0x86a7ffff }, // Blue
                                                     _ => null
                                                 };
                                                 if (col is not null)
@@ -1634,29 +1643,30 @@ public class ParsedString
                                     }
                                 }
                             }
-                            break;
-                        default:
-                            valid = false;
-                            break;
+                                break;
+                            default:
+                                valid = false;
+                                break;
+                        }
                     }
-                }
-                if (valid)
-                {
-                    i += 2;
-                    continue;
-                }
+                    if (valid)
+                    {
+                        i += 2;
+                        continue;
+                    }
+
+                    break;
+                //Console.WriteLine($"{lastIsNewLine}:{i},{cPos}->{text[i]}->{text[i] == '*'}");
+                case '*':
+                    AsteriskCheck = true;
+                    AsteriskPositions.Add(x);
+                    break;
+                case ' ':
+                    tSpace = i + 1;
+                    spaceSb = sb.Length;
+                    break;
             }
-            //Console.WriteLine($"{lastIsNewLine}:{i},{cPos}->{text[i]}->{text[i] == '*'}");
-            if (text[i] == '*')
-            {
-                AsteriskCheck = true;
-                AsteriskPositions.Add(x);
-            }
-            if (@char == ' ')
-            {
-                tSpace = i + 1;
-                spaceSb = sb.Length;
-            }
+
             if (Deltarune.IsNewlineSafe(i, text))
             {
                 tSpace = -1;
