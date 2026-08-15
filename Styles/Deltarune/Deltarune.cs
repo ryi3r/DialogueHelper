@@ -402,147 +402,146 @@ public class Deltarune : StyleScript
             lw.Close();
             return;
         }
-        var (data, sc, warnedKeys) = ExportJson(output, wh, lw);
-        var sb = new StringBuilder();
-        sb.AppendLine("# Warnings\n");
-        var warns = 0;
-        foreach (var (key, value) in data)
+        try
         {
-            if (!output.TryGetValue(key, out var og))
-                continue;
-            var ogParsed = new ParsedString(og, Boxes.Overworld);
-            var parsed = new ParsedString(value, Boxes.Overworld);
+            var (data, sc, warnedKeys) = ExportJson(output, wh, lw);
+            var sb = new StringBuilder();
+            sb.AppendLine("# Warnings\n");
+            var warns = 0;
+            foreach (var (key, value) in data)
             {
-                var ogWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
-                var nWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
-                foreach (var (k, ev) in parsed.ParseWarns)
+                if (!output.TryGetValue(key, out var og))
+                    continue;
+                var ogParsed = new ParsedString(og, Boxes.Overworld);
+                var parsed = new ParsedString(value, Boxes.Overworld);
                 {
-                    foreach (var e in ev)
-                        nWarns.Add((k, e));
-                }
-                foreach (var (k, ev) in ogParsed.ParseWarns)
-                {
-                    foreach (var e in ev)
-                        ogWarns.Add((k, e));
-                }
-                if (ogWarns.Count != nWarns.Count)
-                {
-                    sb.AppendLine($"Parse warnings for {key} (ID `{sc[key].Cont.Id}`) wasn't the same for the original ({ogParsed.ParseWarns.Count}) to the translated ({parsed.ParseWarns.Count}) text.\n");
+                    var ogWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
+                    var nWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
+                    foreach (var (k, ev) in parsed.ParseWarns)
+                    {
+                        foreach (var e in ev)
+                            nWarns.Add((k, e));
+                    }
+                    foreach (var (k, ev) in ogParsed.ParseWarns)
+                    {
+                        foreach (var e in ev)
+                            ogWarns.Add((k, e));
+                    }
+                    if (ogWarns.Count != nWarns.Count)
+                    {
+                        sb.AppendLine($"Parse warnings for {key} (ID `{sc[key].Cont.Id}`) wasn't the same for the original ({ogParsed.ParseWarns.Count}) to the translated ({parsed.ParseWarns.Count}) text.\n");
 
-                    sb.AppendLine("|Old|New|\n|---|---|");
-                    for (var i = 0; i < int.Max(nWarns.Count, ogWarns.Count); i++)
-                    {
-                        sb.Append("|");
-                        if (i < ogWarns.Count)
-                            sb.Append($"{ogWarns[i].Key + 1}: {ogWarns[i].Value.Message}");
-                        sb.Append("|");
-                        if (i < nWarns.Count)
+                        sb.AppendLine("|Old|New|\n|---|---|");
+                        for (var i = 0; i < int.Max(nWarns.Count, ogWarns.Count); i++)
                         {
-                            var bold = i >= ogWarns.Count || nWarns[i].Value.Argument != ogWarns[i].Value.Argument;
-                            sb.Append($"{nWarns[i].Key + 1}: {(bold ? "**" : "")}{nWarns[i].Value.Message}{(bold ? "**" : "")}");
+                            sb.Append("|");
+                            if (i < ogWarns.Count)
+                                sb.Append($"{ogWarns[i].Key + 1}: {ogWarns[i].Value.Message}");
+                            sb.Append("|");
+                            if (i < nWarns.Count)
+                            {
+                                var bold = i >= ogWarns.Count || nWarns[i].Value.Argument != ogWarns[i].Value.Argument;
+                                sb.Append($"{nWarns[i].Key + 1}: {(bold ? "**" : "")}{nWarns[i].Value.Message}{(bold ? "**" : "")}");
+                            }
+                            sb.AppendLine("|");
                         }
-                        sb.AppendLine("|");
+                        sb.AppendLine();
+                        warns++;
                     }
-                    sb.AppendLine();
-                    warns++;
                 }
-            }
-            var ogParse = ogParsed.Events.Select(x => (x.Key, Item: x.Value.Where(x => x is not DialogueTimeSkip and not DialogueIgnore).ToList())).ToArray();
-            var parse = parsed.Events.Select(x => (x.Key, Item: x.Value.Where(x => x is not DialogueTimeSkip and not DialogueIgnore).ToList())).ToArray();
-            var valid = true;
-            if (parse.Length != ogParse.Length)
-                valid = false;
-            else
-            {
-                for (var i = 0; i < parse.Length; i++)
                 {
-                    var evs = parse[i];
-                    var ogEvs = ogParse[i];
-                    if (evs.Item.Count != ogEvs.Item.Count)
+                    var evsParse = new List<(int Key, ParsedEvent Item)>();
+                    var ogEvsParse = new List<(int Key, ParsedEvent Item)>();
+                    foreach (var ev in parsed.Events)
                     {
-                        valid = false;
-                        break;
+                        foreach (var e in ev.Value)
+                        {
+                            if (e is DialogueTimeSkip or DialogueIgnore)
+                                continue;
+                            evsParse.Add((ev.Key, e));
+                        }
                     }
-                    foreach (var (e, o) in evs.Item.Zip(ogEvs.Item))
+                    foreach (var ev in ogParsed.Events)
                     {
-                        if (e.Argument == o.Argument)
-                            continue;
+                        foreach (var e in ev.Value)
+                        {
+                            if (e is DialogueTimeSkip or DialogueIgnore)
+                                continue;
+                            ogEvsParse.Add((ev.Key, e));
+                        }
+                    }
+                    var valid = true;
+                    if (evsParse.Count != ogEvsParse.Count)
                         valid = false;
-                        break;
+                    else
+                    {
+                        foreach (var (e, o) in evsParse.Select(x => x.Item).Zip(ogEvsParse.Select(x => x.Item)))
+                        {
+                            if (e.Argument == o.Argument)
+                                continue;
+                            valid = false;
+                            break;
+                        }
                     }
                     if (!valid)
-                        break;
-                }
-            }
-            if (!valid)
-            {
-                sb.AppendLine($"Invalid events found for `{key}` (ID `{sc[key].Cont.Id}`) that weren't the same for the original ({ogParse.Length}) to the translated ({parse.Length}) text:\n");
-                sb.AppendLine("|Old|New|\n|---|---|");
-                var evsParse = new List<(int Key, ParsedEvent Item)>();
-                var ogEvsParse = new List<(int Key, ParsedEvent Item)>();
-                foreach (var ev in parse)
-                {
-                    foreach (var e in ev.Item)
-                        evsParse.Add((ev.Key, e));
-                }
-                foreach (var ev in ogParse)
-                {
-                    foreach (var e in ev.Item)
-                        ogEvsParse.Add((ev.Key, e));
-                }
-                for (var i = 0; i < int.Max(evsParse.Count, ogEvsParse.Count); i++)
-                {
-                    sb.Append("|");
-                    if (i < ogParse.Length)
-                        sb.Append($"{ogParse[i].Key + 1}: {ogEvsParse[i].Item.Argument}");
-                    sb.Append("|");
-                    if (i < parse.Length)
                     {
-                        var bold = i >= ogEvsParse.Count || evsParse[i].Item.Argument != ogEvsParse[i].Item.Argument;
-                        sb.Append($"{evsParse[i].Key + 1}: {(bold ? "**" : "")}{evsParse[i].Item.Argument}{(bold ? "**" : "")}");
+                        sb.AppendLine($"Invalid events found for `{key}` (ID `{sc[key].Cont.Id}`) that weren't the same for the original ({ogEvsParse.Count}) to the translated ({evsParse.Count}) text:\n");
+                        sb.AppendLine("|Old|New|\n|---|---|");
+                        for (var i = 0; i < int.Max(evsParse.Count, ogEvsParse.Count); i++)
+                        {
+                            sb.Append("|");
+                            if (i < ogEvsParse.Count)
+                                sb.Append($"{ogEvsParse[i].Key + 1}: {ogEvsParse[i].Item.Argument}");
+                            sb.Append("|");
+                            if (i < evsParse.Count)
+                            {
+                                var bold = i >= ogEvsParse.Count || evsParse[i].Item.Argument != ogEvsParse[i].Item.Argument;
+                                sb.Append($"{evsParse[i].Key + 1}: {(bold ? "**" : "")}{evsParse[i].Item.Argument}{(bold ? "**" : "")}");
+                            }
+                            sb.AppendLine("|");
+                        }
+                        sb.AppendLine();
+                        warns++;
                     }
-                    sb.AppendLine("|");
                 }
-                sb.AppendLine();
-                warns++;
             }
-        }
-        if (warnedKeys.Count > 0)
-        {
-            sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
-            foreach (var (key, cont, warn) in warnedKeys)
+            if (warnedKeys.Count > 0)
             {
-                sb.Append($"- {warn switch
+                sb.AppendLine("Unable to be found entries to save (ignored in the final file):\n");
+                foreach (var (key, cont, warn) in warnedKeys)
                 {
-                    WarningKind.NotFoundKey => "Target key not found",
-                    WarningKind.DuplicatedKey => "Duplicate key found",
-                    WarningKind.MissingKey => "Entry not found",
-                    _ => throw new("unsupported warn kind"),
-                }} `{key}`");
-                if (cont is not null)
-                    sb.Append($" (ID `{cont.Id}`)");
-                sb.AppendLine();
-                if (cont is not null)
-                {
-                    sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
-                    if (cont.Text is not null)
-                        sb.AppendLine($"  - Translated Text: `{cont.Text}`");
+                    sb.Append($"- {warn switch
+                    {
+                        WarningKind.NotFoundKey => "Target key not found",
+                        WarningKind.DuplicatedKey => "Duplicate key found",
+                        WarningKind.MissingKey => "Entry not found",
+                        _ => throw new("unsupported warn kind"),
+                    }} `{key}`");
+                    if (cont is not null)
+                        sb.Append($" (ID `{cont.Id}`)");
                     sb.AppendLine();
+                    if (cont is not null)
+                    {
+                        sb.AppendLine($"  - Original Text: `{cont.OriginalText}`");
+                        if (cont.Text is not null)
+                            sb.AppendLine($"  - Translated Text: `{cont.Text}`");
+                        sb.AppendLine();
+                    }
                 }
+                warns += warnedKeys.Count;
             }
-            warns += warnedKeys.Count;
-        }
-        if (warns > 0)
-        {
-            sb.AppendLine($"Found {warns} warning(s).");
             lw.Hide();
-            await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warns == 1 ? "was" : "were")} {warns} warned {(warns == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = [new("*.md")] }]));
-            lw.Show();
+            if (warns > 0)
+            {
+                sb.AppendLine($"Found {warns} warning(s).");
+                await wh.ShowDialog<bool>(new TextBoxWindow($"There {(warns == 1 ? "was" : "were")} {warns} warned {(warns == 1 ? "key" : "keys")} found.", sb.ToString(), [new("Markdown file") { Patterns = [new("*.md")] }]));
+            }
+            else
+                await wh.ShowDialog(new InfoWindow("No warnings were found."));
         }
-        else
+        finally
         {
-            lw.Hide();
-            await wh.ShowDialog(new InfoWindow("No warnings were found."));
+            lw.Close();
         }
     }
 
@@ -1076,7 +1075,7 @@ public class Deltarune : StyleScript
         return await base.PrepareDraw(wh, data);
     }
 
-    public static bool IsNewlineSafe(int idx, string str) => Newlines.Contains(str[idx]) && str[int.Max(0, idx - 1)] != '`';
+    public static bool IsNewlineSafe(int idx, string str, ParsedString ps) => Newlines.Contains(str[idx]) && !ps.Events.GetValueOrDefault(idx, []).Any(x => x is DialogueIgnore);
 
     public override async Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data)
     {
@@ -1199,26 +1198,25 @@ public class Deltarune : StyleScript
                     break;
             }
         }
-        var actAsNewline = IsNewlineSafe(data.Char.Index, data.Char.String);
+        var actAsNewline = IsNewlineSafe(data.Char.Index, data.Char.String, Parsed);
         if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.DynamicWordwarp && data.Char.Index > EnvCheckedIndex)
         {
             if (EnvCheckedIndex == -1)
                 EnvCheckedIndex = 0;
             var i = 0;
             var fs = "";
-            while (data.Char.Index + i < Parsed.TextTrimLength && (data.Char.String[data.Char.Index + i] == ' ' || IsNewlineSafe(data.Char.Index + i, data.Char.String)))
+            while (data.Char.Index + i < Parsed.TextTrimLength && (data.Char.String[data.Char.Index + i] == ' ' || IsNewlineSafe(data.Char.Index + i, data.Char.String, Parsed)))
             {
                 fs += data.Char.String[data.Char.Index + i];
                 i++;
             }
-            while (data.Char.Index + i < Parsed.TextTrimLength && data.Char.String[data.Char.Index + i] != ' ' && !IsNewlineSafe(data.Char.Index + i, data.Char.String))
+            while (data.Char.Index + i < Parsed.TextTrimLength && data.Char.String[data.Char.Index + i] != ' ' && !IsNewlineSafe(data.Char.Index + i, data.Char.String, Parsed))
             {
                 var c = data.Char.String[data.Char.Index + i];
                 switch (c)
                 {
-                    case '`': i++; continue;
                     case '\\': i += 3; continue;
-                    case '^': i += 2; continue;
+                    case '^' or '`': i += 2; continue;
                     case '/':
                         if (data.Char.Index + i >= Parsed.TextTrimLength - 1 || data.Char.Index + i == 0)
                         {
@@ -1271,7 +1269,7 @@ public class Deltarune : StyleScript
             else
                 data.Char.PositionOffset.Y += EnvY * 2;
         }
-        if (!IsNewlineSafe(data.Char.Index, data.Char.String) && !data.Char.IsIgnore)
+        if (!IsNewlineSafe(data.Char.Index, data.Char.String, Parsed) && !data.Char.IsIgnore)
         {
             var glyph = data.Font.GlyphDictionary.GetValueOrDefault(data.Char.Char, new()
             {
@@ -1447,6 +1445,8 @@ public class ParsedString
             {
                 AddEvent(x, new DialogueIgnore(@char.Value.ToString()));
                 i++;
+                if (i < trimLen)
+                    sb.Append(text[i]);
                 continue;
             }
             if (trimLen - i >= 3)
@@ -1654,7 +1654,7 @@ public class ParsedString
                 tSpace = i + 1;
                 spaceSb = sb.Length;
             }
-            if (Deltarune.IsNewlineSafe(i, text))
+            if (Deltarune.IsNewlineSafe(i, text, this))
             {
                 tSpace = -1;
                 cPos = 0;
@@ -1693,7 +1693,7 @@ public class ParsedString
                 if (cPos >= limit)
                 {
                     //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}->{text[i]},a:{AsteriskCheck}");
-                    cPos = 0;
+                    cPos = 1;
                     if (tSpace > 2)
                     {
                         i = tSpace - 1;
@@ -1706,7 +1706,10 @@ public class ParsedString
                         sb.Append('&');
                     }
                     else
+                    {
                         sb.Append('&');
+                        cPos++;
+                    }
                     if (AsteriskCheck && autoAsterisk)
                     {
                         UndrawPositions.Add(sb.Length);
@@ -1717,7 +1720,7 @@ public class ParsedString
                     spaceSb = -1;
                     //Console.WriteLine($"final cPos:{cPos}");
                 }
-                if (!Deltarune.IsNewlineSafe(i, text))
+                if (!Deltarune.IsNewlineSafe(i, text, this))
                 {
                     cPos++;
                     //Console.WriteLine($"new cPos:{cPos},i:{i}->{text[i]},a:{AsteriskCheck}");
