@@ -52,6 +52,7 @@ public class Deltarune : StyleScript
         Default,
         None,
         Basic,
+        MiniFaceArgument,
     }
 
     public enum WarningKind
@@ -62,7 +63,7 @@ public class Deltarune : StyleScript
     }
 
     public static CustomProperty<bool> AutoIndentAutoWrappedMiniFaceLines = new("Auto Indent Auto Wrapped Mini Face Lines", "Allows not using manual line breaks with mini face (\\m?) lines in case your mod has it implemented.", "autoIndentAutoWrappedMiniFaceLines");
-    public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait type, sets the text offset as each specify", "portraitKind", ["Default", "None", "Basic"], [ "Auto-detect portrait type", "Force no portrait", "Force default portrait" ], null, 0);
+    public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait type, sets the text offset as each specify", "portraitKind", ["Default", "None", "Basic", "Mini Face Argument"], ["Auto-detect portrait type", "Force no portrait", "Force default portrait", "Display ~1 format mini face lines correctly"], null, 0);
     public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", null, "darkZone");
     public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "None", "Dynamic"], [null, null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes."], null, 0);
 
@@ -957,13 +958,26 @@ public class Deltarune : StyleScript
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
-        int? characterLimit;
+        var isPortrait = (PortraitKinds)PortraitKind.SelectedIndex is PortraitKinds.Basic;
+        int? characterLimit = null;
         double? textAreaEnd;
         {
-            characterLimit = data.Box.CustomProperties.TryGetValue("CharacterLimit", out var l)
-                             && l is JsonElement && ((JsonElement)l).TryGetInt32(out var eValue)
-                ? eValue
-                : null;
+            // I don't know how to format this to not by this ugly
+            if
+            (
+            isPortrait
+                && data.Box.CustomProperties.TryGetValue("PortraitCharacterLimit", out var l)
+                && l is JsonElement
+                && ((JsonElement)l).TryGetInt32(out var eValue)
+            ||
+                data.Box.CustomProperties.TryGetValue("CharacterLimit", out l)
+                && l is JsonElement
+                && ((JsonElement)l).TryGetInt32(out eValue)
+            )
+            {
+                characterLimit = eValue;
+            }
+            
             textAreaEnd = data.Box.CustomProperties.TryGetValue("TextAreaEnd", out l)
                           && l is JsonElement && ((JsonElement)l).TryGetDouble(out var d)
                 ? d
@@ -983,8 +997,13 @@ public class Deltarune : StyleScript
             }
             return true;
         }
-        Parsed = new(data.Char.String, data.Box, EnvAutoAsterisk);
+        Parsed = new(data.Char.String, characterLimit, EnvAutoAsterisk);
         data.Char.String = Parsed.ParsedText;
+        if (data.BoxImages.Count > 1)
+        {
+            data.BoxImages[0].IsVisible = !isPortrait;      // default
+            data.BoxImages[1].IsVisible = isPortrait;       // portrait variant
+        }
         EnvX = -1;
         EnvY = -1;
         EnvSkip = 0;
@@ -1013,9 +1032,8 @@ public class Deltarune : StyleScript
         }
         if (textAreaEnd.HasValue)
             EnvDynLimitWrap = textAreaEnd.Value;
-        if ((PortraitKinds)PortraitKind.SelectedIndex is PortraitKinds.Basic) {
+        if (isPortrait)
             data.Char.StartPosition = EnvPortraitOffset;
-        }
         //Console.WriteLine(string.Join(",", Parsed.AsteriskPositions));
         return await base.PrepareDraw(wh, data);
     }
@@ -1352,7 +1370,7 @@ public class ParsedString
         ParseWarns[i].Add(warn);
     }
     
-    public ParsedString(string text = "", BoxMetadata? box = null, bool autoAsterisk = true)
+    public ParsedString(string text = "", int? limit = null, bool autoAsterisk = true)
     {
         Text = text;
         var trimLen = text.TrimEnd().Length;
@@ -1364,23 +1382,6 @@ public class ParsedString
         var lastX = -1;
         var indentSize = 2;
         //Console.WriteLine($"============== {text}");
-        int? limit = null;
-        if (box is not null)
-        {
-            // I don't know how to format this to not by this ugly
-            if (
-                // portrait
-                (Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex == Deltarune.PortraitKinds.Basic
-                    && box.CustomProperties.TryGetValue("PortraitCharacterLimit", out var l)
-                    && l is JsonElement
-                    && ((JsonElement)l).TryGetInt32(out var eValue)
-                // normal
-                ||  box.CustomProperties.TryGetValue("CharacterLimit", out l)
-                    && l is JsonElement
-                    && ((JsonElement)l).TryGetInt32(out eValue)
-                )
-                limit = eValue;
-        }
         for (var i = 0; i < trimLen; i++)
         {
             var x = sb.Length;
@@ -1429,10 +1430,11 @@ public class ParsedString
             {
                 case '~':
                 {
-                    if (trimLen - i >= 1 && "0123456789".Contains(text[i + 1]))
+                    if (trimLen - i >= 2 && "0123456789".Contains(text[i + 1]))
                     {
                         var fullSlice = text[i..(i + 1)];
-                        if (text.StartsWith("~1* "))    // best way to detect if it's a flower line
+                        if ((Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex == Deltarune.PortraitKinds.MiniFaceArgument
+                            && text.StartsWith("~1* "))    // best way to detect if it's a flower line
                         {
                             if (i == 0)
                             {

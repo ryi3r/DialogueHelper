@@ -1,6 +1,8 @@
 {
     "Name": "Platformer Dialogue",
     "Images": [{
+        "Path": "Assets/BoxPlatDialogueNoPortrait.png"
+    }, {
         "Path": "Assets/BoxPlatDialogue.png"
     }],
     "CustomProperties": {
