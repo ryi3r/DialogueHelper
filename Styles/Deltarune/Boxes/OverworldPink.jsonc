@@ -4,7 +4,7 @@
         "Path": "Assets/BoxPink.png"
     }],
     "CustomProperties": {
-        "PortraitOffset": [34, 87]
+        "CharacterLimit": 23
     },
     "TextOffset": [34, 87],
     "Index": 6

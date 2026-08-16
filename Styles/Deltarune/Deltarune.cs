@@ -21,6 +21,7 @@ using Avalonia.Platform.Storage;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.PreviewRenderer;
+using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
 
 public class Deltarune : StyleScript
@@ -40,41 +41,18 @@ public class Deltarune : StyleScript
         JaKakugo,
         JaTinyNoelle,
     }
-    public enum Boxes
-    {
-        Overworld,
-        BattleIdle,
-        BattleItemInfo,
-        BattleDialogue,
-        CMenuDescription, // no linewrap
-        CMenuCharacterDescription, // no linewrap
-        OverworldPink,
-        PlatformerDiaglogue,
-        ShopTalk,
-        ShopTalkIdle, // wrong linewrap (33 in the code but should be much lower)
-        ShopItemDescription, // no linewrap
-        RecruitDescription,
-        TennaBoard,
-    }
     public enum DialogueKinds
     {
         Default,
-        BattleIdle,
-        Platformer,
-        PlatformerAct, // no linewrap
-        Pink,
-        ShopSellEquippable,
-        TennaBoard,
-        DynamicWordwarp,
         None,
+        DynamicWordWrap,
     }
     public enum PortraitKinds
     {
+        Default,
         None,
-        ForceNone,
         Basic,
-        SmallFlowers,
-        SmallOther,
+        MiniFaceArgument,
     }
 
     public enum WarningKind
@@ -84,9 +62,10 @@ public class Deltarune : StyleScript
         MissingKey,
     }
 
-    public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait stype, sets the text offset as each specify", "portraitKind", ["None", "Force None", "Basic", "Small (Flowers)", "Small (Other)"], [], null, 0);
-    public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", null, "darkZone", false);
-    public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "Battle Idle", "Platformer", "Platformer ACT", "Pink", "Shop Sell Equippable", "Tenna's Board", "Dynamic Wordwrap", "None"], [null, null, null, null, null, "This one doesn't actually change the line-wrapping style, but it'll change the box (if it's set correctly) to let you see the limit of that", null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes."], null, 0);
+    public static CustomProperty<bool> AutoIndentAutoWrappedMiniFaceLines = new("Auto Indent Auto Wrapped Mini Face Lines", "Allows not using manual line breaks with mini face (\\m?) lines in case your mod has it implemented.", "autoIndentAutoWrappedMiniFaceLines");
+    public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait type, sets the text offset as each specify", "portraitKind", ["Default", "None", "Basic", "Mini Face Argument"], ["Auto-detect portrait type", "Force no portrait", "Force default portrait", "Display ~1 format mini face lines correctly"], null, 0);
+    public static CustomProperty<bool> DarkZone = new("Dark Zone (JP Only)", null, "darkZone");
+    public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "None", "Dynamic"], [null, null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes."], null, 0);
 
     public static double EnvX;
     public static double EnvY;
@@ -94,14 +73,13 @@ public class Deltarune : StyleScript
     public static int EnvSkip;
     public static bool EnvFirstDrawnChar;
     public static int EnvCheckedIndex;
+    public static bool EnvAutoAsterisk = true;
     public static Stopwatch Stopwatch = Stopwatch.StartNew();
     public static bool IsRainbow;
     public static bool IsLastNewline;
-    public ParsedString Parsed = new("", Boxes.Overworld);
+    public ParsedString Parsed = new();
 
     public static (double X, double Y) EnvPortraitOffset;
-    public static (double X, double Y) EnvSmallFlowerPortraitOffset;
-    public static (double X, double Y) EnvSmallOtherPortraitOffset;
 
     public static bool EnvDrawAsterisk;
 
@@ -115,6 +93,13 @@ public class Deltarune : StyleScript
         //await wh.ShowDialog(new InfoWindow("Hello world!"));
         UtmtPath = $"{wh.GetStylePath()}/UndertaleModCli/";
         return Task.CompletedTask;
+    }
+    
+    public override Task<IEnumerable<ICustomProperty>> RegisterCustomSettings()
+    {
+        return Task.FromResult<IEnumerable<ICustomProperty>>([
+            AutoIndentAutoWrappedMiniFaceLines
+        ]);
     }
 
     public override Task<IEnumerable<ICustomProperty>> RegisterCustomProperties()
@@ -412,8 +397,8 @@ public class Deltarune : StyleScript
             {
                 if (!output.TryGetValue(key, out var og))
                     continue;
-                var ogParsed = new ParsedString(og, Boxes.Overworld);
-                var parsed = new ParsedString(value, Boxes.Overworld);
+                var ogParsed = new ParsedString(og);
+                var parsed = new ParsedString(value);
                 {
                     var ogWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
                     var nWarns = new List<(int Key, ParsedString.ParseWarn Value)>();
@@ -856,7 +841,7 @@ public class Deltarune : StyleScript
             if (pos == -1)
             {
                 Console.WriteLine($"Unable to make a string group of {key}");
-                pos = 0;
+                pos = key.Length;
             }
             var header = key[..pos];
             if (header != lastHeader)
@@ -973,52 +958,51 @@ public class Deltarune : StyleScript
 
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
-        var box = (Boxes)data.GetCurrentBox();
+        var isPortrait = (PortraitKinds)PortraitKind.SelectedIndex is PortraitKinds.Basic;
+        int? characterLimit = null;
+        double? textAreaEnd;
+        {
+            // I don't know how to format this to not by this ugly
+            if
+            (
+            isPortrait
+                && data.Box.CustomProperties.TryGetValue("PortraitCharacterLimit", out var l)
+                && l is JsonElement
+                && ((JsonElement)l).TryGetInt32(out var eValue)
+            ||
+                data.Box.CustomProperties.TryGetValue("CharacterLimit", out l)
+                && l is JsonElement
+                && ((JsonElement)l).TryGetInt32(out eValue)
+            )
+            {
+                characterLimit = eValue;
+            }
+            
+            textAreaEnd = data.Box.CustomProperties.TryGetValue("TextAreaEnd", out l)
+                          && l is JsonElement && ((JsonElement)l).TryGetDouble(out var d)
+                ? d
+                : null;
+        }
         if (data.UpdateKind is PreviewRenderer.UpdateKind.SelectedBoxChanged)
         {
-            DialogueKinds? targetBox = box switch
+            if (characterLimit is null)
             {
-                Boxes.BattleIdle => DialogueKinds.BattleIdle,
-                Boxes.PlatformerDiaglogue => DialogueKinds.Platformer,
-                Boxes.OverworldPink => DialogueKinds.Pink,
-                Boxes.RecruitDescription => DialogueKinds.DynamicWordwarp,
-                Boxes.TennaBoard => DialogueKinds.TennaBoard,
-                _ => null,
-            };
-            if (targetBox is not null && DialogueType.SelectedIndex != (int)targetBox)
-            {
-                DialogueType.SelectedIndex = (int)targetBox;
+                DialogueType.SelectedIndex = (int)DialogueKinds.DynamicWordWrap;
                 DialogueType.UpdateUiValue();
-                if (box is Boxes.PlatformerDiaglogue)
-                {
-                    PortraitKind.SelectedIndex = (int)PortraitKinds.SmallFlowers;
-                    PortraitKind.UpdateUiValue();
-                }
-                return true;
             }
+            else if (DialogueType.SelectedIndex == (int)DialogueKinds.DynamicWordWrap)
+            {
+                DialogueType.SelectedIndex = (int)DialogueKinds.Default;
+                DialogueType.UpdateUiValue();
+            }
+            return true;
         }
-        Parsed = new(data.Char.String, box);
+        Parsed = new(data.Char.String, characterLimit, EnvAutoAsterisk);
         data.Char.String = Parsed.ParsedText;
-        switch (box)
+        if (data.BoxImages.Count > 1)
         {
-            case Boxes.PlatformerDiaglogue:
-                data.BoxImages[0].IsVisible = false;
-                data.BoxImages[1].IsVisible = true;
-                if (PortraitKind.SelectedIndex == (int)PortraitKinds.Basic)
-                {
-                    data.BoxImages[0].IsVisible = true;
-                    data.BoxImages[1].IsVisible = false;
-                }
-                break;
-            case Boxes.ShopItemDescription:
-                data.BoxImages[0].IsVisible = true;
-                data.BoxImages[1].IsVisible = false;
-                if (DialogueType.SelectedIndex == (int)DialogueKinds.ShopSellEquippable)
-                {
-                    data.BoxImages[0].IsVisible = false;
-                    data.BoxImages[1].IsVisible = true;
-                }
-                break;
+            data.BoxImages[0].IsVisible = !isPortrait;      // default
+            data.BoxImages[1].IsVisible = isPortrait;       // portrait variant
         }
         EnvX = -1;
         EnvY = -1;
@@ -1030,47 +1014,26 @@ public class Deltarune : StyleScript
         EnvDrawAsterisk = true;
         EnvDynLimitWrap = data.Style.ImageAssets[data.Box.Images[0].Path].Width * data.GetCurrentBoxScale();
         {
-            var (x, y) = (0d, 0d);
+            double x, y;
             if (data.Box.CustomProperties.TryGetValue("PortraitOffset", out var bpo) && bpo is JsonElement po)
             {
                 po[0].TryGetDouble(out x);
                 po[1].TryGetDouble(out y);
             }
+            else
+            {
+                /* so that boxes that don't have PortraitOffset
+                 * don't default to the upper left corner
+                 * if PortraitKinds.Basic is active */
+                x = data.Box.TextOffset[0];
+                y = data.Box.TextOffset[1];
+            }
             EnvPortraitOffset = (x, y);
         }
-        {
-            var (x, y) = (0d, 0d);
-            if (data.Box.CustomProperties.TryGetValue("SmallFlowerPortraitOffset", out var bpo) && bpo is JsonElement po)
-            {
-                po[0].TryGetDouble(out x);
-                po[1].TryGetDouble(out y);
-            }
-            EnvSmallFlowerPortraitOffset = (x, y);
-        }
-        {
-            var (x, y) = (0d, 0d);
-            if (data.Box.CustomProperties.TryGetValue("SmallOtherPortraitOffset", out var bpo) && bpo is JsonElement po)
-            {
-                po[0].TryGetDouble(out x);
-                po[1].TryGetDouble(out y);
-            }
-            EnvSmallOtherPortraitOffset = (x, y);
-        }
-        {
-            if (data.Box.CustomProperties.TryGetValue("DynamicLimitWrap", out var bpo) && bpo is JsonElement po)
-                po.TryGetDouble(out EnvDynLimitWrap);
-        }
-        var pk = (PortraitKinds)PortraitKind.SelectedIndex;
-        if (pk > PortraitKinds.ForceNone)
-        {
-            data.Char.StartPosition = pk switch
-            {
-                PortraitKinds.Basic => EnvPortraitOffset,
-                PortraitKinds.SmallFlowers => EnvSmallFlowerPortraitOffset,
-                PortraitKinds.SmallOther => EnvSmallOtherPortraitOffset,
-                _ => (0, 0),
-            };
-        }
+        if (textAreaEnd.HasValue)
+            EnvDynLimitWrap = textAreaEnd.Value;
+        if (isPortrait)
+            data.Char.StartPosition = EnvPortraitOffset;
         //Console.WriteLine(string.Join(",", Parsed.AsteriskPositions));
         return await base.PrepareDraw(wh, data);
     }
@@ -1083,7 +1046,6 @@ public class Deltarune : StyleScript
             data.Char.IsNewline = true;
 
         var font = (Fonts)data.GetCurrentFont();
-        var box = (Boxes)data.GetCurrentBox();
 
         if (Parsed.Events.TryGetValue(data.Char.Index, out var evs))
         {
@@ -1094,7 +1056,7 @@ public class Deltarune : StyleScript
                     case DialogueIgnore:
                         break;
                     case DialogueIndexPortrait or DialogueCharPortrait:
-                        if (PortraitKind.SelectedIndex == (int)PortraitKinds.None)
+                        if (PortraitKind.SelectedIndex == (int)PortraitKinds.Default)
                         {
                             PortraitKind.SelectedIndex = (int)PortraitKinds.Basic;
                             PortraitKind.UpdateUiValue();
@@ -1133,25 +1095,6 @@ public class Deltarune : StyleScript
             case Fonts.Main:
                 EnvX = 8;
                 EnvY = 18;
-                switch (box)
-                {
-                    case Boxes.BattleIdle:
-                        EnvY = 14;
-                        break;
-                    case Boxes.BattleItemInfo:
-                        EnvX = 7;
-                        EnvY = 16;
-                        break;
-                    case Boxes.CMenuDescription or Boxes.CMenuCharacterDescription or Boxes.ShopItemDescription:
-                        EnvX = -1; // drawn by gamemaker
-                        EnvY = -1;
-                        break;
-                }
-                if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.PlatformerAct)
-                {
-                    EnvX = -1; // drawn by gamemaker
-                    EnvY = -1;
-                }
                 break;
             case Fonts.ComicSans:
                 EnvX = 8;
@@ -1172,6 +1115,14 @@ public class Deltarune : StyleScript
             default:
                 { EnvX = data.Font.GlyphDictionary.TryGetValue(data.Char.Char, out var glyph) ? glyph.Shift : -1; }
                 break;
+        }
+        {
+            if (data.Box.CustomProperties.TryGetValue("CustomY", out var l)
+                && l is JsonElement && ((JsonElement)l).TryGetDouble(out var eValue))
+                EnvY = eValue;
+            if (data.Box.CustomProperties.TryGetValue("CustomX", out l)
+                && l is JsonElement && ((JsonElement)l).TryGetDouble(out eValue))
+                EnvX = eValue;
         }
         var visualY = 0;
         if ((Enum.GetName(font) ?? "").Contains("jp", StringComparison.InvariantCultureIgnoreCase) && data.Char.Char <= 0xff || (data.Char.Char >= 65377 && data.Char.Char <= 65439))
@@ -1199,7 +1150,7 @@ public class Deltarune : StyleScript
             }
         }
         var actAsNewline = IsNewlineSafe(data.Char.Index, data.Char.String, Parsed);
-        if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.DynamicWordwarp && data.Char.Index > EnvCheckedIndex)
+        if ((DialogueKinds)DialogueType.SelectedIndex is DialogueKinds.DynamicWordWrap && data.Char.Index > EnvCheckedIndex)
         {
             if (EnvCheckedIndex == -1)
                 EnvCheckedIndex = 0;
@@ -1418,8 +1369,8 @@ public class ParsedString
         ParseWarns.TryAdd(i, []);
         ParseWarns[i].Add(warn);
     }
-
-    public ParsedString(string text, Deltarune.Boxes box, bool autoAsterisk = true)
+    
+    public ParsedString(string text = "", int? limit = null, bool autoAsterisk = true)
     {
         Text = text;
         var trimLen = text.TrimEnd().Length;
@@ -1429,6 +1380,7 @@ public class ParsedString
         var cPos = 0;
         var spaceSb = -1;
         var lastX = -1;
+        var indentSize = 2;
         //Console.WriteLine($"============== {text}");
         for (var i = 0; i < trimLen; i++)
         {
@@ -1474,35 +1426,75 @@ public class ParsedString
                 AddEvent(x, new DialogueEnd(@char.Value.ToString()));
                 continue;
             }
-            if (@char == '\\')
+            switch (@char)
             {
-                var valid = true;
-                if (trimLen - i >= 3)
+                case '~':
                 {
-                    var fullSlice = text[i..(i + 3)];
-                    var slice = text[(i + 1)..(i + 3)];
-                    switch (slice[0])
+                    if (trimLen - i >= 2 && "0123456789".Contains(text[i + 1]))
                     {
-                        case 'E':
-                            if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
+                        var fullSlice = text[i..(i + 1)];
+                        if ((Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex == Deltarune.PortraitKinds.MiniFaceArgument
+                            && text.StartsWith("~1* "))    // best way to detect if it's a flower line
+                        {
+                            if (i == 0)
                             {
-                                valid = false;
-                                AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
+                                AddEvent(i, new DialogueMiniFace(fullSlice));
+                                indentSize += 2;
+                                for (var j = 0; j < 2; j++)
+                                    UndrawPositions.Add(sb.Length + j);
                             }
                             else
-                                AddEvent(x, new DialogueIndexPortrait(fullSlice));
-                            break;
-                        case 'F':
-                            // todo: \F0 seems to reset line wrap
-                            if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
                             {
-                                valid = false;
-                                AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
+                                // this is a little janky, but it works
+                                text = text.Replace(fullSlice, "\n\t");
+                                for (var j = 0; j < 6; j++)
+                                    UndrawPositions.Add(sb.Length + j);
                             }
-                            else
-                                AddEvent(x, new DialogueCharPortrait(fullSlice));
-                            break;
-                        case 'T':
+                        }
+                    }
+                }
+                    break;
+                case '\\':
+                {
+                    var valid = true;
+                    if (trimLen - i >= 3)
+                    {
+                        var fullSlice = text[i..(i + 3)];
+                        var slice = text[(i + 1)..(i + 3)];
+                        switch (slice[0])
+                        {
+                            case 'E':
+                            {
+                                var oldFullSlice = fullSlice;
+                                if (slice[1] is '~' && trimLen - i >= 4 && "0123456789".Contains(text[i + 3]))
+                                {
+                                    fullSlice = text[i..(i + 4)];
+                                }
+                                else if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
+                                {
+                                    valid = false;
+                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
+                                }
+                                if (valid)
+                                {
+                                    AddEvent(x, new DialogueIndexPortrait(fullSlice));
+                                    i += fullSlice.Length - oldFullSlice.Length;
+                                }
+                            }
+                                break;
+                            case 'F':
+                            {
+                                // todo: \F0 seems to reset line wrap
+                                if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
+                                {
+                                    valid = false;
+                                    AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
+                                }
+                                else
+                                    AddEvent(x, new DialogueCharPortrait(fullSlice));
+                            }
+                                break;
+                            case 'T':
                             {
                                 Deltarune.Fonts? f = slice[1] switch
                                 {
@@ -1519,8 +1511,8 @@ public class ParsedString
                                 else
                                     AddEvent(x, new DialogueFonts(fullSlice) { Font = f });
                             }
-                            break;
-                        case 'c':
+                                break;
+                            case 'c':
                             {
                                 var rnb = false;
                                 Color? col = slice[1] switch
@@ -1559,8 +1551,8 @@ public class ParsedString
                                 else
                                     AddEvent(x, new DialogueColor(fullSlice) { Color = col, Rainbow = rnb });
                             }
-                            break;
-                        case 'V':
+                                break;
+                            case 'V':
                             {
                                 if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
                                 {
@@ -1570,8 +1562,8 @@ public class ParsedString
                                 else
                                     AddEvent(x, new DialogueFloweryVoiceClip(fullSlice));
                             }
-                            break;
-                        case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O' or 'v':
+                                break;
+                            case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O' or 'v':
                             {
                                 if (!int.TryParse(slice[1].ToString(), out var v))
                                     valid = false;
@@ -1617,6 +1609,31 @@ public class ParsedString
                                             break;
                                         case 'm':
                                             AddEvent(x, new DialogueMiniFace(fullSlice));
+                                            var indentCounter = 0;
+                                            var ii = i + 3;
+                                            while (trimLen - ii > 0 && text[ii] is '*' or '\t' or ' ')
+                                            {
+                                                indentCounter++;
+                                                ii++;
+                                            }
+                                            if (indentCounter == 4)
+                                            {
+                                                Color? col = slice[1] switch
+                                                {
+                                                    '0' => new() { Rgba = 0x84f9ffff }, // Aqua
+                                                    '1' => new() { Rgba = 0xe2a8fcff }, // Seth
+                                                    '2' => new() { Rgba = 0xffac87ff }, // Orange
+                                                    '3' => new() { Rgba = 0xaeffbcff }, // Green
+                                                    '4' => new() { Rgba = 0xfff8a1ff }, // Yellow
+                                                    '5' => new() { Rgba = 0x86a7ffff }, // Blue
+                                                    _ => null
+                                                };
+                                                if (col is not null)
+                                                    AddEvent(x, new DialogueColor(fullSlice) { Color = col, Rainbow = false });
+                                            }
+                                            if (Deltarune.AutoIndentAutoWrappedMiniFaceLines.Value) {
+                                                indentSize = indentCounter;
+                                            }
                                             break;
                                         case 'O':
                                             AddEvent(x, new DialogueObject(fullSlice));
@@ -1631,28 +1648,28 @@ public class ParsedString
                                     }
                                 }
                             }
-                            break;
-                        default:
-                            valid = false;
-                            break;
+                                break;
+                            default:
+                                valid = false;
+                                break;
+                        }
+                    }
+                    if (valid)
+                    {
+                        i += 2;
+                        continue;
                     }
                 }
-                if (valid)
-                {
-                    i += 2;
-                    continue;
-                }
-            }
-            //Console.WriteLine($"{lastIsNewLine}:{i},{cPos}->{text[i]}->{text[i] == '*'}");
-            if (text[i] == '*')
-            {
-                AsteriskCheck = true;
-                AsteriskPositions.Add(x);
-            }
-            if (@char == ' ')
-            {
-                tSpace = i + 1;
-                spaceSb = sb.Length;
+                    break;
+                //Console.WriteLine($"{lastIsNewLine}:{i},{cPos}->{text[i]}->{text[i] == '*'}");
+                case '*':
+                    AsteriskCheck = true;
+                    AsteriskPositions.Add(x);
+                    break;
+                case ' ':
+                    tSpace = i + 1;
+                    spaceSb = sb.Length;
+                    break;
             }
             if (Deltarune.IsNewlineSafe(i, text, this))
             {
@@ -1663,32 +1680,15 @@ public class ParsedString
                 if (AsteriskCheck && autoAsterisk && (i + 1 >= text.Length || text[i + 1] != '*'))
                 {
                     cPos += 2;
-                    UndrawPositions.Add(sb.Length);
-                    UndrawPositions.Add(sb.Length + 1);
-                    sb.Append("||");
+                    for (var j = 0; j < 2; j++)
+                        UndrawPositions.Add(sb.Length + j);
+                    sb.Append(new string('|', 2));
                 }
             }
 
             // todo: parse events like ~1, ~2, ..., ~N and a way to test it out (presets/editor?)
-            var dk = (Deltarune.DialogueKinds)Deltarune.DialogueType.SelectedIndex;
-            if (box is not Deltarune.Boxes.CMenuDescription and not Deltarune.Boxes.CMenuCharacterDescription and not Deltarune.Boxes.ShopItemDescription && dk is not Deltarune.DialogueKinds.PlatformerAct and not Deltarune.DialogueKinds.DynamicWordwarp and not Deltarune.DialogueKinds.None)
+            if (limit is not null && (Deltarune.DialogueKinds)Deltarune.DialogueType.SelectedIndex is Deltarune.DialogueKinds.Default)
             {
-                var pt = (Deltarune.PortraitKinds)Deltarune.PortraitKind.SelectedIndex;
-                var limit = dk switch
-                {
-                    Deltarune.DialogueKinds.BattleIdle => (pt > Deltarune.PortraitKinds.ForceNone) ? 29 : 37,
-                    // 5's from the charline_bonus
-                    Deltarune.DialogueKinds.Platformer => (pt == Deltarune.PortraitKinds.SmallFlowers ? 33 : 26) + 5,
-                    Deltarune.DialogueKinds.Pink => 23,
-                    Deltarune.DialogueKinds.TennaBoard => 22,
-                    _ => pt switch
-                    {
-                        Deltarune.PortraitKinds.Basic => 26,
-                        // todo: this actually seems 33 always? check if that's true or not
-                        //Deltarune.PortraitKinds.SmallFlowers or Deltarune.PortraitKinds.SmallOther => 29,
-                        _ => 33,
-                    }
-                };
                 //Console.WriteLine($"cPos:{cPos},i:{i}->{text[i]}->l:{limit}");
                 if (cPos >= limit)
                 {
@@ -1712,9 +1712,9 @@ public class ParsedString
                     }
                     if (AsteriskCheck && autoAsterisk)
                     {
-                        UndrawPositions.Add(sb.Length);
-                        UndrawPositions.Add(sb.Length + 1);
-                        sb.Append("||");
+                        for (var j = 0; j < indentSize; j++)
+                            UndrawPositions.Add(sb.Length + j);
+                        sb.Append(new string('|', indentSize));
                     }
                     tSpace = -1;
                     spaceSb = -1;

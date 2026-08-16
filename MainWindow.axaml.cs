@@ -76,7 +76,7 @@ public partial class MainWindow : Window
     public double UiFontSize = 14;
     public string DictionaryAffPath = "";
     public string DictionaryDicPath = "";
-
+    public bool SwapPreviews;
 
     public MainWindow()
     {
@@ -901,7 +901,9 @@ public partial class MainWindow : Window
                         if (double.TryParse(f[i], CultureInfo.InvariantCulture, out var parsedSize))
                             UiFontSize = parsedSize;
                         break;
-
+                    case "SwapPreviews":
+                        SwapPreviews = bool.Parse(f[i]);
+                        break;
                 }
             }
             i++;
@@ -937,6 +939,9 @@ public partial class MainWindow : Window
             "DictPaths@@",
             DictionaryAffPath,
             DictionaryDicPath,
+            "@@end@@",
+            "SwapPreviews@@",
+            SwapPreviews.ToString(CultureInfo.InvariantCulture),
             "@@end@@"
         };
         foreach (var ss in StyleSettings)
@@ -969,6 +974,7 @@ public partial class MainWindow : Window
         MiddleStackPanel.RowDefinitions[2].Height = new GridLength(230 * ClientSize.Height / 720);
         await LoadSettings();
         ApplyEditorFont();
+        ApplyPreviewOrder();
         if (SelectedStyle is null)
         {
             w.Hide();
@@ -1592,7 +1598,7 @@ public partial class MainWindow : Window
         }
     }
 
-    async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
+    public async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
     {
         var lWin = new LoadingWindow { Title = "Reloading style...", CanResize = false, ProgressBar = { IsIndeterminate = true } };
         lWin.Closing += (_, ev) =>
@@ -2835,4 +2841,10 @@ public partial class MainWindow : Window
     }
 
     void RestrictTabIndicator_OnClick(object? sender, RoutedEventArgs e) => SaveSettings();
+    
+    public void ApplyPreviewOrder()
+    {
+        Grid.SetRow(PanelOriginal, SwapPreviews ? 2 : 0);
+        Grid.SetRow(Panel, SwapPreviews ? 0 : 2);
+    }
 }
