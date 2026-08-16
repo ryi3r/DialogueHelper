@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json;
 
 namespace DialogueHelper.StylesParser;
 
@@ -7,7 +8,7 @@ public class BoxMetadata
     public required string Name;
     public required List<ImageMetadata> Images;
     public float Scale = 1;
-    public Dictionary<string, dynamic?> CustomProperties = [];
+    public Dictionary<string, JsonElement> CustomProperties = [];
     public float[] TextOffset = [0, 0];
     public float Index = float.MaxValue;
 }

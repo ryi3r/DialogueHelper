@@ -4,9 +4,8 @@
         "Path": "Assets/BoxBattleInfo.png"
     }],
     "CustomProperties": {
-        "CharacterLimit": 10,
-        "CustomY": 16,
-        "CustomX": 7
+        "CustomX": 7,
+        "CustomY": 16
     },
     "TextOffset": [64, 14],
     "Index": 2

@@ -4,7 +4,7 @@
         "Path": "Assets/BoxRecruitDesc.png"
     }],
     "CustomProperties": {
-        "TextAreaEnd": 560
+        "TextAreaEnd": 280
     },
     "TextOffset": [540, 154],
     "Index": 11

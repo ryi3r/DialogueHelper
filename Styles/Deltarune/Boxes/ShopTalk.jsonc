@@ -4,7 +4,7 @@
         "Path": "Assets/BoxShopTalk.png"
     }],
     "CustomProperties": {
-        "CharacterLimit": 37
+        "CharacterLimit": 33
     },
     "TextOffset": [30, 29],
     "Index": 8

@@ -4,7 +4,7 @@
         "Path": "Assets/BoxBattleDiag.png"
     }],
     "CustomProperties": {
-        "CharacterLimit": 51
+        "TextAreaEnd": 460
     },
     "TextOffset": [20, 20],
     "Index": 3

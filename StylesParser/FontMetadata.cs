@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
 using SkiaSharp;
 
 namespace DialogueHelper.StylesParser;
@@ -13,6 +14,7 @@ public class FontMetadata
     public readonly double Size;
     public readonly double Ascender;
     public readonly double AscenderOffset;
+    public readonly Dictionary<string, JsonElement> CustomProperties = [];
     public readonly List<GlyphMetadata> Glyphs;
     public readonly GlyphLookup GlyphDictionary;
     public readonly float Index = float.MaxValue;
@@ -34,6 +36,7 @@ public class FontMetadata
         Ascender = font.Ascender;
         AscenderOffset = font.AscenderOffset;
         Index = font.Index;
+        CustomProperties = font.CustomProperties;
         Glyphs = [];
         foreach (var glyph in font.Glyphs ?? [])
         {
@@ -72,6 +75,7 @@ public class FontMetadataJson
     public double Size = 10;
     public double Ascender = 10;
     public double AscenderOffset = 0;
+    public Dictionary<string, JsonElement> CustomProperties = [];
     public List<GlyphMetadataJson>? Glyphs;
     public float Index = float.MaxValue;
 }

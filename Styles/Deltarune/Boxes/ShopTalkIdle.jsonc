@@ -4,7 +4,7 @@
         "Path": "Assets/BoxShopIdle.png"
     }],
     "CustomProperties": {
-        "CharacterLimit": 23
+        "CharacterLimit": 33
     },
     "TextOffset": [30, 29],
     "Index": 9
