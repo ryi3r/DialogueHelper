@@ -1548,7 +1548,7 @@ public partial class MainWindow : Window
             StyleData!,
             SelectedString,
             EditableText.Text ?? "",
-            DisplayEditableCanvas
+            SwapPreviews ? DisplayOriginalCanvas : DisplayEditableCanvas
         );
         UpdateBoxBounds();
     }
@@ -1583,7 +1583,7 @@ public partial class MainWindow : Window
             StyleData!,
             SelectedString,
             OriginalText.Text ?? "",
-            DisplayOriginalCanvas
+            SwapPreviews ? DisplayEditableCanvas : DisplayOriginalCanvas
         );
         UpdateBoxBounds();
     }
@@ -2841,10 +2841,15 @@ public partial class MainWindow : Window
     }
 
     void RestrictTabIndicator_OnClick(object? sender, RoutedEventArgs e) => SaveSettings();
-    
+
     public void ApplyPreviewOrder()
     {
-        Grid.SetRow(PanelOriginal, SwapPreviews ? 2 : 0);
-        Grid.SetRow(Panel, SwapPreviews ? 0 : 2);
+        PanelOriginal.Children[0] = new();
+        Panel.Children[0] = new();
+
+        PanelOriginal.Children[0] = SwapPreviews ? EditableLabel : OriginalLabel;
+        Panel.Children[0] = SwapPreviews ? OriginalLabel : EditableLabel;
+
+        UpdateBoxBounds();
     }
 }
