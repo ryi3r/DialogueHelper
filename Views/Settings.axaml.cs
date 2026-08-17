@@ -10,6 +10,7 @@ using Avalonia.Interactivity;
 using Avalonia.Media;
 using DialogueHelper.External;
 using DialogueHelper.StylesParser;
+using static DialogueHelper.PreviewRenderer.PreviewRenderer;
 
 namespace DialogueHelper.Views;
 
@@ -96,9 +97,13 @@ public partial class Settings : Window
             MainWindow.BgndPath = BackgroundData[BackgroundComboBox.SelectedIndex];
             MainWindow.SaveSettings();
             await MainWindow.LoadBackground();
+
+            await MainWindow.ReloadCustomSettingsData();
+            await MainWindow.UpdateEditableText(UpdateKind.ReloadSettings);
+            await MainWindow.UpdateOriginalText(UpdateKind.ReloadSettings);
+            await (MainWindow.StyleData!.Script?.FinalizeDrawEpoch(new(MainWindow, MainWindow.StyleData)) ?? Task.CompletedTask);
         }
         Close();
-        MainWindow?.ForceStyleReload_OnClick(sender, e);
     }
 
     void Cancel_OnClick(object? sender, RoutedEventArgs e)

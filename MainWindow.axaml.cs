@@ -77,6 +77,7 @@ public partial class MainWindow : Window
     public string DictionaryAffPath = "";
     public string DictionaryDicPath = "";
     public bool SwapPreviews;
+    public List<ICustomProperty> CustomSettings = [];
 
     public MainWindow()
     {
@@ -1064,23 +1065,8 @@ public partial class MainWindow : Window
             CustomProperties = [.. await (StyleData.Script?.RegisterCustomProperties() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()))];
 
             StyleSettings.TryAdd(SelectedStyle!, []);
-            var res = await (StyleData.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()));
-            var props = StyleSettings[SelectedStyle!];
-            foreach (var prop in res)
-            {
-                var p = props.FirstOrDefault(p => p.Name == prop.Name);
-                if (p is not null)
-                {
-                    var val = p.ValueToString();
-                    if (val.Length > 0)
-                        prop.StringToValue(val);
-                    var ind = props.IndexOf(p);
-                    props.RemoveAt(ind);
-                    props.Insert(ind, prop);
-                }
-                else
-                    props.Add(prop);
-            }
+            CustomSettings = [.. await (StyleData.Script?.RegisterCustomSettings() ?? Task.FromResult(Enumerable.Empty<ICustomProperty>()))];
+            await ReloadCustomSettingsData();
         }
         catch (Exception ex)
         {
@@ -1098,6 +1084,38 @@ public partial class MainWindow : Window
 
         UpdateCustomScriptFields();
         StyleData?.InitializedScript = true;
+    }
+
+    public async Task ReloadCustomSettingsData()
+    {
+        try
+        {
+            var props = StyleSettings[SelectedStyle!];
+            foreach (var prop in CustomSettings)
+            {
+                var p = props.FirstOrDefault(p => p.Name == prop.Name);
+                if (p is not null)
+                {
+                    var val = p.ValueToString();
+                    if (val.Length > 0)
+                        prop.StringToValue(val);
+                    var ind = props.IndexOf(p);
+                    props.RemoveAt(ind);
+                    props.Insert(ind, prop);
+                }
+                else
+                    props.Add(prop);
+            }
+        }
+        catch (Exception ex)
+        {
+            var se = new StyleError
+            {
+                MessageBlock = { Text = "While trying to reload the style settings, the program encountered an error" },
+                ErrorBox = { Text = ex.ToString() },
+            };
+            await se.ShowDialog(this);
+        }
     }
 
     void BoxImages_OnLayoutUpdated(object? sender, EventArgs e) => UpdateBoxBounds();
@@ -1476,7 +1494,7 @@ public partial class MainWindow : Window
 
     //System.Diagnostics.Stopwatch _sw = System.Diagnostics.Stopwatch.StartNew();
 
-    async Task UpdateEditableText(UpdateKind updateKind)
+    public async Task UpdateEditableText(UpdateKind updateKind)
     {
         if (PreviewRenderer is null)
             return;
@@ -1539,7 +1557,7 @@ public partial class MainWindow : Window
         await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
     }
 
-    async Task UpdateOriginalText(UpdateKind updateKind)
+    public async Task UpdateOriginalText(UpdateKind updateKind)
     {
         if (PreviewRenderer is null)
             return;
@@ -1582,7 +1600,7 @@ public partial class MainWindow : Window
         }
     }
 
-    public async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
+    async void ForceStyleReload_OnClick(object? sender, RoutedEventArgs e)
     {
         var lWin = new LoadingWindow { Title = "Reloading style...", CanResize = false, ProgressBar = { IsIndeterminate = true } };
         lWin.Closing += (_, ev) =>
@@ -1607,6 +1625,7 @@ public partial class MainWindow : Window
         }
         await PopulateCustomPropertiesValues();
         UpdateCustomScriptFields();
+        await ReloadCustomSettingsData();
         UpdatingEntry = true;
         await UpdateEditableText(UpdateKind.ReloadedStyle);
         await UpdateOriginalText(UpdateKind.ReloadedStyle);

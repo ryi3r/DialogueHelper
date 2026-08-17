@@ -32,6 +32,7 @@ public class PreviewRenderer(MainWindow mainWindow)
         ChangedEntry,
         QueuedRedraw,
         SpellcheckChanged,
+        ReloadSettings,
     }
 
     public readonly MainWindow MainWindow = mainWindow;
