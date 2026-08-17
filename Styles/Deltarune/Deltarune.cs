@@ -1496,7 +1496,6 @@ public class ParsedString
                                     text = text.Remove(i + 2, 2).Insert(i + 2, r);
                                     trimLen = text.TrimEnd().Length;
                                     i--;
-                                    Console.WriteLine($"ow:{text}");
                                     continue;
                                 }
                                 else
