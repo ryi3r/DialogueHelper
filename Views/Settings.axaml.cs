@@ -102,6 +102,8 @@ public partial class Settings : Window
             await MainWindow.UpdateEditableText(UpdateKind.ReloadSettings);
             await MainWindow.UpdateOriginalText(UpdateKind.ReloadSettings);
             await (MainWindow.StyleData!.Script?.FinalizeDrawEpoch(new(MainWindow, MainWindow.StyleData)) ?? Task.CompletedTask);
+
+            MainWindow.ReloadSpellChecker();
         }
         Close();
     }
@@ -133,8 +135,6 @@ public partial class Settings : Window
 
             await DownloadOne(http, affPath, dictFolder);
             await DownloadOne(http, dicPath, dictFolder);
-
-            MainWindow?.ReloadSpellChecker();
             DownloadStatusText.Text = "Downloaded successfully. Ready for use.";
         }
         catch (Exception ex)

@@ -31,7 +31,7 @@ using SkiaSharp;
 using Views;
 using static DialogueHelper.PreviewRenderer.PreviewRenderer;
 using FileInfo = DialogueHelper.Views.FileInfo;
-using Avalonia.VisualTree;  // needed for MainWindow_OnKeyDown
+using Avalonia.VisualTree;
 
 namespace DialogueHelper;
 
@@ -92,10 +92,16 @@ public partial class MainWindow : Window
             {
                 ev.Cancel = true;
                 if (!await new UnsavedChanges().ShowDialog<bool>(this))
-                    Environment.Exit(0);
+                {
+                    IsFileModified = false;
+                    Close();
+                }
+                return;
             }
-            else
-                Environment.Exit(0);
+
+            _timer.Stop();
+            _backupTimer.Stop();
+            _redrawTimer.Stop();
         };
 
         // no dnd on linux :( unable to test.
@@ -171,9 +177,16 @@ public partial class MainWindow : Window
         {
             if (FileData is null)
                 return;
-            using var f = File.Create("backup.dh");
-            f.Write(Encoding.UTF8.GetBytes(FileData.OutputString()));
-            f.Close();
+            try
+            {
+                using var f = File.Create("backup.dh");
+                f.Write(Encoding.UTF8.GetBytes(FileData.OutputString()));
+                f.Close();
+            }
+            catch (Exception)
+            {
+                // permission errors likely, ignore
+            }
         };
         _backupTimer.Start();
         _redrawTimer.Tick += async (_, _) =>
@@ -202,7 +215,7 @@ public partial class MainWindow : Window
                     curVer += $".{ver.Revision}";
             }
 
-            var http = new HttpClient();
+            using var http = new HttpClient();
             var lastShown = (Version?)null;
             while (true)
             {
@@ -286,9 +299,7 @@ public partial class MainWindow : Window
                         }
                         else
                         {
-                            var container = EntryTreeView.SelectedItem is not null
-                                ? EntryTreeView.TreeContainerFromItem(EntryTreeView.SelectedItem)
-                                : null;
+                            var container = EntryTreeView.SelectedItem is not null ? EntryTreeView.TreeContainerFromItem(EntryTreeView.SelectedItem) : null;
                             (container ?? EntryTreeView).Focus(NavigationMethod.Tab);
                         }
                     });
@@ -296,6 +307,7 @@ public partial class MainWindow : Window
                 else
                 {
                     var textBox = GetFocusedTargetTextBox();
+                    // todo: use AcceptsTab instead
                     if (textBox is not null)
                     {
                         if (!textBox.IsReadOnly)
@@ -304,8 +316,7 @@ public partial class MainWindow : Window
                     }
                 }
                 break;
-                /* switch in case we want to us this method for anything else later,
-                   maybe make the mouse side back/forward buttons cycle between entries */
+                // switch in case we want to us this method for anything else later, maybe make the mouse side back/forward buttons cycle between entries
         }
     }
 
@@ -351,7 +362,6 @@ public partial class MainWindow : Window
             else
                 node.FontSize = UiFontSize;
         }
-        // todo: fix a bug with `EditableText` not updating until you type again
         UpdatingEntry = false;
     }
 
