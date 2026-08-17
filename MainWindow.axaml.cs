@@ -180,8 +180,9 @@ public partial class MainWindow : Window
             if (!RedrawRenderer)
                 return;
             RedrawRenderer = false;
-            await UpdateEditableText(UpdateKind.None);
-            await UpdateOriginalText(UpdateKind.None);
+            await UpdateEditableText(UpdateKind.QueuedRedraw);
+            await UpdateOriginalText(UpdateKind.QueuedRedraw);
+            await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
         };
         _redrawTimer.Start();
         SizeChanged += async (_, _) => await LoadBackground();
@@ -315,11 +316,23 @@ public partial class MainWindow : Window
 
         foreach (var candidate in new[] { EditableText, OriginalText, CommentText })
         {
-            if (!Equals(focused, candidate) && !candidate.IsVisualAncestorOf(focused))
+            if (!Equals(focused, candidate))
                 continue;
 
             textBox = candidate;
             break;
+        }
+
+        if (textBox is null)
+        {
+            foreach (var prop in CustomProperties)
+            {
+                if (prop.Node is not TextBox tb || !Equals(focused, tb))
+                    continue;
+
+                textBox = tb;
+                break;
+            }
         }
 
         return textBox;
@@ -770,6 +783,7 @@ public partial class MainWindow : Window
 
             await UpdateEditableText(UpdateKind.ChangedEntry);
             await UpdateOriginalText(UpdateKind.ChangedEntry);
+            await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
         }
     }
 
@@ -839,6 +853,7 @@ public partial class MainWindow : Window
             UpdatingEntry = true;
             await UpdateEditableText(UpdateKind.InitializedStyle);
             await UpdateOriginalText(UpdateKind.InitializedStyle);
+            await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
             UpdatingEntry = false;
         }
     }
@@ -1007,6 +1022,7 @@ public partial class MainWindow : Window
         await InitializeCustomScript();
         await UpdateEditableText(UpdateKind.InitializedStyle);
         await UpdateOriginalText(UpdateKind.InitializedStyle);
+        await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
 
         w.Close();
         var lastArg = Environment.GetCommandLineArgs()[^1];
@@ -1114,13 +1130,8 @@ public partial class MainWindow : Window
             }
         }
         CustomPropertiesPanel.Children.Clear();
-        if (CustomProperties.Count <= 0)
-            CustomPropertiesNone.IsVisible = true;
-        else
-        {
-            CustomPropertiesNone.IsVisible = false;
-            UpdateCustomProperties(CustomPropertiesPanel, CustomProperties.AsEnumerable(), true);
-        }
+        CustomPropertiesNone.IsVisible = CustomProperties.Count(x => x.Visible) <= 0;
+        UpdateCustomProperties(CustomPropertiesPanel, CustomProperties.AsEnumerable(), true);
     }
 
     async Task RunCustomTool(CustomTool tool)
@@ -1142,6 +1153,12 @@ public partial class MainWindow : Window
 
     public void UpdateCustomProperties(Panel panel, IEnumerable<ICustomProperty> props, bool isString = false)
     {
+        async Task Rerender()
+        {
+            await UpdateEditableText(UpdateKind.CustomPropertyChanged);
+            await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
+            await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
+        }
         foreach (var tool in props)
         {
             var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new(5) };
@@ -1163,10 +1180,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.IsChecked ?? false) ? "true" : "false");
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1188,10 +1202,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1212,10 +1223,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1236,10 +1244,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1260,10 +1265,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1285,10 +1287,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1309,10 +1308,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1333,10 +1329,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1357,10 +1350,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1380,10 +1370,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1402,10 +1389,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue((node.Value ?? 0).ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1416,17 +1400,14 @@ public partial class MainWindow : Window
                     {
                         var node = new TextBox
                         {
-                            Text = tool.Value as string,
+                            Text = (string?)tool.Value,
                             IsReadOnly = tool.ReadOnly,
                         };
                         node.TextChanged += async (_, _) =>
                         {
                             tool.StringToValue(node.Text ?? "");
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1435,7 +1416,7 @@ public partial class MainWindow : Window
 
                 case not null when tool.Type == typeof(Color):
                     {
-                        var col = (Color)tool.Value!;
+                        var col = ((Color?)tool.Value) ?? new();
                         var node = new ColorPicker
                         {
                             IsEnabled = !tool.ReadOnly,
@@ -1447,10 +1428,7 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue(new Color { Argb = node.Color.ToUInt32() }.Rgba.ToString() ?? "");
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
@@ -1476,23 +1454,25 @@ public partial class MainWindow : Window
                         {
                             tool.StringToValue(node.SelectedIndex.ToString());
                             if (isString)
-                            {
-                                await UpdateEditableText(UpdateKind.CustomPropertyChanged);
-                                await UpdateOriginalText(UpdateKind.CustomPropertyChanged);
-                            }
+                                await Rerender();
                         };
                         tool.Node = node;
                         item.Children.Add(node);
                     }
                     break;
             }
+            item.IsVisible = tool.Visible;
             if (tool.Node is not null)
                 ToolTip.SetTip(tool.Node, tool.Tooltip);
             panel.Children.Add(item);
         }
     }
 
-    async void EditableText_OnTextChanging(object? sender, TextChangingEventArgs? e) => await UpdateEditableText(UpdatingEntry ? UpdateKind.None : UpdateKind.EditableTextChanged);
+    async void EditableText_OnTextChanging(object? sender, TextChangingEventArgs? e)
+    {
+        await UpdateEditableText(UpdatingEntry ? UpdateKind.None : UpdateKind.EditableTextChanged);
+        await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
+    }
 
     //System.Diagnostics.Stopwatch _sw = System.Diagnostics.Stopwatch.StartNew();
 
@@ -1553,7 +1533,11 @@ public partial class MainWindow : Window
         UpdateBoxBounds();
     }
 
-    async void OriginalText_OnTextChanging(object? sender, TextChangingEventArgs? e) => await UpdateOriginalText(UpdatingEntry ? UpdateKind.None : UpdateKind.OriginalTextChanged);
+    async void OriginalText_OnTextChanging(object? sender, TextChangingEventArgs? e)
+    {
+        await UpdateOriginalText(UpdatingEntry ? UpdateKind.None : UpdateKind.OriginalTextChanged);
+        await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
+    }
 
     async Task UpdateOriginalText(UpdateKind updateKind)
     {
@@ -1626,6 +1610,7 @@ public partial class MainWindow : Window
         UpdatingEntry = true;
         await UpdateEditableText(UpdateKind.ReloadedStyle);
         await UpdateOriginalText(UpdateKind.ReloadedStyle);
+        await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
         UpdatingEntry = false;
 
         lWin.Close();
@@ -1635,6 +1620,8 @@ public partial class MainWindow : Window
     {
         await UpdateEditableText(UpdateKind.ScaleChanged);
         await UpdateOriginalText(UpdateKind.ScaleChanged);
+        if (StyleData is not null)
+            await (StyleData.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
     }
 
     void TextBox_OnSelectionPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -1650,8 +1637,9 @@ public partial class MainWindow : Window
 
     async void ShowSpellcheckUnderline_OnClick(object? sender, RoutedEventArgs e)
     {
-        await UpdateEditableText(UpdateKind.None);
-        await UpdateOriginalText(UpdateKind.None);
+        await UpdateEditableText(UpdateKind.SpellcheckChanged);
+        await UpdateOriginalText(UpdateKind.SpellcheckChanged);
+        await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
     }
 
     public void ReloadSpellChecker()
@@ -1796,6 +1784,8 @@ public partial class MainWindow : Window
             SelectedString?.BoxStyle = BoxComboBox.SelectedIndex;
         await UpdateEditableText(UpdateKind.SelectedBoxChanged);
         await UpdateOriginalText(UpdateKind.SelectedBoxChanged);
+        if (StyleData is not null)
+            await (StyleData.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
     }
 
     async void FontComboBox_OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -1804,6 +1794,8 @@ public partial class MainWindow : Window
             SelectedString?.FontStyle = FontComboBox.SelectedIndex;
         await UpdateEditableText(UpdateKind.SelectedFontChanged);
         await UpdateOriginalText(UpdateKind.SelectedFontChanged);
+        if (StyleData is not null)
+            await (StyleData.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
     }
 
     async void EntryTextBox_OnTextChanged(object? sender, TextChangedEventArgs? e) => await UpdateSearchFiltering();
@@ -2456,6 +2448,7 @@ public partial class MainWindow : Window
     {
         await UpdateEditableText(UpdateKind.ColorChanged);
         await UpdateOriginalText(UpdateKind.ColorChanged);
+        await (StyleData!.Script?.FinalizeDrawEpoch(new(this, StyleData)) ?? Task.CompletedTask);
     }
 
     async void GroupEditorSelect_OnClick(object? sender, RoutedEventArgs e)

@@ -250,6 +250,10 @@ public class ExternalData(MainWindow mainWindow, StringContainer stringContainer
 
     public float GetCurrentFontScale() => _stringContainer.FontScale;
 
+    public bool IsSpellcheckShowEnabled() => mainWindow.ShowSpellcheckUnderline.IsChecked ?? false;
+
+    public void SetSpellcheckShowEnabled(bool enabled) => mainWindow.ShowSpellcheckUnderline.IsChecked = enabled;
+
     public void SetChangeableBox(bool changeable) => mainWindow.BoxComboBox.IsEnabled = changeable;
 
     public void SetChangeableFont(bool changeable) => mainWindow.FontComboBox.IsEnabled = changeable;

@@ -12,6 +12,7 @@ public interface ICustomProperty
     public string VisualName { get; }
     public string? Tooltip { get; }
     public bool ReadOnly { get; set; }
+    public bool Visible { get; set; }
     public object? Value { get; set; }
     public object? DefaultValue { get; }
     public Type Type { get; }
@@ -30,6 +31,15 @@ public class CustomProperty<T>(string visualName, string? tooltip, string name, 
     public string VisualName { get; set; } = visualName;
     public string? Tooltip { get; set; } = tooltip;
     public bool ReadOnly { get; set; } = readOnly;
+    public bool Visible
+    {
+        get;
+        set
+        {
+            field = value;
+            ((Control?)Node?.Parent)?.IsVisible = value;
+        }
+    } = true;
     object? ICustomProperty.Value
     {
         get => Value;

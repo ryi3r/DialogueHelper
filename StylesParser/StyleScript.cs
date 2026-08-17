@@ -24,4 +24,6 @@ public class StyleScript
     /// if it returns true then it finishes drawing early.
     /// </summary>
     public virtual Task<bool> DrawGlyph(CustomToolWindowHandler wh, ExternalData data) => Task.FromResult(false);
+
+    public virtual Task FinalizeDrawEpoch(CustomToolWindowHandler wh) => Task.CompletedTask;
 }

@@ -30,6 +30,8 @@ public class PreviewRenderer(MainWindow mainWindow)
         ScaleChanged,
         ColorChanged,
         ChangedEntry,
+        QueuedRedraw,
+        SpellcheckChanged,
     }
 
     public readonly MainWindow MainWindow = mainWindow;
@@ -172,7 +174,7 @@ public class PreviewRenderer(MainWindow mainWindow)
                             StrokeThickness = 1.5,
                             StrokeDashArray = new AvaloniaList<double>(4.0, 2.0),
                             StrokeLineCap = PenLineCap.Round,
-                            //Opacity = 0.9
+                            //Opacity = 0.9,
                         });
                     }
                 }

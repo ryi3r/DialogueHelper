@@ -21,7 +21,6 @@ using Avalonia.Platform.Storage;
 using DialogueHelper.External;
 using DialogueHelper.FileFormat;
 using DialogueHelper.PreviewRenderer;
-using DialogueHelper.StylesParser;
 using DialogueHelper.Views;
 
 public class Deltarune : StyleScript
@@ -65,6 +64,7 @@ public class Deltarune : StyleScript
     public static CustomProperty<bool> AutoIndentAutoWrappedMiniFaceLines = new("Auto Indent Auto Wrapped Mini Face Lines", "Allows not using manual line breaks with mini face (\\m?) lines in case your mod has it implemented.", "autoIndentAutoWrappedMiniFaceLines", false);
     public static CustomPropertyList<string> PortraitKind = new("Portrait Kind", "Portrait type, sets the text offset as each specify", "portraitKind", ["Default", "None", "Basic", "Flower Lines"], ["Auto-detect portrait type", "Force no portrait", "Force default portrait", "Display ~1 format mini face lines correctly"], null, 0);
     public static CustomPropertyList<string> DialogueType = new("Dialogue Type", "Line-wrapping style", "dialogueType", ["Default", "None", "Dynamic"], [null, null, "This is vastly the legacy line-wrapping system, this might be useful for certain custom boxes."], null, 0);
+    public static List<CustomProperty<string>> Templates = [];
 
     public static double EnvX;
     public static double EnvY;
@@ -87,12 +87,15 @@ public class Deltarune : StyleScript
     protected static string UtmtPath = null!;
 
     int _textLimit;
+    HashSet<int> _usedTemplates = [];
 
     public override Task Init(CustomToolWindowHandler wh)
     {
         // This is called when the script is loaded and ready to go.
         //await wh.ShowDialog(new InfoWindow("Hello world!"));
         UtmtPath = $"{wh.GetStylePath()}/UndertaleModCli/";
+        for (var i = 0; i <= 9; i++)
+            Templates.Add(new($"~{i}", "Template string that replaces its contents with the specified text.", $"~{i}"));
         return Task.CompletedTask;
     }
 
@@ -106,10 +109,9 @@ public class Deltarune : StyleScript
     public override Task<IEnumerable<ICustomProperty>> RegisterCustomProperties()
     {
         // Store these somewhere if you're going to use them
-        return Task.FromResult<IEnumerable<ICustomProperty>>([
-            PortraitKind,
-            DialogueType,
-        ]);
+        var props = (List<ICustomProperty>)[PortraitKind, DialogueType];
+        props.AddRange(Templates);
+        return Task.FromResult<IEnumerable<ICustomProperty>>(props);
     }
 
     public override Task<IEnumerable<CustomTool>> RegisterCustomTools()
@@ -955,6 +957,15 @@ public class Deltarune : StyleScript
         return new(data, scUns, warnedKeys);
     }
 
+    public override Task FinalizeDrawEpoch(CustomToolWindowHandler wh)
+    {
+        //Console.WriteLine($"idxs->{string.Join(", ", _usedTemplates)}");
+        foreach (var (i, t) in Templates.Index())
+            t.Visible = _usedTemplates.Contains(i);
+        _usedTemplates.Clear();
+        return base.FinalizeDrawEpoch(wh);
+    }
+
     public override async Task<bool> PrepareDraw(CustomToolWindowHandler wh, ExternalData data)
     {
         if (PortraitKind.SelectedIndex == (int)PortraitKinds.Default && data.Char.String.StartsWith("~1* ", StringComparison.InvariantCultureIgnoreCase))
@@ -963,6 +974,20 @@ public class Deltarune : StyleScript
             PortraitKind.UpdateUiValue();
             data.QueueRedraw = true;
             return true;
+        }
+        if (PortraitKind.SelectedIndex == (int)PortraitKinds.FlowerLines)
+        {
+            // todo: don't update when template is empty by the user
+            if (Templates[1].Value is null)
+            {
+                Templates[1].Value = "\\m9\t\t";
+                Templates[1].UpdateUiValue();
+            }
+            if (Templates[2].Value is null)
+            {
+                Templates[2].Value = "&\t\t";
+                Templates[2].UpdateUiValue();
+            }
         }
         var isPortrait = PortraitKind.SelectedIndex == (int)PortraitKinds.Basic;
         int? characterLimit = null;
@@ -993,11 +1018,15 @@ public class Deltarune : StyleScript
                 return true;
             }
         }
-        Parsed = new(data.Char.String, characterLimit, EnvAutoAsterisk, PortraitKind.SelectedIndex == (int)PortraitKinds.FlowerLines ? new()
+        var td = new Dictionary<int, string>();
+        foreach (var (i, t) in Templates.Index())
         {
-            [1] = "\\m9\t\t",
-            [2] = "&\t\t",
-        } : []);
+            if (t.Value is not null)
+                td.Add(i, t.Value);
+        }
+        Parsed = new(data.Char.String, characterLimit, EnvAutoAsterisk, td);
+        foreach (var idx in Parsed.Events.Values.SelectMany(x => x.Where(y => y is DialogueTemplate)).Cast<DialogueTemplate>().Select(x => x.Template))
+            _usedTemplates.Add(idx);
         data.Char.String = Parsed.ParsedText;
         _textLimit = data.Char.String.TrimEnd().Length;
         if (data.BoxImages.Count > 1)
@@ -1337,7 +1366,10 @@ public class DialogueFloweryVoiceClip(string argument) : ParsedEvent(argument) {
 /// <summary>
 /// ~_ (_ = int 1..=9)
 /// </summary>
-public class DialogueTemplate(string argument) : ParsedEvent(argument) { }
+public class DialogueTemplate(string argument, int template) : ParsedEvent(argument)
+{
+    public int Template = template;
+}
 
 public class ParsedString
 {
@@ -1434,7 +1466,7 @@ public class ParsedString
                     if (trimLen - i >= 2 && int.TryParse([text[i + 1]], out var t))
                     {
                         var fullSlice = text[i..(i + 2)];
-                        AddEvent(i, new DialogueTemplate(fullSlice));
+                        AddEvent(i, new DialogueTemplate(fullSlice, t));
                         if (tempaltes.TryGetValue(t, out var r))
                         {
                             text = text.Remove(i, fullSlice.Length).Insert(i, r);
