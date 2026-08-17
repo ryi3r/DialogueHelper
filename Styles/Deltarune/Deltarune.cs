@@ -1463,16 +1463,18 @@ public class ParsedString
             switch (@char)
             {
                 case '~':
-                    if (trimLen - i >= 2 && int.TryParse([text[i + 1]], out var t))
                     {
-                        var fullSlice = text[i..(i + 2)];
-                        AddEvent(i, new DialogueTemplate(fullSlice, t));
-                        if (tempaltes.TryGetValue(t, out var r))
+                        if (trimLen - i >= 2 && int.TryParse([text[i + 1]], out var t))
                         {
-                            text = text.Remove(i, fullSlice.Length).Insert(i, r);
-                            trimLen = text.TrimEnd().Length;
-                            i--;
-                            continue;
+                            var fullSlice = text[i..(i + 2)];
+                            AddEvent(x, new DialogueTemplate(fullSlice, t));
+                            if (tempaltes.TryGetValue(t, out var r))
+                            {
+                                text = text.Remove(i, fullSlice.Length).Insert(i, r);
+                                trimLen = text.TrimEnd().Length;
+                                i--;
+                                continue;
+                            }
                         }
                     }
                     break;
@@ -1483,36 +1485,44 @@ public class ParsedString
                         {
                             var fullSlice = text[i..(i + 3)];
                             var slice = text[(i + 1)..(i + 3)];
+
+                            var oldFullSlice = fullSlice;
+                            if (trimLen - i >= 4 && slice[1] == '~' && int.TryParse([text[i + 3]], out var t))
+                            {
+                                fullSlice = text[i..(i + 4)];
+                                AddEvent(x, new DialogueTemplate(text[(i + 2)..(i + 3)], t));
+                                if (tempaltes.TryGetValue(t, out var r))
+                                {
+                                    text = text.Remove(i + 2, 2).Insert(i + 2, r);
+                                    trimLen = text.TrimEnd().Length;
+                                    i--;
+                                    Console.WriteLine($"ow:{text}");
+                                    continue;
+                                }
+                                else
+                                    valid = false;
+                            }
+
                             switch (slice[0])
                             {
                                 case 'E':
+                                    if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
                                     {
-                                        var oldFullSlice = fullSlice;
-                                        if (trimLen - i >= 4 && slice[1] == '~' && char.IsAsciiDigit(text[i + 3]))
-                                            fullSlice = text[i..(i + 4)];
-                                        else if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz".Contains(slice[1]))
-                                        {
-                                            valid = false;
-                                            AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
-                                        }
-                                        if (valid)
-                                        {
-                                            AddEvent(x, new DialogueIndexPortrait(fullSlice));
-                                            i += fullSlice.Length - oldFullSlice.Length;
-                                        }
+                                        valid = false;
+                                        AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting index portrait: {fullSlice}"));
                                     }
+                                    if (valid)
+                                        AddEvent(x, new DialogueIndexPortrait(fullSlice));
                                     break;
                                 case 'F':
+                                    // todo: \F0 seems to reset line wrap
+                                    if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
                                     {
-                                        // todo: \F0 seems to reset line wrap
-                                        if (!"0SRNTLsUAaBubrUKQC◘yi".Contains(slice[1]))
-                                        {
-                                            valid = false;
-                                            AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
-                                        }
-                                        else
-                                            AddEvent(x, new DialogueCharPortrait(fullSlice));
+                                        valid = false;
+                                        AddParseWarn(x, new ParseWarn(fullSlice, $"invalid choice {slice[1]} for setting character portrait: {fullSlice}"));
                                     }
+                                    else
+                                        AddEvent(x, new DialogueCharPortrait(fullSlice));
                                     break;
                                 case 'T':
                                     {
@@ -1573,15 +1583,13 @@ public class ParsedString
                                     }
                                     break;
                                 case 'V':
+                                    if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
                                     {
-                                        if (!"0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZzabcdefghijklmnopqrstuvwxy".Contains(slice[1]))
-                                        {
-                                            valid = false;
-                                            AddParseWarn(x, new ParseWarn(fullSlice, $"invalid voice-clip selected: {slice[1]}"));
-                                        }
-                                        else
-                                            AddEvent(x, new DialogueFloweryVoiceClip(fullSlice));
+                                        valid = false;
+                                        AddParseWarn(x, new ParseWarn(fullSlice, $"invalid voice-clip selected: {slice[1]}"));
                                     }
+                                    else
+                                        AddEvent(x, new DialogueFloweryVoiceClip(fullSlice));
                                     break;
                                 case 'S' or 's' or 'C' or 'M' or 'I' or 'm' or 'f' or 'O' or 'v':
                                     {
