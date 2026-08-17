@@ -993,9 +993,9 @@ public class Deltarune : StyleScript
         int? characterLimit = null;
         double? textAreaEnd;
         {
-            if (isPortrait && data.Box.CustomProperties.TryGetValue("PortraitCharacterLimit", out var l) && l.TryGetInt32(out var eValue))
+            if (data.Box.CustomProperties.TryGetValue("CharacterLimit", out var l) && l.TryGetInt32(out var eValue))
                 characterLimit = eValue;
-            if (data.Box.CustomProperties.TryGetValue("CharacterLimit", out l) && l.TryGetInt32(out eValue))
+            if (isPortrait && data.Box.CustomProperties.TryGetValue("PortraitCharacterLimit", out l) && l.TryGetInt32(out eValue))
                 characterLimit = eValue;
 
             textAreaEnd = data.Box.CustomProperties.TryGetValue("TextAreaEnd", out l) && l.TryGetDouble(out var d) ? d : null;
