@@ -1779,7 +1779,7 @@ public class ParsedString
                     }
                     if (AsteriskCheck && autoAsterisk)
                     {
-                        cPos += 2;
+                        cPos += indentSize;
                         for (var j = 0; j < indentSize; j++)
                             UndrawPositions.Add(sb.Length + j);
                         sb.Append(new string('|', indentSize));
