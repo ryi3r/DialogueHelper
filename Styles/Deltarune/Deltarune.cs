@@ -125,7 +125,47 @@ public class Deltarune : StyleScript
             new("Update Dialogues", "Update your old .dh file to contain changes from newer game versions.", UpdateDialogues, "Ctrl+Shift+U"),
             new("Assign String Keys to all Entries", "Update your old .dh translation file to contain all keys.", AssignStringKeyToAll),
             new("Reorganize Dialogues", "Reorder your old .dh file dialogue order to ensure accuracy with the base json.", ReorderDialogues),
+            //new("[DEBUG] Test Deltarune Wrapping", null, TestDeltaruneWrapping, "F1"),
+            //new("[DEBUG] Load Deltarune Wrapping as File", null, LoadDeltaruneWrapping, "F3"),
         ]);
+    }
+
+    readonly (string Base, string Expected, int StringLimit)[] _testingData = [
+        ("* Al fin podremos estar... en armonía... ¡por siempre!", "* Al fin podremos&||estar... en&||armonía... ¡por&||siempre!", 23),
+        ("* ¡Ja! Encontrar METAL ROSA... ¡eso SÍ es algo que puedo hacer!", "* ¡Ja! Encontrar METAL ROSA...&||¡eso SÍ es algo que puedo&||hacer!", 33),
+        ("123456789123456789123456789123456 123456789123456789123456789123456789/%", "123456789123456789123456789123456&123456789123456789123456789123456&789", 33),
+        ("\\m0\t\t* Come to think of it,&\t\tI've never won before either.", "\t\t* Come to think of it,&||\t\tI've never won before either.", 33),
+        ("\\m0\t\t* Come to think of it,&\t\tI've never won before either.1", "\t\t* Come to think of it,&||\t\tI've never won before&||either.1", 33),
+        ("* hogy keszitsunk egy gond&nosz tervet, amivel elve-&runk titeket BOHOCOKAT./%", "* hogy keszitsunk egy gond&||nosz tervet, amivel&||elve-&||runk titeket BOHOCOKAT.", 26),
+        ("0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789", "012345678901234567890123456789012&345678901234567890123456789012345&678901234567890123456789012345678&9", 33),
+        ("\\E3* If you're serious^1, I'll see you at Flower Castle./%", "* If you're serious, I'll&||see you at Flower&||Castle.", 26),
+        ("* 123456789123456789123456789123456789123456789123456789123456789123456789/%", "* 1234567891234567891234567891234&||5678912345678912345678912345678&||9123456789", 33),
+        ("\\E4* 123456789123456789123456789123456789123456789123456789123456789123456789/%", "*&||1234567891234567891234567891234&||5678912345678912345678912345678&||9123456789", 33),
+    ];
+
+    async Task TestDeltaruneWrapping(CustomToolWindowHandler wh)
+    {
+        var last = AutoIndentAutoWrappedMiniFaceLines.Value;
+        AutoIndentAutoWrappedMiniFaceLines.Value = false;
+        Console.WriteLine("==================================");
+        foreach (var (i, (b, e, l)) in _testingData.Index())
+        {
+            var got = new ParsedString(b, l).ParsedText;
+            if (e != got)
+            {
+                Console.WriteLine($"TEST {i + 1}: FAILED (got=\"{got}\" expected=\"{e}\")");
+            }
+            else
+                Console.WriteLine($"TEST {i + 1}: PASSED");
+        }
+        AutoIndentAutoWrappedMiniFaceLines.Value = last;
+    }
+
+    async Task LoadDeltaruneWrapping(CustomToolWindowHandler wh)
+    {
+        var fd = new FileData();
+        fd.AddString("data", [.. _testingData.Select(x => new StringContainer { Text = x.Base, OriginalText = x.Expected })]);
+        await wh.LoadRaw(fd);
     }
 
     public async Task<bool> DownloadUndertaleModToolCli(CustomToolWindowHandler wh)
@@ -1713,13 +1753,14 @@ public class ParsedString
             }
 
             // todo: parse events like ~1, ~2, ..., ~N and a way to test it out (presets/editor?)
+            var wrapped = false;
             if (limit is not null && (Deltarune.DialogueKinds)Deltarune.DialogueType.SelectedIndex is Deltarune.DialogueKinds.Default)
             {
                 //Console.WriteLine($"cPos:{cPos},i:{i}->{text[i]}->l:{limit}");
                 if (cPos >= limit)
                 {
                     //Console.WriteLine($"cPos:{cPos},tSpace:{tSpace},i:{i}->{text[i]},a:{AsteriskCheck}");
-                    cPos = 1;
+                    cPos = 0;
                     if (tSpace > 2)
                     {
                         i = tSpace - 1;
@@ -1738,6 +1779,7 @@ public class ParsedString
                     }
                     if (AsteriskCheck && autoAsterisk)
                     {
+                        cPos += 2;
                         for (var j = 0; j < indentSize; j++)
                             UndrawPositions.Add(sb.Length + j);
                         sb.Append(new string('|', indentSize));
@@ -1745,8 +1787,9 @@ public class ParsedString
                     tSpace = -1;
                     spaceSb = -1;
                     //Console.WriteLine($"final cPos:{cPos}");
+                    wrapped = true;
                 }
-                if (!Deltarune.IsNewlineSafe(i, text, this))
+                if (!wrapped && !Deltarune.IsNewlineSafe(i, text, this))
                 {
                     cPos++;
                     //Console.WriteLine($"new cPos:{cPos},i:{i}->{text[i]},a:{AsteriskCheck}");
